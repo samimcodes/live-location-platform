@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import api from '@/lib/axios';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from '@/lib/toast';
 import type { Friend } from '@/hooks/useFriends';
 import Link from 'next/link';
 import { formatDistanceToNow } from '@/lib/dateUtils';

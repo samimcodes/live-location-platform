@@ -6,7 +6,7 @@ import { useGroup } from '@/hooks/useGroups';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LiveMap } from '@/components/map/LiveMap';
-import { Users, ArrowLeft, Navigation, MapPin } from 'lucide-react';
+import { Users, ArrowLeft, Navigation } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useLocationStore } from '@/store/useLocationStore';

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Lock, Bell, Map, Sun, Moon, Monitor, Shield } from 'lucide-react';
+import { User, Lock, Bell, Map, Sun, Moon, Monitor } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { motion } from 'framer-motion';
 import api from '@/lib/axios';

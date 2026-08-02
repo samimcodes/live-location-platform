@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import type { Map, Marker, MapboxOptions } from 'mapbox-gl';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useAppSelector } from '@/store/store';
 import { useFriends } from '@/hooks/useFriends';
 import { cn } from '@/lib/utils';
+
+// We avoid importing mapbox-gl types at top level to prevent SSR issues.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MapboxInstance = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MarkerInstance = any;
 
 interface LiveMapProps {
   className?: string;
@@ -15,9 +20,11 @@ interface LiveMapProps {
 
 export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<Map | null>(null);
-  const myMarkerRef = useRef<Marker | null>(null);
-  const friendMarkersRef = useRef<Map<number, Marker>>(new Map());
+  const mapRef = useRef<MapboxInstance>(null);
+  const myMarkerRef = useRef<MarkerInstance>(null);
+  // Use a plain object as a marker registry to avoid JS Map / mapbox Map name collision
+  const friendMarkersRef = useRef<Record<number, MarkerInstance>>({});
+
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState(false);
 
@@ -27,7 +34,7 @@ export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapP
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
 
-  // ── Init map (dynamic import — avoids SSR) ────────────────
+  // ── Init map ───────────────────────────────────────────────
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
     if (!token || token === 'pk.your_mapbox_public_token_here') {
@@ -39,23 +46,16 @@ export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapP
 
     import('mapbox-gl').then((mgl) => {
       if (!mounted || !mapContainer.current) return;
-
-      // Import CSS once
-      import('mapbox-gl/dist/mapbox-gl.css').catch(() => null);
-
       mgl.default.accessToken = token;
 
-      const options: MapboxOptions = {
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [90.4125, 23.8103],
-        zoom: 11,
-      };
-
       try {
-        const m = new mgl.default.Map(options);
+        const m = new mgl.default.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [90.4125, 23.8103],
+          zoom: 11,
+        });
         mapRef.current = m;
-
         m.addControl(new mgl.default.NavigationControl(), 'top-right');
         m.addControl(
           new mgl.default.GeolocateControl({
@@ -65,7 +65,6 @@ export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapP
           }),
           'top-right'
         );
-
         m.on('load', () => { if (mounted) setMapLoaded(true); });
       } catch {
         if (mounted) setMapError(true);
@@ -74,21 +73,15 @@ export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapP
 
     return () => {
       mounted = false;
-      mapRef.current?.remove();
-      mapRef.current = null;
+      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
       myMarkerRef.current = null;
-      friendMarkersRef.current.clear();
+      friendMarkersRef.current = {};
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Create marker element ──────────────────────────────────
-  const createMarkerEl = useCallback((
-    name: string,
-    isMe: boolean,
-    letter: string,
-    gradient: string
-  ): HTMLDivElement => {
+  // ── Marker helper ──────────────────────────────────────────
+  const createMarkerEl = useCallback((name: string, isMe: boolean, letter: string, gradient: string): HTMLDivElement => {
     const el = document.createElement('div');
     el.className = 'localink-marker';
     el.innerHTML = `
@@ -103,12 +96,10 @@ export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapP
     return el;
   }, []);
 
-  // ── My location marker ─────────────────────────────────────
+  // ── My marker ──────────────────────────────────────────────
   useEffect(() => {
     if (!mapLoaded || !mapRef.current || !myLocation) return;
-
     const { latitude, longitude } = myLocation;
-
     import('mapbox-gl').then((mgl) => {
       if (!mapRef.current) return;
       if (!myMarkerRef.current) {
@@ -116,7 +107,7 @@ export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapP
         myMarkerRef.current = new mgl.default.Marker({ element: el, anchor: 'bottom' })
           .setLngLat([longitude, latitude])
           .setPopup(new mgl.default.Popup({ offset: 25 }).setHTML(
-            `<div style="padding:8px;min-width:120px"><p style="font-weight:600;margin:0 0 4px">${user?.name ?? 'You'}</p><p style="color:#6b7280;font-size:12px;margin:0">${myLocation.city ?? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`}</p></div>`
+            `<div style="padding:8px"><p style="font-weight:600;margin:0 0 4px">${user?.name ?? 'You'}</p><p style="color:#6b7280;font-size:12px;margin:0">${myLocation.city ?? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`}</p></div>`
           ))
           .addTo(mapRef.current);
       } else {
@@ -129,40 +120,40 @@ export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapP
   // ── Friend markers ─────────────────────────────────────────
   useEffect(() => {
     if (!mapLoaded || !mapRef.current || !showFriends) return;
-
-    const GRADIENTS = [
+    const GRADS = [
       'linear-gradient(135deg,#10b981,#059669)',
       'linear-gradient(135deg,#3b82f6,#2563eb)',
       'linear-gradient(135deg,#f59e0b,#d97706)',
       'linear-gradient(135deg,#ec4899,#db2777)',
       'linear-gradient(135deg,#06b6d4,#0891b2)',
     ];
-
     import('mapbox-gl').then((mgl) => {
       if (!mapRef.current) return;
-
       friendsLocations.forEach((loc, userId) => {
         const friend = friends.find((f) => f.id === userId);
         if (!friend?.sharingLocation) return;
         const { latitude, longitude } = loc;
-        const gradient = GRADIENTS[userId % GRADIENTS.length];
-
-        if (friendMarkersRef.current.has(userId)) {
-          friendMarkersRef.current.get(userId)!.setLngLat([longitude, latitude]);
+        const grad = GRADS[userId % GRADS.length];
+        if (friendMarkersRef.current[userId]) {
+          friendMarkersRef.current[userId].setLngLat([longitude, latitude]);
         } else {
-          const el = createMarkerEl(friend.name, false, friend.name.charAt(0).toUpperCase(), gradient);
+          const el = createMarkerEl(friend.name, false, friend.name.charAt(0).toUpperCase(), grad);
           const marker = new mgl.default.Marker({ element: el, anchor: 'bottom' })
             .setLngLat([longitude, latitude])
             .setPopup(new mgl.default.Popup({ offset: 25 }).setHTML(
-              `<div style="padding:8px;min-width:140px"><p style="font-weight:600;margin:0 0 4px">${friend.name}</p><p style="color:#6b7280;font-size:12px;margin:0 0 2px">${loc.city ?? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`}</p><p style="color:${friend.isOnline ? '#10b981' : '#9ca3af'};font-size:11px;margin:0">${friend.isOnline ? '● Online' : '○ Offline'}</p></div>`
+              `<div style="padding:8px"><p style="font-weight:600;margin:0 0 4px">${friend.name}</p><p style="color:${friend.isOnline ? '#10b981' : '#9ca3af'};font-size:11px;margin:0">${friend.isOnline ? '● Online' : '○ Offline'}</p></div>`
             ))
             .addTo(mapRef.current!);
-          friendMarkersRef.current.set(userId, marker);
+          friendMarkersRef.current[userId] = marker;
         }
       });
-
-      friendMarkersRef.current.forEach((marker, uid) => {
-        if (!friendsLocations.has(uid)) { marker.remove(); friendMarkersRef.current.delete(uid); }
+      // Remove stale markers
+      Object.keys(friendMarkersRef.current).forEach((key) => {
+        const uid = Number(key);
+        if (!friendsLocations.has(uid)) {
+          friendMarkersRef.current[uid].remove();
+          delete friendMarkersRef.current[uid];
+        }
       });
     });
   }, [mapLoaded, friendsLocations, friends, showFriends, createMarkerEl]);
@@ -178,7 +169,7 @@ export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapP
     return (
       <div className={cn('flex flex-col items-center justify-center bg-muted/50 rounded-2xl border border-border', className)}>
         <div className="text-center p-8">
-          <p className="text-lg font-semibold text-foreground mb-2">Map unavailable</p>
+          <p className="text-lg font-semibold mb-2">Map unavailable</p>
           <p className="text-sm text-muted-foreground">
             Set <code className="bg-muted px-1 rounded text-xs">NEXT_PUBLIC_MAPBOX_TOKEN</code> in <code className="bg-muted px-1 rounded text-xs">.env</code>
           </p>
