@@ -6,7 +6,13 @@
     "dev": "nodemon --watch server --watch tsconfig.server.json --ext ts --exec ts-node --project tsconfig.server.json server/index.ts",
     "build": "next build && tsc --project tsconfig.server.json",
     "start": "NODE_ENV=production node dist/server/index.js",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "type-check": "tsc --noEmit && tsc --project tsconfig.server.json --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

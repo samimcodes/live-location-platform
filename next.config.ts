@@ -9,17 +9,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
-  // Allow mapbox-gl to be bundled
+  // Turbopack config (Next.js 16 default)
+  turbopack: {},
+  // mapbox-gl needs to be transpiled
   transpilePackages: ["mapbox-gl"],
-
-  webpack: (config) => {
-    // Fix for mapbox-gl Worker — needed for WebGL tile rendering
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "./dist/mapbox-gl-csp-worker": false,
-    };
-    return config;
-  },
 };
 
 export default nextConfig;

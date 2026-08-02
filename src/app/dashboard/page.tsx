@@ -213,7 +213,7 @@ export default function DashboardPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <Group size={16} className="text-primary" />
+                  <Users2 size={16} className="text-primary" />
                   My Groups
                 </CardTitle>
                 <Button variant="ghost" size="sm" className="text-xs" asChild>

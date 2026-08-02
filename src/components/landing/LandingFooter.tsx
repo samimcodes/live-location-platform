@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { MapPin, Github, Twitter } from 'lucide-react';
+import { MapPin, ExternalLink } from 'lucide-react';
 
 export function LandingFooter() {
   return (
@@ -62,14 +62,14 @@ export function LandingFooter() {
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} LocaLink. All rights reserved.
           </p>
-          <div className="flex items-center gap-3">
-            <a href="#" aria-label="GitHub" className="text-muted-foreground hover:text-foreground transition-colors">
-              <Github size={18} />
-            </a>
-            <a href="#" aria-label="Twitter" className="text-muted-foreground hover:text-foreground transition-colors">
-              <Twitter size={18} />
-            </a>
-          </div>
+        <div className="flex items-center gap-3">
+          <a href="https://github.com" aria-label="GitHub" className="text-muted-foreground hover:text-foreground transition-colors">
+            <ExternalLink size={18} />
+          </a>
+          <a href="https://x.com" aria-label="X / Twitter" className="text-muted-foreground hover:text-foreground transition-colors">
+            <ExternalLink size={18} />
+          </a>
+        </div>
         </div>
       </div>
     </footer>
