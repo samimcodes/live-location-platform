@@ -1,30 +1,47 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Welcome to {{appName}}!</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #f4f4f4; padding: 10px; text-align: center; }
-        .content { padding: 20px 0; }
-        .footer { font-size: 12px; color: #777; text-align: center; margin-top: 20px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to LocaLink</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; }
+    .container { max-width: 560px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .header { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 32px; text-align: center; }
+    .logo { font-size: 24px; font-weight: 800; color: white; letter-spacing: -0.5px; }
+    .header h1 { color: white; font-size: 20px; font-weight: 600; margin: 12px 0 0; }
+    .body { padding: 32px; }
+    .body p { color: #475569; font-size: 15px; line-height: 1.7; margin: 0 0 16px; }
+    .cta { display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white !important; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 600; font-size: 15px; margin: 8px 0 24px; }
+    .footer { background: #f8fafc; padding: 20px 32px; text-align: center; border-top: 1px solid #e2e8f0; }
+    .footer p { color: #94a3b8; font-size: 13px; margin: 0; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>Welcome to {{appName}}!</h2>
-        </div>
-        <div class="content">
-            <p>Hi {{name}},</p>
-            <p>Thank you for signing up for <strong>{{appName}}</strong>! We're excited to have you on board.</p>
-            <p>If you have any questions or need assistance, feel free to reach out to our support team.</p>
-            <p>Best regards,<br>The {{appName}} Team</p>
-        </div>
-        <div class="footer">
-            <p>&copy; {{year}} {{appName}}. All rights reserved.</p>
-        </div>
+  <div class="container">
+    <div class="header">
+      <div class="logo">📍 LocaLink</div>
+      <h1>Welcome aboard, {{name}}!</h1>
     </div>
+    <div class="body">
+      <p>Hi {{name}},</p>
+      <p>Your LocaLink account is ready. Start sharing your location with family and friends in real time.</p>
+      <p style="text-align:center;">
+        <a href="{{appUrl}}" class="cta">Open LocaLink</a>
+      </p>
+      <p>Here's what you can do right away:</p>
+      <ul style="color:#475569;font-size:15px;line-height:1.8;padding-left:20px;margin:0 0 16px;">
+        <li>Add friends and family to your circle</li>
+        <li>See everyone on the live map</li>
+        <li>Create groups for easy tracking</li>
+        <li>Save important places for alerts</li>
+      </ul>
+      <p>Stay safe, stay connected.</p>
+      <p>— The LocaLink Team</p>
+    </div>
+    <div class="footer">
+      <p>© {{year}} LocaLink · You're receiving this because you signed up.</p>
+    </div>
+  </div>
 </body>
 </html>

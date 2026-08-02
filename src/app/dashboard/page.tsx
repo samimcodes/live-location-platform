@@ -7,7 +7,7 @@ import { useFriends } from '@/hooks/useFriends';
 import { useGroups } from '@/hooks/useGroups';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { useLocationStore } from '@/store/useLocationStore';
-import { Users, Map, Bell, Navigation, UserCheck, Group } from 'lucide-react';
+import { Users, Map, Bell, Navigation, UserCheck, Users2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -32,7 +32,7 @@ export default function DashboardPage() {
     {
       label: 'Groups',
       value: groups.length,
-      icon: Group,
+      icon: Users2,
       color: 'text-purple-500',
       bg: 'bg-purple-50 dark:bg-purple-950/50',
       href: '/dashboard/groups',

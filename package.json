@@ -1,6 +1,6 @@
 {
-  "name": "my-app",
-  "version": "0.1.0",
+  "name": "localink",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "nodemon --watch server --watch tsconfig.server.json --ext ts --exec ts-node --project tsconfig.server.json server/index.ts",

@@ -4,7 +4,6 @@ import { NotificationService } from '../services/notificationService';
 import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { AuthRequest } from '../middlewares/authMiddleware';
-import { Server as SocketIOServer } from 'socket.io';
 
 export class FriendController {
   static searchUsers = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -24,19 +23,17 @@ export class FriendController {
       sendResponse(res, { statusCode: 400, message: 'receiverId is required' });
       return;
     }
+
     const request = await FriendService.sendFriendRequest(senderId, receiverId, message);
 
-    // Socket notification
-    const io = (req as AuthRequest & { io?: SocketIOServer }).io;
-    if (io) {
-      io.to(`user:${receiverId}`).emit('notification', {
-        type: 'FRIEND_REQUEST',
-        message: 'You have a new friend request',
-        data: { requestId: request.id, senderId },
-      });
-    }
+    // Real-time notification via Socket.IO
+    req.io?.to(`user:${receiverId}`).emit('notification', {
+      type: 'FRIEND_REQUEST',
+      message: `${request.sender.name} sent you a friend request`,
+      data: { requestId: request.id, senderId },
+    });
 
-    // DB notification
+    // Persist notification
     await NotificationService.create({
       userId: receiverId,
       type: 'FRIEND_REQUEST',
@@ -60,15 +57,26 @@ export class FriendController {
 
     const result = await FriendService.respondToRequest(Number(id), userId, action);
 
-    // Notify sender if accepted
     if (action === 'ACCEPTED') {
-      const io = (req as AuthRequest & { io?: SocketIOServer }).io;
-      const request = await FriendService.getPendingRequests(userId); // use sender info
-      const senderId = Number(id); // This is not quite right — we get senderId from the service
-      if (io) {
-        io.to(`user:${senderId}`).emit('notification', {
+      // We need the senderId — get it from the original request
+      const { PrismaClient } = await import('@prisma/client');
+      const p = new PrismaClient();
+      const original = await p.friendRequest.findUnique({ where: { id: Number(id) } });
+      await p.$disconnect();
+
+      if (original) {
+        req.io?.to(`user:${original.senderId}`).emit('notification', {
           type: 'FRIEND_ACCEPTED',
           message: 'Your friend request was accepted',
+          data: { userId },
+        });
+
+        await NotificationService.create({
+          userId: original.senderId,
+          type: 'FRIEND_ACCEPTED',
+          title: 'Friend Request Accepted',
+          body: 'Your friend request was accepted',
+          data: { userId },
         });
       }
     }

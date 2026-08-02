@@ -3,18 +3,15 @@ import { LocationService } from '../services/locationService';
 import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { AuthRequest } from '../middlewares/authMiddleware';
-import { Server as SocketIOServer } from 'socket.io';
 
 export class LocationController {
   static updateLocation = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.userId;
     const location = await LocationService.updateLocation(userId, req.body);
 
-    // Broadcast to friends via Socket.IO
-    const io = (req as AuthRequest & { io?: SocketIOServer }).io;
-    if (io) {
-      const friendships = await import('../socket/socketHandlers'); // avoid circular
-      io.emit(`location:receive:${userId}`, { userId, ...location });
+    // Broadcast to friends via Socket.IO (attached to req by server/index.ts)
+    if (req.io) {
+      req.io.to(`user:${userId}`).emit('location:broadcast', { userId, ...location });
     }
 
     sendResponse(res, { statusCode: 200, message: 'Location updated', data: location });
@@ -36,9 +33,8 @@ export class LocationController {
       endDate?: string;
       limit?: string;
     };
-    const userId = req.user!.userId;
     const history = await LocationService.getHistory(
-      userId,
+      req.user!.userId,
       startDate,
       endDate,
       limit ? Number(limit) : 100
@@ -58,6 +54,10 @@ export class LocationController {
       return;
     }
     const result = await LocationService.toggleSharing(req.user!.userId, sharing);
-    sendResponse(res, { statusCode: 200, message: `Location sharing ${sharing ? 'enabled' : 'disabled'}`, data: result });
+    sendResponse(res, {
+      statusCode: 200,
+      message: `Location sharing ${sharing ? 'enabled' : 'disabled'}`,
+      data: result,
+    });
   });
 }

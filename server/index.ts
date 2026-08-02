@@ -9,6 +9,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
+import 'dotenv/config';
 
 // Routes
 import userRoutes from './routes/userRoutes';
@@ -23,12 +24,18 @@ import savedPlaceRoutes from './routes/savedPlaceRoutes';
 // Socket handler
 import { initSocketHandlers } from './socket/socketHandlers';
 
-export const prisma = new PrismaClient();
-
+const prisma = new PrismaClient();
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 const port = process.env.PORT || 3000;
+
+// Extend Request to carry socket.io instance
+declare module 'express-serve-static-core' {
+  interface Request {
+    io?: SocketIOServer;
+  }
+}
 
 app.prepare().then(async () => {
   const server = express();
@@ -46,7 +53,7 @@ app.prepare().then(async () => {
 
   initSocketHandlers(io);
 
-  // ── Global Middleware ──────────────────────────────────────
+  // ── Middleware ─────────────────────────────────────────────
   server.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
@@ -61,7 +68,7 @@ app.prepare().then(async () => {
 
   // ── Rate Limiting ──────────────────────────────────────────
   const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
     max: 200,
     standardHeaders: true,
     legacyHeaders: false,
@@ -89,25 +96,25 @@ app.prepare().then(async () => {
     res.json({ success: true, message: 'LocaLink API is running', timestamp: new Date() });
   });
 
-  // ── Attach io to requests ──────────────────────────────────
+  // ── Attach io to every request ────────────────────────────
   server.use((req: Request, _res: Response, next: NextFunction) => {
-    (req as Request & { io: SocketIOServer }).io = io;
+    req.io = io;
     next();
   });
 
   // ── API Routes v1 ──────────────────────────────────────────
-  server.use('/api/v1/auth', authLimiter, authRoutes);
-  server.use('/api/v1/users', apiLimiter, userRoutes);
-  server.use('/api/v1/friends', apiLimiter, friendRoutes);
-  server.use('/api/v1/location', apiLimiter, locationRoutes);
-  server.use('/api/v1/groups', apiLimiter, groupRoutes);
-  server.use('/api/v1/notifications', apiLimiter, notificationRoutes);
-  server.use('/api/v1/saved-places', apiLimiter, savedPlaceRoutes);
-  server.use('/api/v1/upload', apiLimiter, uploadRoutes);
+  server.use('/api/v1/auth',          authLimiter, authRoutes);
+  server.use('/api/v1/users',         apiLimiter,  userRoutes);
+  server.use('/api/v1/friends',       apiLimiter,  friendRoutes);
+  server.use('/api/v1/location',      apiLimiter,  locationRoutes);
+  server.use('/api/v1/groups',        apiLimiter,  groupRoutes);
+  server.use('/api/v1/notifications', apiLimiter,  notificationRoutes);
+  server.use('/api/v1/saved-places',  apiLimiter,  savedPlaceRoutes);
+  server.use('/api/v1/upload',        apiLimiter,  uploadRoutes);
 
-  // Legacy routes (keep backward compat)
+  // Legacy routes kept for backward compat
   server.use('/api/users', apiLimiter, userRoutes);
-  server.use('/api/auth', authLimiter, authRoutes);
+  server.use('/api/auth',  authLimiter, authRoutes);
   server.use('/api/upload', apiLimiter, uploadRoutes);
 
   // ── Static Files ───────────────────────────────────────────
@@ -119,32 +126,37 @@ app.prepare().then(async () => {
   });
 
   // ── Global Error Handler ───────────────────────────────────
-  server.use((err: Error & { statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('❌  Server Error:', err);
+  server.use((
+    err: Error & { statusCode?: number },
+    _req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    console.error('❌  Server Error:', err.message);
 
-    const statusCodeMap: Record<string, number> = {
+    const statusMap: Record<string, number> = {
       'User already exists with this email': 409,
       'Invalid email or password': 401,
       'Unauthorized': 401,
       'Not found': 404,
       'Token is invalid or has expired': 400,
+      'Invalid refresh token': 401,
     };
 
-    const statusCode = err.statusCode || statusCodeMap[err.message] || 500;
-    const message = err.message || 'Internal Server Error';
+    const statusCode = err.statusCode ?? statusMap[err.message] ?? 500;
 
     res.status(statusCode).json({
       success: false,
-      message,
+      message: err.message || 'Internal Server Error',
       data: null,
     });
   });
 
-  // ── Start Server ───────────────────────────────────────────
+  // ── Start ──────────────────────────────────────────────────
   httpServer.listen(port, () => {
-    console.log(`🚀  LocaLink ready on http://localhost:${port}`);
+    console.log(`🚀  LocaLink ready → http://localhost:${port}`);
   });
-}).catch((err) => {
+}).catch((err: Error) => {
   console.error('❌  Server startup failed:', err);
   process.exit(1);
 });

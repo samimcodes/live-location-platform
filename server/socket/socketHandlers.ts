@@ -1,6 +1,9 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../index';
+import { PrismaClient } from '@prisma/client';
+
+// Use a separate prisma instance to avoid circular imports with server/index.ts
+const prisma = new PrismaClient();
 
 interface LocationPayload {
   latitude: number;
@@ -22,8 +25,10 @@ interface AuthSocket extends Socket {
  * Authenticate socket connection via JWT token in handshake
  */
 const authenticateSocket = (socket: AuthSocket, next: (err?: Error) => void): void => {
-  const token = socket.handshake.auth?.token as string | undefined
-    ?? socket.handshake.headers?.authorization?.split(' ')[1];
+  const authData = socket.handshake.auth as Record<string, unknown>;
+  const authHeader = socket.handshake.headers?.authorization as string | undefined;
+
+  const token = (authData?.token as string | undefined) ?? authHeader?.split(' ')[1];
 
   if (!token) {
     return next(new Error('Authentication error: No token provided'));
@@ -55,24 +60,24 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
         data: { isOnline: true, lastSeen: new Date() },
       });
     } catch {
-      // silently fail — non-critical
+      // non-critical
     }
 
     // Join personal room
     socket.join(`user:${userId}`);
 
-    // Notify friends that this user is online
+    // Notify friends this user is online
     const friendIds = await getFriendIds(userId);
     friendIds.forEach((friendId) => {
       io.to(`user:${friendId}`).emit('friend:online', { userId });
     });
 
-    // ── EVENT: join group room ──────────────────────────────
+    // ── EVENT: join group/room ──────────────────────────────
     socket.on('join', (roomId: string) => {
       socket.join(roomId);
     });
 
-    // ── EVENT: leave group room ─────────────────────────────
+    // ── EVENT: leave room ───────────────────────────────────
     socket.on('leave', (roomId: string) => {
       socket.leave(roomId);
     });
@@ -89,14 +94,14 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
           update: { ...payload, updatedAt: new Date() },
         });
 
-        // Save to history (every update)
+        // Save to history
         await prisma.locationHistory.create({
           data: { userId, ...payload, recordedAt: new Date() },
         });
 
-        // Broadcast to all friends
-        const updatedFriendIds = await getFriendIds(userId);
-        updatedFriendIds.forEach((friendId) => {
+        // Broadcast to friends
+        const latestFriendIds = await getFriendIds(userId);
+        latestFriendIds.forEach((friendId) => {
           io.to(`user:${friendId}`).emit('location:receive', {
             userId,
             ...payload,
@@ -118,7 +123,7 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
           data: { isOnline: false, lastSeen: new Date() },
         });
       } catch {
-        // silently fail
+        // non-critical
       }
 
       const offlineFriendIds = await getFriendIds(userId);
@@ -129,9 +134,7 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
   });
 };
 
-/**
- * Helper — returns all friend userIds for a given user
- */
+/** Helper — returns all friend userIds for a given user */
 const getFriendIds = async (userId: number): Promise<number[]> => {
   try {
     const friendships = await prisma.friendship.findMany({

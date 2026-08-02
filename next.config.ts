@@ -7,11 +7,19 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "graph.facebook.com" },
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },
-      { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
-  // Mapbox GL requires transpiling for Next.js
+  // Allow mapbox-gl to be bundled
   transpilePackages: ["mapbox-gl"],
+
+  webpack: (config) => {
+    // Fix for mapbox-gl Worker — needed for WebGL tile rendering
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "./dist/mapbox-gl-csp-worker": false,
+    };
+    return config;
+  },
 };
 
 export default nextConfig;
