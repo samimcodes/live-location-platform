@@ -1,58 +1,30 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { UserService } from '../services/userService';
 import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
+import { AuthRequest } from '../middlewares/authMiddleware';
 
 export class UserController {
-  static getAllUsers = catchAsync(async (req: Request, res: Response) => {
-    const users = await UserService.getAllUsers();
-    sendResponse(res, {
-      statusCode: 200,
-      data: users,
-    });
+  static getAll = catchAsync(async (_req: AuthRequest, res: Response) => {
+    const users = await UserService.getAll();
+    sendResponse(res, { statusCode: 200, data: users });
   });
 
-  static getUserById = catchAsync(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string, 10);
-    const user = await UserService.getUserById(id);
-    if (user) {
-      sendResponse(res, {
-        statusCode: 200,
-        data: user,
-      });
-    } else {
-      sendResponse(res, {
-        statusCode: 404,
-        message: 'User not found',
-      });
-    }
+  static getById = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params as { id: string };
+    const user = await UserService.getById(Number(id));
+    sendResponse(res, { statusCode: 200, data: user });
   });
 
-  static createUser = catchAsync(async (req: Request, res: Response) => {
-    const user = await UserService.createUser(req.body);
-    sendResponse(res, {
-      statusCode: 201,
-      message: 'User created successfully',
-      data: user,
-    });
+  static updateProfile = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.userId;
+    const user = await UserService.updateProfile(userId, req.body);
+    sendResponse(res, { statusCode: 200, message: 'Profile updated', data: user });
   });
 
-  static updateUser = catchAsync(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string, 10);
-    const user = await UserService.updateUser(id, req.body);
-    sendResponse(res, {
-      statusCode: 200,
-      message: 'User updated successfully',
-      data: user,
-    });
-  });
-
-  static deleteUser = catchAsync(async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string, 10);
-    await UserService.deleteUser(id);
-    sendResponse(res, {
-      statusCode: 200,
-      message: 'User deleted successfully',
-    });
+  static deleteUser = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params as { id: string };
+    const result = await UserService.deleteUser(Number(id));
+    sendResponse(res, { statusCode: 200, message: result.message });
   });
 }

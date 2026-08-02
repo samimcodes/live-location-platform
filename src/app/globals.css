@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "mapbox-gl/dist/mapbox-gl.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -189,4 +190,90 @@
   .animation-delay-2000 {
     animation-delay: 2s;
   }
+}
+
+/* ── LocaLink Custom Map Markers ──────────────────────────────── */
+.localink-marker {
+  cursor: pointer;
+}
+
+.marker-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.marker-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.marker-pin:hover {
+  transform: scale(1.15);
+}
+
+.marker-letter {
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  user-select: none;
+}
+
+.marker-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  animation: marker-pulse 2s infinite;
+  opacity: 0.5;
+}
+
+@keyframes marker-pulse {
+  0% { transform: scale(1); opacity: 0.5; }
+  70% { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.marker-label {
+  background: white;
+  color: #1e293b;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  white-space: nowrap;
+}
+
+.dark .marker-label {
+  background: #1e293b;
+  color: white;
+}
+
+.marker-arrow {
+  width: 8px;
+  height: 8px;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  margin-top: -1px;
+}
+
+/* ── Mapbox popup customization ───────────────────────────────── */
+.mapboxgl-popup-content {
+  border-radius: 12px !important;
+  padding: 0 !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
+  border: 1px solid oklch(0.92 0.01 250) !important;
+}
+
+.mapboxgl-popup-close-button {
+  padding: 4px 8px !important;
+  font-size: 16px !important;
+  color: #64748b !important;
 }

@@ -1,34 +1,43 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { Sidebar } from "@/components/dashboard/sidebar";
-import { Navbar } from "@/components/dashboard/navbar";
+import React, { useState } from 'react';
+import { Sidebar } from '@/components/dashboard/sidebar';
+import { Navbar } from '@/components/dashboard/navbar';
+import { useLocationSharing } from '@/hooks/useLocationSharing';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
+  // Start location sharing when dashboard loads
+  useLocationSharing();
 
   return (
-    <div className="flex h-screen w-full bg-slate-50/50 overflow-hidden font-sans">
-      {/* Background decoration for glassy effect */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-100/40 via-white to-purple-50/40"></div>
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-indigo-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
-        <div className="absolute top-1/3 left-1/3 w-72 h-72 bg-purple-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+    <div className="flex h-screen w-full bg-background overflow-hidden">
+      {/* Mobile overlay */}
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        fixed inset-y-0 left-0 z-40 md:relative md:z-auto
+        transform transition-transform duration-300
+        ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        <Sidebar
+          isCollapsed={isCollapsed}
+          toggleSidebar={() => setIsCollapsed(!isCollapsed)}
+        />
       </div>
 
-      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      
-      <div className="flex flex-col flex-1 relative z-10 w-full overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-y-auto p-6">
+      {/* Main content */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Navbar onMobileMenuToggle={() => setMobileSidebarOpen(!mobileSidebarOpen)} />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

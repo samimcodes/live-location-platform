@@ -1,151 +1,139 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import SocialLogin from "../SocialLogin";
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/lib/toast';
+import { useRouter } from 'next/navigation';
+import api from '@/lib/axios';
+import { Eye, EyeOff, MapPin } from 'lucide-react';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
 
-const schema = yup.object().shape({
-  name: yup.string().required("Name is required").min(2, "Name must be at least 2 characters"),
-  email: yup.string().email("Invalid email format").required("Email is required"),
-  password: yup.string().required("Password is required").min(6, "Password must be at least 6 characters"),
-  confirmPassword: yup
-    .string()
-    .required("Confirm Password is required")
-    .oneOf([yup.ref("password")], "Passwords must match"),
+const schema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string(),
+}).refine((d) => d.password === d.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
 
-type FormData = yup.InferType<typeof schema>;
+type FormData = z.infer<typeof schema>;
 
 export function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>({
-    resolver: yupResolver(schema),
-  });
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (formData: FormData) => {
     setIsLoading(true);
     try {
-      const { confirmPassword, ...registerData } = data;
-      
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(registerData),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast.success("Account created successfully!");
-        router.push("/login");
+      const { confirmPassword, ...payload } = formData;
+      const { data } = await api.post('/auth/register', payload);
+      if (data.success) {
+        toast.success('Account created!', { description: 'Please sign in to continue.' });
+        router.push('/login');
       } else {
-        toast.error(result.message || "Failed to create account");
+        throw new Error(data.message);
       }
-    } catch (error) {
-      toast.error("An error occurred during sign up");
-      console.error(error);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+            ?? 'Registration failed';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
-      <div className="space-y-2 text-left">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          type="text"
-          placeholder="John Doe"
-          {...register("name")}
-          aria-invalid={!!errors.name}
-        />
-        {errors.name && (
-          <p className="text-sm text-red-500">{errors.name.message}</p>
-        )}
+    <motion.form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-4 w-full"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="space-y-1.5">
+        <Label htmlFor="name">Full Name</Label>
+        <Input id="name" placeholder="John Doe" {...register('name')} aria-invalid={!!errors.name} />
+        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
       </div>
 
-      <div className="space-y-2 text-left">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="m@example.com"
-          {...register("email")}
-          aria-invalid={!!errors.email}
-        />
-        {errors.email && (
-          <p className="text-sm text-red-500">{errors.email.message}</p>
-        )}
+      <div className="space-y-1.5">
+        <Label htmlFor="email">Email address</Label>
+        <Input id="email" type="email" placeholder="you@example.com" {...register('email')} aria-invalid={!!errors.email} />
+        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
 
-      <div className="space-y-2 text-left">
+      <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="••••••••"
-          {...register("password")}
-          aria-invalid={!!errors.password}
-        />
-        {errors.password && (
-          <p className="text-sm text-red-500">{errors.password.message}</p>
-        )}
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Min 6 characters"
+            {...register('password')}
+            aria-invalid={!!errors.password}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
+        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
       </div>
 
-      <div className="space-y-2 text-left">
+      <div className="space-y-1.5">
         <Label htmlFor="confirmPassword">Confirm Password</Label>
         <Input
           id="confirmPassword"
           type="password"
           placeholder="••••••••"
-          {...register("confirmPassword")}
+          {...register('confirmPassword')}
           aria-invalid={!!errors.confirmPassword}
         />
-        {errors.confirmPassword && (
-          <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
-        )}
+        {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Creating account..." : "Sign Up"}
+      <Button type="submit" className="w-full h-10" disabled={isLoading}>
+        {isLoading ? (
+          <span className="flex items-center gap-2">
+            <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            Creating account…
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <MapPin size={16} />
+            Create Free Account
+          </span>
+        )}
       </Button>
 
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-slate-200" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white/80 px-2 text-slate-500 rounded-full">
-            Or continue with
-          </span>
-        </div>
-      </div>
-
-      <div className="flex justify-center w-full pb-2">
-        <SocialLogin />
-      </div>
-
-      <div className="text-center text-sm text-slate-500 mt-4">
-        Already have an account?{" "}
-        <button type="button" onClick={() => router.push('/login')} className="text-indigo-600 hover:underline font-medium">
+      <p className="text-center text-sm text-muted-foreground">
+        Already have an account?{' '}
+        <Link href="/login" className="text-primary hover:underline font-medium">
           Sign in
-        </button>
-      </div>
-    </form>
+        </Link>
+      </p>
+    </motion.form>
   );
 }

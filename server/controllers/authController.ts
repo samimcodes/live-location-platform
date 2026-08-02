@@ -1,30 +1,33 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response } from 'express';
 import { AuthService } from '../services/authService';
 import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
+import { AuthRequest } from '../middlewares/authMiddleware';
 
 export class AuthController {
-  static register = catchAsync(async (req: Request, res: Response) => {
+  static register = catchAsync(async (req: AuthRequest, res: Response) => {
     const user = await AuthService.registerUser(req.body);
-    sendResponse(res, {
-      statusCode: 201,
-      message: 'User registered successfully',
-      data: user,
-    });
+    sendResponse(res, { statusCode: 201, message: 'Account created successfully', data: user });
   });
 
-  static login = catchAsync(async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+  static login = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { email, password } = req.body as { email?: string; password?: string };
+
     if (!email || !password) {
-      sendResponse(res, {
-        statusCode: 400,
-        message: 'Email and password are required',
-      });
+      sendResponse(res, { statusCode: 400, message: 'Email and password are required' });
       return;
     }
+
     const result = await AuthService.loginUser(email, password);
-    
-    // Set HTTP-only cookie for refresh token
+
+    // Set HTTP-only cookies
+    res.cookie('accessToken', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -34,16 +37,13 @@ export class AuthController {
 
     sendResponse(res, {
       statusCode: 200,
-      message: 'Login successful',
-      data: {
-        user: result.user,
-        token: result.token,
-      },
+      message: 'Welcome back!',
+      data: { user: result.user, token: result.token },
     });
   });
 
-  static forgotPassword = catchAsync(async (req: Request, res: Response) => {
-    const { email } = req.body;
+  static forgotPassword = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { email } = req.body as { email?: string };
     if (!email) {
       sendResponse(res, { statusCode: 400, message: 'Email is required' });
       return;
@@ -52,8 +52,8 @@ export class AuthController {
     sendResponse(res, { statusCode: 200, message: result.message });
   });
 
-  static resetPassword = catchAsync(async (req: Request, res: Response) => {
-    const { token, newPassword } = req.body;
+  static resetPassword = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { token, newPassword } = req.body as { token?: string; newPassword?: string };
     if (!token || !newPassword) {
       sendResponse(res, { statusCode: 400, message: 'Token and new password are required' });
       return;
@@ -62,55 +62,64 @@ export class AuthController {
     sendResponse(res, { statusCode: 200, message: result.message });
   });
 
-  static refreshToken = catchAsync(async (req: Request, res: Response) => {
-    const refreshToken = req.cookies.refreshToken;
+  static refreshToken = catchAsync(async (req: AuthRequest, res: Response) => {
+    const refreshToken = req.cookies?.refreshToken as string | undefined;
     if (!refreshToken) {
       sendResponse(res, { statusCode: 401, message: 'Refresh token not found' });
       return;
     }
     const result = await AuthService.refreshToken(refreshToken);
+
+    // Refresh the access token cookie
+    res.cookie('accessToken', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
     sendResponse(res, { statusCode: 200, message: 'Token refreshed', data: result });
   });
 
-  static logout = catchAsync(async (req: any, res: Response) => {
+  static logout = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user?.userId;
     if (userId) {
       await AuthService.logoutUser(userId);
     }
+    res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
     sendResponse(res, { statusCode: 200, message: 'Logged out successfully' });
   });
 
-
-
-  static me = catchAsync(async (req: any, res: Response) => {
+  static me = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user?.userId;
     if (!userId) {
-      sendResponse(res, {
-        statusCode: 401,
-        message: 'Unauthorized',
-      });
+      sendResponse(res, { statusCode: 401, message: 'Unauthorized' });
       return;
     }
-
-
-
     const user = await AuthService.getMe(userId);
     if (!user) {
-      sendResponse(res, {
-        statusCode: 404,
-        message: 'User not found',
-      });
+      sendResponse(res, { statusCode: 404, message: 'User not found' });
       return;
     }
+    sendResponse(res, { statusCode: 200, data: user });
+  });
 
-
-
-
-    sendResponse(res, {
-      statusCode: 200,
-      data: user,
-    });
+  static updatePassword = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.userId;
+    if (!userId) {
+      sendResponse(res, { statusCode: 401, message: 'Unauthorized' });
+      return;
+    }
+    const { currentPassword, newPassword } = req.body as {
+      currentPassword?: string;
+      newPassword?: string;
+    };
+    if (!currentPassword || !newPassword) {
+      sendResponse(res, { statusCode: 400, message: 'Current and new password are required' });
+      return;
+    }
+    await AuthService.updatePassword(userId, currentPassword, newPassword);
+    sendResponse(res, { statusCode: 200, message: 'Password updated successfully' });
   });
 }
-

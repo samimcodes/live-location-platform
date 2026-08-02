@@ -7,22 +7,228 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  phone     String?
-  password  String?
-  provider  String   @default("local")
-  providerId String? @unique
-  role      String   @default("employee")
-  issueDate DateTime @default(now())
-  loginLog  Json?    // Can store array of login timestamps or IP addresses
-  
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String   @unique
+  phone       String?
+  password    String?
+  avatar      String?
+  bio         String?
+  provider    String   @default("local")
+  providerId  String?  @unique
+  role        String   @default("user")
+  isOnline    Boolean  @default(false)
+  lastSeen    DateTime @default(now())
+
+  // Location sharing toggle
+  sharingLocation Boolean @default(true)
+
+  // Auth tokens
   resetPasswordToken   String?
   resetPasswordExpires DateTime?
   refreshToken         String?
+  loginLog             Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Relations
+  sentFriendRequests     FriendRequest[]    @relation("RequestSender")
+  receivedFriendRequests FriendRequest[]    @relation("RequestReceiver")
+  friendshipsAsUser1     Friendship[]       @relation("FriendshipUser1")
+  friendshipsAsUser2     Friendship[]       @relation("FriendshipUser2")
+  locations              Location[]
+  locationHistories      LocationHistory[]
+  notifications          Notification[]
+  groupsCreated          Group[]            @relation("GroupCreator")
+  groupMemberships       GroupMember[]
+  savedPlaces            SavedPlace[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// FRIEND REQUEST
+// ─────────────────────────────────────────────
+model FriendRequest {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  status     FriendRequestStatus @default(PENDING)
+  message    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender   User @relation("RequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("RequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@map("friend_requests")
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+// ─────────────────────────────────────────────
+// FRIENDSHIP
+// ─────────────────────────────────────────────
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  user1Id   Int
+  user2Id   Int
+  createdAt DateTime @default(now())
+
+  user1 User @relation("FriendshipUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2 User @relation("FriendshipUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  @@unique([user1Id, user2Id])
+  @@map("friendships")
+}
+
+// ─────────────────────────────────────────────
+// LOCATION (current)
+// ─────────────────────────────────────────────
+model Location {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  altitude  Float?
+  speed     Float?
+  heading   Float?
+  address   String?
+  city      String?
+  country   String?
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("locations")
+}
+
+// ─────────────────────────────────────────────
+// LOCATION HISTORY
+// ─────────────────────────────────────────────
+model LocationHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  speed     Float?
+  heading   Float?
+  address   String?
+  city      String?
+  country   String?
+  recordedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+  @@map("location_histories")
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATION
+// ─────────────────────────────────────────────
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  GROUP_INVITE
+  GROUP_JOINED
+  LOCATION_ALERT
+  SYSTEM
+}
+
+// ─────────────────────────────────────────────
+// GROUP
+// ─────────────────────────────────────────────
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  avatar      String?
+  createdById Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User          @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members   GroupMember[]
+
+  @@map("groups")
+}
+
+// ─────────────────────────────────────────────
+// GROUP MEMBER
+// ─────────────────────────────────────────────
+model GroupMember {
+  id       Int         @id @default(autoincrement())
+  groupId  Int
+  userId   Int
+  role     GroupRole   @default(MEMBER)
+  joinedAt DateTime    @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+// ─────────────────────────────────────────────
+// SAVED PLACE
+// ─────────────────────────────────────────────
+model SavedPlace {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  name      String
+  address   String?
+  latitude  Float
+  longitude Float
+  icon      String?
+  color     String?
+  type      PlaceType @default(OTHER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("saved_places")
+}
+
+enum PlaceType {
+  HOME
+  WORK
+  SCHOOL
+  GYM
+  OTHER
 }

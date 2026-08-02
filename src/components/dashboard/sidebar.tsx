@@ -1,18 +1,13 @@
-"use client";
+'use client';
 
-import React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Users,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-} from "lucide-react";
-import { navItems } from "@/data/navdata";
+import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, MapPin, LogOut } from 'lucide-react';
+import { navItems } from '@/data/navdata';
+import { useAuth } from '@/hooks/useAuth';
+import Image from 'next/image';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -21,69 +16,93 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   return (
     <aside
       className={cn(
-        "relative flex flex-col h-screen bg-white/10 backdrop-blur-xl border-r border-white/20 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out z-20",
-        isCollapsed ? "w-20" : "w-64"
+        'relative flex flex-col h-screen bg-card border-r border-border transition-all duration-300 ease-in-out z-20',
+        isCollapsed ? 'w-[72px]' : 'w-64'
       )}
     >
-      <div className="flex items-center justify-between h-16 px-4 border-b border-white/20">
+      {/* Logo */}
+      <div className={cn('flex items-center h-16 border-b border-border shrink-0', isCollapsed ? 'justify-center px-2' : 'px-4 gap-2')}>
+        <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+          <MapPin size={16} className="text-white" />
+        </div>
         {!isCollapsed && (
-          <span className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent truncate">
-            AdminPanel
+          <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent truncate">
+            LocaLink
           </span>
-        )}
-        {isCollapsed && (
-          <div className="mx-auto text-indigo-500">
-            <Menu size={24} />
-          </div>
         )}
       </div>
 
+      {/* Collapse button */}
       <button
         onClick={toggleSidebar}
-        className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-white shadow-md hover:bg-indigo-600 transition-colors z-30"
+        className="absolute -right-3 top-20 h-6 w-6 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/80 transition-colors z-30"
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
 
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1 scrollbar-thin">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
           return (
             <Link
               key={item.name}
               href={item.href}
+              title={isCollapsed ? item.name : undefined}
               className={cn(
-                "flex items-center rounded-xl px-3 py-2.5 transition-all duration-200 group relative",
+                'flex items-center rounded-xl transition-all duration-150 group',
+                isCollapsed ? 'justify-center h-10 w-10 mx-auto' : 'px-3 py-2.5 gap-3',
                 isActive
-                  ? "bg-indigo-500/10 text-indigo-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.5)] border border-white/40"
-                  : "text-slate-600 hover:bg-white/40 hover:text-indigo-600 border border-transparent"
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               <item.icon
-                className={cn("shrink-0", isCollapsed ? "mx-auto" : "mr-3", isActive ? "text-indigo-600" : "text-slate-500 group-hover:text-indigo-600")}
-                size={20}
+                size={18}
+                className={cn('shrink-0', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')}
               />
               {!isCollapsed && (
-                <span className="font-medium whitespace-nowrap">{item.name}</span>
+                <span className="text-sm font-medium truncate">{item.name}</span>
               )}
             </Link>
           );
         })}
       </nav>
-      
-      <div className="p-4 border-t border-white/20">
-        <div className={cn("flex items-center", isCollapsed ? "justify-center" : "")}>
-          <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-400 shrink-0 border-2 border-white shadow-sm flex items-center justify-center text-white font-bold text-xs">
-            JD
+
+      {/* User section */}
+      <div className={cn('border-t border-border p-3 shrink-0', isCollapsed ? 'flex flex-col items-center gap-2' : '')}>
+        {/* Logout button */}
+        <button
+          onClick={logout}
+          title="Logout"
+          className={cn(
+            'flex items-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors',
+            isCollapsed ? 'h-10 w-10 justify-center' : 'w-full px-3 py-2 gap-3 mb-2'
+          )}
+        >
+          <LogOut size={16} className="shrink-0" />
+          {!isCollapsed && <span className="text-sm font-medium">Logout</span>}
+        </button>
+
+        {/* Avatar + name */}
+        <div className={cn('flex items-center', isCollapsed ? 'justify-center' : 'gap-3')}>
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 shrink-0 flex items-center justify-center text-white font-bold text-xs overflow-hidden">
+            {user?.avatar ? (
+              <Image src={user.avatar} alt={user.name} width={32} height={32} className="object-cover" />
+            ) : (
+              user?.name?.charAt(0).toUpperCase() ?? 'U'
+            )}
           </div>
           {!isCollapsed && (
-            <div className="ml-3 truncate">
-              <p className="text-sm font-medium text-slate-700 truncate">John Doe</p>
-              <p className="text-xs text-slate-500 truncate">admin@example.com</p>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{user?.name ?? 'User'}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email ?? ''}</p>
             </div>
           )}
         </div>

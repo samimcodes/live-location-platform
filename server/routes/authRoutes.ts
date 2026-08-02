@@ -10,9 +10,11 @@ router.post('/login', AuthController.login);
 router.post('/forgot-password', AuthController.forgotPassword);
 router.post('/reset-password', AuthController.resetPassword);
 router.post('/refresh-token', AuthController.refreshToken);
-router.post('/logout', verifyToken, AuthController.logout); // Optional: verifyToken ensures only logged in users can logout
+router.post('/logout', verifyToken, AuthController.logout);
 router.get('/me', verifyToken, AuthController.me);
+router.patch('/update-password', verifyToken, AuthController.updatePassword);
 
+// Social auth
 router.post('/social-login/google', SocialAuthController.loginWithGoogle);
 router.post('/social-login/facebook', SocialAuthController.loginWithFacebook);
 

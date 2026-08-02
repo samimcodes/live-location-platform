@@ -1,26 +1,55 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { catchServiceAsync } from '../utils/catchServiceAsync';
 
 const prisma = new PrismaClient();
 
+interface UpdateProfileInput {
+  name?: string;
+  phone?: string;
+  avatar?: string;
+  bio?: string;
+}
+
 export class UserService {
-  static getAllUsers = catchServiceAsync(async () => {
-    return prisma.user.findMany();
+  static getAll = catchServiceAsync(async () => {
+    return prisma.user.findMany({
+      select: {
+        id: true, name: true, email: true, avatar: true,
+        role: true, isOnline: true, lastSeen: true, createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   });
 
-  static getUserById = catchServiceAsync(async (id: number) => {
-    return prisma.user.findUnique({ where: { id } });
+  static getById = catchServiceAsync(async (id: number) => {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true, name: true, email: true, phone: true,
+        avatar: true, bio: true, role: true,
+        isOnline: true, lastSeen: true, sharingLocation: true,
+        createdAt: true, updatedAt: true,
+      },
+    });
+    if (!user) throw new Error('User not found');
+    return user;
   });
 
-  static createUser = catchServiceAsync(async (data: Prisma.UserCreateInput) => {
-    return prisma.user.create({ data });
-  });
-
-  static updateUser = catchServiceAsync(async (id: number, data: Prisma.UserUpdateInput) => {
-    return prisma.user.update({ where: { id }, data });
+  static updateProfile = catchServiceAsync(async (id: number, data: UpdateProfileInput) => {
+    return prisma.user.update({
+      where: { id },
+      data,
+      select: {
+        id: true, name: true, email: true, phone: true,
+        avatar: true, bio: true, role: true,
+        isOnline: true, lastSeen: true, sharingLocation: true,
+        updatedAt: true,
+      },
+    });
   });
 
   static deleteUser = catchServiceAsync(async (id: number) => {
-    return prisma.user.delete({ where: { id } });
+    await prisma.user.delete({ where: { id } });
+    return { message: 'User deleted' };
   });
 }
