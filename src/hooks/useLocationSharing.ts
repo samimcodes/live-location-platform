@@ -1,55 +1,73 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSocketContext } from '@/components/SocketProvider';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useAppSelector } from '@/store/store';
 
-const LOCATION_INTERVAL_MS = 15_000; // 15 seconds
+const LOCATION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: true,
+  maximumAge: 15_000,
+  timeout: 10_000,
+};
 
 export function useLocationSharing() {
   const { emit } = useSocketContext();
   const { isSharing, setMyLocation, setWatchId, watchId } = useLocationStore();
   const { isAuthenticated } = useAppSelector((s) => s.auth);
 
-  const startSharing = useCallback(() => {
+  // Keep a ref so callbacks never go stale without causing re-renders
+  const watchIdRef = useRef<number | null>(watchId);
+  const isAuthRef  = useRef(isAuthenticated);
+  const isSharingRef = useRef(isSharing);
+
+  // Sync refs on every render (no re-render side-effects)
+  watchIdRef.current   = watchId;
+  isAuthRef.current    = isAuthenticated;
+  isSharingRef.current = isSharing;
+
+  useEffect(() => {
+    if (!isAuthenticated || !isSharing) {
+      // Stop watching if we have an active watch
+      if (watchIdRef.current !== null) {
+        navigator.geolocation?.clearWatch(watchIdRef.current);
+        setWatchId(null);
+      }
+      return;
+    }
+
+    // Already watching — don't start again
+    if (watchIdRef.current !== null) return;
+
     if (!navigator.geolocation) return;
 
     const id = navigator.geolocation.watchPosition(
       (position) => {
         const payload = {
-          userId: 0, // will be overwritten on server
-          latitude: position.coords.latitude,
+          userId: 0,
+          latitude:  position.coords.latitude,
           longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy ?? undefined,
-          altitude: position.coords.altitude ?? undefined,
-          speed: position.coords.speed ?? undefined,
-          heading: position.coords.heading ?? undefined,
+          accuracy:  position.coords.accuracy   ?? undefined,
+          altitude:  position.coords.altitude   ?? undefined,
+          speed:     position.coords.speed      ?? undefined,
+          heading:   position.coords.heading    ?? undefined,
         };
         setMyLocation(payload);
         emit('location:update', payload);
       },
-      (err) => console.warn('Geolocation error:', err),
-      { enableHighAccuracy: true, maximumAge: LOCATION_INTERVAL_MS, timeout: 10_000 }
+      (err) => console.warn('Geolocation error:', err.message),
+      LOCATION_OPTIONS
     );
+
     setWatchId(id);
-  }, [emit, setMyLocation, setWatchId]);
 
-  const stopSharing = useCallback(() => {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
+    return () => {
+      navigator.geolocation?.clearWatch(id);
       setWatchId(null);
-    }
-  }, [watchId, setWatchId]);
+    };
+  // Only re-run when auth status or sharing toggle changes — NOT on watchId change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isSharing]);
 
-  useEffect(() => {
-    if (isAuthenticated && isSharing) {
-      startSharing();
-    } else {
-      stopSharing();
-    }
-    return () => stopSharing();
-  }, [isAuthenticated, isSharing, startSharing, stopSharing]);
-
-  return { startSharing, stopSharing, isSharing };
+  return { isSharing };
 }
