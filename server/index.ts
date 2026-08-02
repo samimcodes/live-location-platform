@@ -31,9 +31,11 @@ const handle = app.getRequestHandler();
 const port = process.env.PORT || 3000;
 
 // Extend Request to carry socket.io instance
-declare module 'express-serve-static-core' {
-  interface Request {
-    io?: SocketIOServer;
+declare global {
+  namespace Express {
+    interface Request {
+      io?: SocketIOServer;
+    }
   }
 }
 

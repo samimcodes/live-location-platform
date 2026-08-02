@@ -144,7 +144,7 @@ export default function GroupsPage() {
       ) : groups.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
-            <Group size={40} className="mb-3 opacity-20" />
+            <Users2 size={40} className="mb-3 opacity-20" />
             <p className="font-medium">No groups yet</p>
             <p className="text-sm mt-1">Create a group to share location with multiple people at once</p>
             <Button className="mt-4" size="sm" onClick={() => setShowCreate(true)}>

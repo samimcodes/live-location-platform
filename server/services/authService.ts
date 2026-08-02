@@ -60,13 +60,13 @@ export class AuthService {
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: (process.env.JWT_EXPIRES_IN || '30d') as string }
+      { expiresIn: (process.env.JWT_EXPIRES_IN as string | undefined) ?? '30d' } as Parameters<typeof jwt.sign>[2]
     );
 
     const refreshToken = jwt.sign(
       { userId: user.id },
       process.env.JWT_REFRESH_SECRET || 'refresh_secret',
-      { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as string }
+      { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as string | undefined) ?? '7d' } as Parameters<typeof jwt.sign>[2]
     );
 
     // Update login log
@@ -138,7 +138,7 @@ export class AuthService {
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: (process.env.JWT_EXPIRES_IN || '30d') as string }
+      { expiresIn: (process.env.JWT_EXPIRES_IN as string | undefined) ?? '30d' } as Parameters<typeof jwt.sign>[2]
     );
 
     return { token };

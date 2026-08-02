@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { FriendService } from '../services/friendService';
 import { NotificationService } from '../services/notificationService';
 import { catchAsync } from '../utils/catchAsync';
@@ -39,7 +40,7 @@ export class FriendController {
       type: 'FRIEND_REQUEST',
       title: 'New Friend Request',
       body: `${request.sender.name} sent you a friend request`,
-      data: { requestId: request.id, senderId },
+      data: { requestId: request.id, senderId } as Prisma.InputJsonValue,
     });
 
     sendResponse(res, { statusCode: 201, message: 'Friend request sent', data: request });
@@ -76,7 +77,7 @@ export class FriendController {
           type: 'FRIEND_ACCEPTED',
           title: 'Friend Request Accepted',
           body: 'Your friend request was accepted',
-          data: { userId },
+          data: { userId } as Prisma.InputJsonValue,
         });
       }
     }

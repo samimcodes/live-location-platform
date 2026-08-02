@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Server as SocketIOServer } from 'socket.io';
 import jwt from 'jsonwebtoken';
 
 export interface JwtPayload {
@@ -8,6 +9,7 @@ export interface JwtPayload {
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;
+  io?: SocketIOServer;
 }
 
 /**
@@ -45,13 +47,12 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
 
 /**
  * Optional auth — does NOT block if token is missing.
- * Useful for routes that behave differently for logged-in users.
  */
 export const optionalAuth = (req: AuthRequest, _res: Response, next: NextFunction): void => {
   let token: string | undefined;
 
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (authHeader?.startsWith('Bearer ')) {
     token = authHeader.split(' ')[1];
   }
   if (!token && req.cookies?.accessToken) {
@@ -64,7 +65,7 @@ export const optionalAuth = (req: AuthRequest, _res: Response, next: NextFunctio
       const decoded = jwt.verify(token, secret) as JwtPayload;
       req.user = decoded;
     } catch {
-      // silently ignore invalid token for optional routes
+      // silently ignore
     }
   }
 

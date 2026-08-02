@@ -11,7 +11,7 @@ export class LocationController {
 
     // Broadcast to friends via Socket.IO (attached to req by server/index.ts)
     if (req.io) {
-      req.io.to(`user:${userId}`).emit('location:broadcast', { userId, ...location });
+      req.io.to(`user:${userId}`).emit('location:broadcast', { ...location, userId });
     }
 
     sendResponse(res, { statusCode: 200, message: 'Location updated', data: location });

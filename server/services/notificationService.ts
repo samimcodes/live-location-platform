@@ -1,4 +1,4 @@
-import { PrismaClient, NotificationType } from '@prisma/client';
+import { PrismaClient, NotificationType, Prisma } from '@prisma/client';
 import { catchServiceAsync } from '../utils/catchServiceAsync';
 
 const prisma = new PrismaClient();
@@ -8,7 +8,7 @@ interface CreateNotificationInput {
   type: NotificationType;
   title: string;
   body: string;
-  data?: Record<string, unknown>;
+  data?: Prisma.InputJsonValue;
 }
 
 export class NotificationService {
