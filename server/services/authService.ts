@@ -78,7 +78,7 @@ export class AuthService {
       data: { loginLog, refreshToken, isOnline: true, lastSeen: new Date() },
     });
 
-    const { password, resetPasswordToken, resetPasswordExpires, ...safe } = user;
+    const { password, resetPasswordToken, resetPasswordExpires, refreshToken: _rt, loginLog: _ll, ...safe } = user;
     return { user: safe, token, refreshToken };
   });
 
