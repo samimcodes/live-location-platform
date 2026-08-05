@@ -1,17 +1,28 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useAppSelector } from '@/store/store';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFriends } from '@/hooks/useFriends';
-import { useGroups } from '@/hooks/useGroups';
-import { useUnreadCount } from '@/hooks/useNotifications';
-import { useLocationStore } from '@/store/useLocationStore';
-import { Users, MapIcon, Bell, Navigation, UserCheck, Users2 } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import React from "react";
+import { useAppSelector } from "@/store/store";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import KpiCard from "@/components/dashboard/KpiCard";
+import StatsChart from "@/components/dashboard/StatsChart";
+import { useFriends } from "@/hooks/useFriends";
+import { useGroups } from "@/hooks/useGroups";
+import { useUnreadCount } from "@/hooks/useNotifications";
+import { useLocationStore } from "@/store/useLocationStore";
+import {
+  Users,
+  MapIcon,
+  Bell,
+  Navigation,
+  UserCheck,
+  Users2,
+  Calendar,
+  DownloadCloud,
+} from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 export default function DashboardPage() {
   const user = useAppSelector((s) => s.auth.user);
@@ -22,36 +33,36 @@ export default function DashboardPage() {
 
   const stats = [
     {
-      label: 'Friends',
+      label: "Friends",
       value: friends.length,
       icon: UserCheck,
-      color: 'text-indigo-500',
-      bg: 'bg-indigo-50 dark:bg-indigo-950/50',
-      href: '/dashboard/friends',
+      color: "text-indigo-500",
+      bg: "bg-indigo-50 dark:bg-indigo-950/50",
+      href: "/dashboard/friends",
     },
     {
-      label: 'Groups',
+      label: "Groups",
       value: groups.length,
       icon: Users2,
-      color: 'text-purple-500',
-      bg: 'bg-purple-50 dark:bg-purple-950/50',
-      href: '/dashboard/groups',
+      color: "text-purple-500",
+      bg: "bg-purple-50 dark:bg-purple-950/50",
+      href: "/dashboard/groups",
     },
     {
-      label: 'Online Friends',
+      label: "Online Friends",
       value: friends.filter((f) => f.isOnline).length,
       icon: Navigation,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-50 dark:bg-emerald-950/50',
-      href: '/dashboard/map',
+      color: "text-emerald-500",
+      bg: "bg-emerald-50 dark:bg-emerald-950/50",
+      href: "/dashboard/map",
     },
     {
-      label: 'Notifications',
+      label: "Notifications",
       value: unreadCount,
       icon: Bell,
-      color: 'text-orange-500',
-      bg: 'bg-orange-50 dark:bg-orange-950/50',
-      href: '/dashboard/notifications',
+      color: "text-orange-500",
+      bg: "bg-orange-50 dark:bg-orange-950/50",
+      href: "/dashboard/notifications",
     },
   ];
 
@@ -63,14 +74,29 @@ export default function DashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-2xl font-bold text-foreground">
-          Good {getGreeting()}, {user?.name?.split(' ')[0]} 👋
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {isSharing
-            ? `Your location is being shared with ${friends.length} friend${friends.length !== 1 ? 's' : ''}.`
-            : 'Location sharing is paused.'}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Good {getGreeting()}, {user?.name?.split(" ")[0]} 👋
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {isSharing
+                ? `Your location is being shared with ${friends.length} friend${friends.length !== 1 ? "s" : ""}.`
+                : "Location sharing is paused."}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-card text-sm text-muted-foreground hover:shadow-sm">
+              <Calendar size={16} />
+              <span>Last 7 days</span>
+            </button>
+            <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-primary/10 text-sm text-primary hover:brightness-95">
+              <DownloadCloud size={16} />
+              <span>Export</span>
+            </button>
+          </div>
+        </div>
       </motion.div>
 
       {/* Stats grid */}
@@ -82,21 +108,15 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: i * 0.07 }}
           >
-            <Link href={s.href}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-                <CardContent className="pt-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium mb-1">{s.label}</p>
-                      <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                    </div>
-                    <div className={cn('h-10 w-10 rounded-xl flex items-center justify-center', s.bg)}>
-                      <s.icon size={18} className={cn(s.color)} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+            <KpiCard
+              label={s.label}
+              value={s.value}
+              icon={s.icon}
+              color={s.color}
+              bg={s.bg}
+              href={s.href}
+              delta={Math.round((Math.random() - 0.35) * 24)}
+            />
           </motion.div>
         ))}
       </div>
@@ -118,23 +138,35 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className={cn(
-                'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium',
-                isSharing
-                  ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50'
-                  : 'bg-muted text-muted-foreground'
-              )}>
-                <span className={cn('h-1.5 w-1.5 rounded-full', isSharing ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground')} />
-                {isSharing ? 'Sharing live' : 'Sharing paused'}
+              <div
+                className={cn(
+                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
+                  isSharing
+                    ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    isSharing
+                      ? "bg-emerald-500 animate-pulse"
+                      : "bg-muted-foreground",
+                  )}
+                />
+                {isSharing ? "Sharing live" : "Sharing paused"}
               </div>
 
               {myLocation ? (
                 <div className="text-sm space-y-1">
                   <p className="text-muted-foreground">
-                    {myLocation.city ?? `${myLocation.latitude.toFixed(4)}, ${myLocation.longitude.toFixed(4)}`}
+                    {myLocation.city ??
+                      `${myLocation.latitude.toFixed(4)}, ${myLocation.longitude.toFixed(4)}`}
                   </p>
                   {myLocation.accuracy && (
-                    <p className="text-xs text-muted-foreground/60">Accuracy: ±{Math.round(myLocation.accuracy)}m</p>
+                    <p className="text-xs text-muted-foreground/60">
+                      Accuracy: ±{Math.round(myLocation.accuracy)}m
+                    </p>
                   )}
                 </div>
               ) : (
@@ -176,25 +208,58 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {friends.filter((f) => f.isOnline).slice(0, 5).map((f) => (
-                    <div key={f.id} className="flex items-center gap-3 py-2 px-1">
-                      <div className="relative">
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                          {f.name.charAt(0)}
+                  {/* Small activity chart */}
+                  {(() => {
+                    const chartData = Array.from({ length: 7 }).map((_, i) => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - (6 - i));
+                      const label = d.toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      });
+                      const base = friends.length || 0;
+                      const variance = Math.round(
+                        Math.sin(i) * 3 + Math.random() * 3,
+                      );
+                      return {
+                        date: label,
+                        value: Math.max(0, base + variance),
+                      };
+                    });
+                    return <StatsChart data={chartData} color="#7c3aed" />;
+                  })()}
+                  {friends
+                    .filter((f) => f.isOnline)
+                    .slice(0, 5)
+                    .map((f) => (
+                      <div
+                        key={f.id}
+                        className="flex items-center gap-3 py-2 px-1"
+                      >
+                        <div className="relative">
+                          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                            {f.name.charAt(0)}
+                          </div>
+                          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-card" />
                         </div>
-                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-card" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {f.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {f.locations?.[0]?.city ?? "Location active"}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs shrink-0"
+                          asChild
+                        >
+                          <Link href="/dashboard/map">View</Link>
+                        </Button>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{f.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {f.locations?.[0]?.city ?? 'Location active'}
-                        </p>
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-xs shrink-0" asChild>
-                        <Link href="/dashboard/map">View</Link>
-                      </Button>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </CardContent>
@@ -231,7 +296,9 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{g.name}</p>
-                        <p className="text-xs text-muted-foreground">{g._count?.members ?? g.members.length} members</p>
+                        <p className="text-xs text-muted-foreground">
+                          {g._count?.members ?? g.members.length} members
+                        </p>
                       </div>
                     </div>
                   </Link>
@@ -247,7 +314,7 @@ export default function DashboardPage() {
 
 function getGreeting(): string {
   const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 17) return 'afternoon';
-  return 'evening';
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
 }

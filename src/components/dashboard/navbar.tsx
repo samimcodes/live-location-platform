@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Search, Sun, Moon, Menu, MapPin } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useAppDispatch, useAppSelector } from '@/store/store';
-import { setTheme } from '@/store/slices/appSlice';
-import { useNotifications, useMarkAllRead } from '@/hooks/useNotifications';
-import { useNotificationStore } from '@/store/useNotificationStore';
-import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from '@/lib/dateUtils';
+import React, { useState, useRef, useEffect } from "react";
+import { Bell, Search, Sun, Moon, Menu, MapPin } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useAppDispatch, useAppSelector } from "@/store/store";
+import { setTheme } from "@/store/slices/appSlice";
+import { useNotifications, useMarkAllRead } from "@/hooks/useNotifications";
+import { useNotificationStore } from "@/store/useNotificationStore";
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "@/lib/dateUtils";
 
 interface NavbarProps {
   onMobileMenuToggle?: () => void;
@@ -33,34 +33,52 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
         setNotifOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNotifOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, []);
 
   const toggleTheme = () => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.classList.toggle('dark');
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark");
     }
-    dispatch(setTheme(theme === 'dark' ? 'light' : 'dark'));
+    dispatch(setTheme(theme === "dark" ? "light" : "dark"));
   };
 
   return (
-    <header className="h-16 flex items-center justify-between px-4 sm:px-6 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-10">
+    <header
+      role="navigation"
+      aria-label="Dashboard top navigation"
+      className="h-16 flex items-center justify-between px-4 sm:px-6 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-10"
+    >
       {/* Left — mobile menu + search */}
       <div className="flex items-center gap-3 flex-1">
         <button
           className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
           onClick={onMobileMenuToggle}
           aria-label="Open menu"
+          aria-expanded={false}
         >
           <Menu size={20} />
         </button>
 
         <div className="relative hidden sm:block w-64 lg:w-80">
-          <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            size={15}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             type="text"
             placeholder="Search friends, groups…"
+            aria-label="Search"
             className="pl-8 h-8 bg-muted/50 border-transparent focus-visible:border-ring text-sm"
           />
         </div>
@@ -76,7 +94,7 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
           aria-label="Toggle theme"
           className="text-muted-foreground hover:text-foreground"
         >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </Button>
 
         {/* Notifications */}
@@ -85,13 +103,15 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
             variant="ghost"
             size="icon"
             onClick={() => setNotifOpen(!notifOpen)}
-            className="relative text-muted-foreground hover:text-foreground"
+            className="relative text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring rounded"
             aria-label="Notifications"
+            aria-haspopup="true"
+            aria-expanded={notifOpen}
           >
             <Bell size={18} />
             {unreadCount > 0 && (
               <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
+                {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </Button>
@@ -120,17 +140,28 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
                   notifications.slice(0, 10).map((n) => (
                     <div
                       key={n.id}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          /* handle click action if needed */
+                        }
+                      }}
                       className={cn(
-                        'flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer',
-                        !n.isRead && 'bg-primary/5'
+                        "flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer focus:bg-muted/50 focus:outline-none",
+                        !n.isRead && "bg-primary/5",
                       )}
                     >
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                         <MapPin size={14} className="text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">{n.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{n.body}</p>
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {n.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {n.body}
+                        </p>
                         <p className="text-[10px] text-muted-foreground/60 mt-0.5">
                           {formatDistanceToNow(n.createdAt)}
                         </p>
@@ -144,6 +175,15 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
               </div>
             </div>
           )}
+        </div>
+        {/* Profile / avatar */}
+        <div>
+          <button
+            className="ml-1 h-8 w-8 rounded-full bg-muted/30 flex items-center justify-center text-sm font-medium text-foreground hover:brightness-95"
+            aria-label="Open profile"
+          >
+            You
+          </button>
         </div>
       </div>
     </header>
