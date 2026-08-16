@@ -1,16 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { History, MapPin, Trash2, Navigation } from 'lucide-react';
+import { History, MapPin, Trash2, Navigation, Map } from 'lucide-react';
 import { formatDateTime } from '@/lib/dateUtils';
 import { toast } from '@/lib/toast';
 import { motion } from 'framer-motion';
+import { isValidLatLng } from '@/lib/mapUtils';
+
+// Route map is client-only
+const MiniMap = dynamic(
+  () => import('@/components/map/MiniMap').then((m) => m.MiniMap),
+  { ssr: false }
+);
 
 interface HistoryEntry {
   id: number;
@@ -29,13 +37,14 @@ export default function HistoryPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [applied, setApplied] = useState<{ start?: string; end?: string }>({});
+  const [showRouteMap, setShowRouteMap] = useState(false);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ['location-history', applied],
     queryFn: async () => {
       const params = new URLSearchParams({ limit: '200' });
       if (applied.start) params.set('startDate', applied.start);
-      if (applied.end) params.set('endDate', applied.end);
+      if (applied.end)   params.set('endDate', applied.end);
       const { data } = await api.get(`/location/history?${params}`);
       return data.data as HistoryEntry[];
     },
@@ -50,30 +59,88 @@ export default function HistoryPage() {
     onError: () => toast.error('Failed to clear history'),
   });
 
+  // Build route coordinates from history (history is DESC, so reverse for chronological)
+  const routeCoords = useMemo<[number, number][]>(() => {
+    return [...data]
+      .reverse()
+      .filter((e) => isValidLatLng(e.latitude, e.longitude))
+      .map((e) => [e.longitude, e.latitude]);
+  }, [data]);
+
+  const routeCenter = useMemo<[number, number] | null>(() => {
+    if (routeCoords.length === 0) return null;
+    const mid = routeCoords[Math.floor(routeCoords.length / 2)];
+    return mid;
+  }, [routeCoords]);
+
   return (
     <div className="space-y-6 max-w-3xl">
+      {/* ── Header ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Location History</h1>
           <p className="text-muted-foreground text-sm mt-0.5">{data.length} records</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-destructive border-destructive/30 hover:bg-destructive/10"
-          onClick={() => {
-            if (confirm('Clear all location history? This cannot be undone.')) {
-              clearHistory();
-            }
-          }}
-          disabled={clearing || data.length === 0}
-        >
-          <Trash2 size={13} className="mr-2" />
-          Clear All
-        </Button>
+        <div className="flex items-center gap-2">
+          {routeCoords.length > 1 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRouteMap((v) => !v)}
+            >
+              <Map size={13} className="mr-2" />
+              {showRouteMap ? 'Hide map' : 'Route map'}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive border-destructive/30 hover:bg-destructive/10"
+            onClick={() => {
+              if (confirm('Clear all location history? This cannot be undone.')) {
+                clearHistory();
+              }
+            }}
+            disabled={clearing || data.length === 0}
+          >
+            <Trash2 size={13} className="mr-2" />
+            Clear All
+          </Button>
+        </div>
       </div>
 
-      {/* Filters */}
+      {/* ── Route map ──────────────────────────────────────────── */}
+      {showRouteMap && routeCenter && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+        >
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Map size={14} className="text-primary" />
+                Route Map
+                <span className="ml-auto text-xs text-muted-foreground font-normal">
+                  {routeCoords.length} points
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0">
+              <MiniMap
+                center={routeCenter}
+                zoom={12}
+                routeCoords={routeCoords}
+                routeColor="#6366f1"
+                controls={true}
+                className="h-64 rounded-xl border border-border"
+              />
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* ── Filters ────────────────────────────────────────────── */}
       <Card>
         <CardContent className="pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
@@ -115,7 +182,7 @@ export default function HistoryPage() {
         </CardContent>
       </Card>
 
-      {/* History entries */}
+      {/* ── Timeline ───────────────────────────────────────────── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm flex items-center gap-2">
@@ -126,17 +193,21 @@ export default function HistoryPage() {
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />)}
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
+              ))}
             </div>
           ) : data.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <History size={40} className="mx-auto mb-3 opacity-20" />
               <p className="font-medium">No history found</p>
-              <p className="text-sm mt-1">Location history will appear here as you share your location</p>
+              <p className="text-sm mt-1">
+                Location history will appear here as you share your location
+              </p>
             </div>
           ) : (
             <div className="relative">
-              {/* Timeline line */}
+              {/* Timeline spine */}
               <div className="absolute left-4 top-2 bottom-2 w-px bg-border" />
               <div className="space-y-1">
                 {data.map((entry, i) => (
@@ -164,7 +235,9 @@ export default function HistoryPage() {
                             {entry.latitude.toFixed(5)}, {entry.longitude.toFixed(5)}
                           </p>
                           <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground/70">
-                            {entry.accuracy && <span>±{Math.round(entry.accuracy)}m</span>}
+                            {entry.accuracy && (
+                              <span>±{Math.round(entry.accuracy)}m</span>
+                            )}
                             {entry.speed != null && entry.speed > 0 && (
                               <span className="flex items-center gap-1">
                                 <Navigation size={9} />

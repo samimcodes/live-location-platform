@@ -1,16 +1,26 @@
 'use client';
 
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Bookmark, Plus, Trash2, Home, Briefcase, GraduationCap, Dumbbell, MapPin, X } from 'lucide-react';
+import {
+  Bookmark, Plus, Trash2, Home, Briefcase,
+  GraduationCap, Dumbbell, MapPin, X,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
+
+// Mini map is client-only (WebGL)
+const MiniMap = dynamic(
+  () => import('@/components/map/MiniMap').then((m) => m.MiniMap),
+  { ssr: false }
+);
 
 interface SavedPlace {
   id: number;
@@ -23,22 +33,22 @@ interface SavedPlace {
 }
 
 const placeTypes = [
-  { value: 'HOME', label: 'Home', icon: Home, color: '#6366f1' },
-  { value: 'WORK', label: 'Work', icon: Briefcase, color: '#10b981' },
+  { value: 'HOME',   label: 'Home',   icon: Home,          color: '#6366f1' },
+  { value: 'WORK',   label: 'Work',   icon: Briefcase,     color: '#10b981' },
   { value: 'SCHOOL', label: 'School', icon: GraduationCap, color: '#f59e0b' },
-  { value: 'GYM', label: 'Gym', icon: Dumbbell, color: '#ec4899' },
-  { value: 'OTHER', label: 'Other', icon: MapPin, color: '#6b7280' },
+  { value: 'GYM',    label: 'Gym',    icon: Dumbbell,      color: '#ec4899' },
+  { value: 'OTHER',  label: 'Other',  icon: MapPin,        color: '#6b7280' },
 ] as const;
 
-const typeIcon = (type: string) => {
-  const found = placeTypes.find((t) => t.value === type);
-  return found ?? placeTypes[4];
-};
+const typeIcon = (type: string) =>
+  placeTypes.find((t) => t.value === type) ?? placeTypes[4];
 
 export default function SavedPlacesPage() {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', address: '', latitude: '', longitude: '', type: 'OTHER' as SavedPlace['type'] });
+  const [form, setForm] = useState({
+    name: '', address: '', latitude: '', longitude: '', type: 'OTHER' as SavedPlace['type'],
+  });
 
   const { data: places = [], isLoading } = useQuery({
     queryKey: ['saved-places'],
@@ -50,15 +60,15 @@ export default function SavedPlacesPage() {
 
   const { mutate: createPlace, isPending: creating } = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const t = typeIcon(form.type);
+      const { data } = await api.post('/saved-places', {
         name: form.name,
         address: form.address || undefined,
         latitude: parseFloat(form.latitude),
         longitude: parseFloat(form.longitude),
         type: form.type,
-        color: typeIcon(form.type).color,
-      };
-      const { data } = await api.post('/saved-places', payload);
+        color: t.color,
+      });
       return data;
     },
     onSuccess: () => {
@@ -83,17 +93,21 @@ export default function SavedPlacesPage() {
     navigator.geolocation.getCurrentPosition((pos) => {
       setForm((f) => ({
         ...f,
-        latitude: pos.coords.latitude.toFixed(6),
+        latitude:  pos.coords.latitude.toFixed(6),
         longitude: pos.coords.longitude.toFixed(6),
       }));
     });
   };
 
-  const isFormValid = form.name.trim() && form.latitude && form.longitude &&
-    !isNaN(parseFloat(form.latitude)) && !isNaN(parseFloat(form.longitude));
+  const isFormValid =
+    form.name.trim() &&
+    form.latitude && form.longitude &&
+    !isNaN(parseFloat(form.latitude)) &&
+    !isNaN(parseFloat(form.longitude));
 
   return (
     <div className="space-y-6">
+      {/* ── Header ───────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Saved Places</h1>
@@ -105,7 +119,7 @@ export default function SavedPlacesPage() {
         </Button>
       </div>
 
-      {/* Create form modal */}
+      {/* ── Create form modal ─────────────────────────────────────── */}
       <AnimatePresence>
         {showForm && (
           <motion.div
@@ -130,7 +144,11 @@ export default function SavedPlacesPage() {
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Name *</Label>
-                  <Input placeholder="My Home" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <Input
+                    placeholder="My Home"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -157,16 +175,18 @@ export default function SavedPlacesPage() {
 
                 <div className="space-y-1.5">
                   <Label>Address</Label>
-                  <Input placeholder="Optional address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                  <Input
+                    placeholder="Optional address"
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>Latitude *</Label>
                     <Input
-                      type="number"
-                      step="any"
-                      placeholder="23.8103"
+                      type="number" step="any" placeholder="23.8103"
                       value={form.latitude}
                       onChange={(e) => setForm({ ...form, latitude: e.target.value })}
                     />
@@ -174,9 +194,7 @@ export default function SavedPlacesPage() {
                   <div className="space-y-1.5">
                     <Label>Longitude *</Label>
                     <Input
-                      type="number"
-                      step="any"
-                      placeholder="90.4125"
+                      type="number" step="any" placeholder="90.4125"
                       value={form.longitude}
                       onChange={(e) => setForm({ ...form, longitude: e.target.value })}
                     />
@@ -187,11 +205,32 @@ export default function SavedPlacesPage() {
                   <MapPin size={13} className="mr-2" />
                   Use my current location
                 </Button>
+
+                {/* Preview mini-map */}
+                {form.latitude && form.longitude &&
+                  !isNaN(parseFloat(form.latitude)) && !isNaN(parseFloat(form.longitude)) && (
+                  <MiniMap
+                    center={[parseFloat(form.longitude), parseFloat(form.latitude)]}
+                    zoom={14}
+                    markers={[{
+                      latitude:  parseFloat(form.latitude),
+                      longitude: parseFloat(form.longitude),
+                      color: typeIcon(form.type).color,
+                    }]}
+                    className="h-32 border border-border"
+                  />
+                )}
               </div>
 
               <div className="flex gap-3 mt-6">
-                <Button variant="outline" className="flex-1" onClick={() => setShowForm(false)}>Cancel</Button>
-                <Button className="flex-1" onClick={() => createPlace()} disabled={!isFormValid || creating}>
+                <Button variant="outline" className="flex-1" onClick={() => setShowForm(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => createPlace()}
+                  disabled={!isFormValid || creating}
+                >
                   {creating ? 'Saving…' : 'Save Place'}
                 </Button>
               </div>
@@ -200,17 +239,17 @@ export default function SavedPlacesPage() {
         )}
       </AnimatePresence>
 
-      {/* Places grid */}
+      {/* ── Places grid ───────────────────────────────────────────── */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <div key={i} className="h-32 rounded-2xl bg-muted animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />)}
         </div>
       ) : places.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
             <Bookmark size={40} className="mb-3 opacity-20" />
             <p className="font-medium">No saved places</p>
-            <p className="text-sm mt-1">Save frequent locations like Home and Work for quick alerts</p>
+            <p className="text-sm mt-1">Save frequent locations like Home and Work</p>
             <Button className="mt-4" size="sm" onClick={() => setShowForm(true)}>
               <Plus size={14} className="mr-2" />
               Add your first place
@@ -228,15 +267,23 @@ export default function SavedPlacesPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
               >
-                <Card className="hover:shadow-md transition-shadow group">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
+                <Card className="overflow-hidden hover:shadow-md transition-shadow group">
+                  {/* Mini map thumbnail */}
+                  <MiniMap
+                    center={[place.longitude, place.latitude]}
+                    zoom={14}
+                    markers={[{ latitude: place.latitude, longitude: place.longitude, color: place.color ?? t.color }]}
+                    className="h-32 rounded-none"
+                  />
+
+                  <CardContent className="pt-3 pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2.5">
                         <div
-                          className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                          className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
                           style={{ backgroundColor: `${t.color}20` }}
                         >
-                          <t.icon size={18} style={{ color: t.color }} />
+                          <t.icon size={16} style={{ color: t.color }} />
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{place.name}</p>
@@ -256,9 +303,9 @@ export default function SavedPlacesPage() {
                       </button>
                     </div>
                     {place.address && (
-                      <p className="text-xs text-muted-foreground mb-2 truncate">{place.address}</p>
+                      <p className="text-xs text-muted-foreground mt-2 truncate">{place.address}</p>
                     )}
-                    <p className="text-[11px] font-mono text-muted-foreground/60">
+                    <p className="text-[11px] font-mono text-muted-foreground/60 mt-1">
                       {place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}
                     </p>
                   </CardContent>

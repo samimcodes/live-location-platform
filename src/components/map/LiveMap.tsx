@@ -1,177 +1,345 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+/**
+ * LiveMap
+ * -------
+ * Production-ready MapLibre GL JS + OpenStreetMap live-location map.
+ *
+ * Modes:
+ *  A) Controlled  — parent calls useMapLibre() and passes the refs in as props.
+ *     Used by MapPage so the page can also call fitToPoints / toggleFullscreen.
+ *  B) Self-contained (default) — LiveMap calls useMapLibre() internally.
+ *     Used by mini/embedded maps (saved-places, history, etc.).
+ *
+ * Features:
+ *  • OSM tiles, no API key
+ *  • Current-user marker + accuracy circle + pulse animation
+ *  • Friend markers — colour-coded, online dot, popup
+ *  • Saved-place markers layer
+ *  • Real-time Zustand updates (fed by Socket.IO in SocketProvider)
+ *  • Auto fit-bounds on first load
+ *  • flyTo on focusUserId change
+ *  • Loading / error / no-location states
+ *  • Full cleanup on unmount
+ */
+
+import React, { useEffect, useRef, useCallback } from 'react';
+import { useMapLibre, type UseMapLibreReturn } from '@/hooks/useMapLibre';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useAppSelector } from '@/store/store';
 import { useFriends } from '@/hooks/useFriends';
+import {
+  createMarkerElement,
+  createAccuracyElement,
+  friendGradient,
+  ME_GRADIENT,
+  buildMePopup,
+  buildFriendPopup,
+  isValidLatLng,
+  type LatLng,
+} from '@/lib/mapUtils';
 import { cn } from '@/lib/utils';
+import { MapPin, WifiOff, Loader2 } from 'lucide-react';
 
-// We avoid importing mapbox-gl types at top level to prevent SSR issues.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type MapboxInstance = any;
+type AnyMarker = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type MarkerInstance = any;
+type AnyPopup = any;
 
-interface LiveMapProps {
-  className?: string;
-  showFriends?: boolean;
-  focusUserId?: number;
+const ACC_THRESHOLD_PX = 5;
+
+// ── Saved-place overlay ───────────────────────────────────────────────────
+export interface SavedPlacePoint {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  color?: string;
+  icon?: string;
 }
 
-export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapProps) {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MapboxInstance>(null);
-  const myMarkerRef = useRef<MarkerInstance>(null);
-  // Use a plain object as a marker registry to avoid JS Map / mapbox Map name collision
-  const friendMarkersRef = useRef<Record<number, MarkerInstance>>({});
+// ── Controlled-mode props (all optional) ─────────────────────────────────
+type ControlledMapProps = Partial<
+  Pick<UseMapLibreReturn, 'containerRef' | 'mapRef' | 'mapLoaded' | 'mapError' | 'flyTo' | 'fitToPoints'>
+>;
 
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [mapError, setMapError] = useState(false);
+export interface LiveMapProps extends ControlledMapProps {
+  className?: string;
+  /** Show friend markers. Default true. */
+  showFriends?: boolean;
+  /** Fly to this userId when set. */
+  focusUserId?: number;
+  /** Overlay saved-place markers. */
+  savedPlaces?: SavedPlacePoint[];
+  /** Suppress the loading overlay (for mini maps). */
+  hideLoadingOverlay?: boolean;
+  /** Map navigation controls (pass false for mini maps). */
+  controls?: boolean;
+  /** Initial zoom override. */
+  zoom?: number;
+}
+
+export function LiveMap({
+  className,
+  showFriends = true,
+  focusUserId,
+  savedPlaces,
+  hideLoadingOverlay = false,
+  controls = true,
+  zoom,
+  // Controlled-mode overrides
+  containerRef: externalContainerRef,
+  mapRef: externalMapRef,
+  mapLoaded: externalMapLoaded,
+  mapError: externalMapError,
+  flyTo: externalFlyTo,
+  fitToPoints: externalFitToPoints,
+}: LiveMapProps) {
+  // ── Self-contained mode: create our own map instance ──────────────────
+  const internal = useMapLibre({ controls, zoom });
+
+  // Prefer external (controlled) values, fall back to internal
+  const containerRef = externalContainerRef ?? internal.containerRef;
+  const mapRef       = externalMapRef       ?? internal.mapRef;
+  const mapLoaded    = externalMapLoaded    ?? internal.mapLoaded;
+  const mapError     = externalMapError     ?? internal.mapError;
+  const flyTo        = externalFlyTo        ?? internal.flyTo;
+  const fitToPoints  = externalFitToPoints  ?? internal.fitToPoints;
 
   const { myLocation, friendsLocations } = useLocationStore();
   const { user } = useAppSelector((s) => s.auth);
   const { data: friends = [] } = useFriends();
 
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
+  // ── Marker registries ─────────────────────────────────────────────────
+  const myMarkerRef     = useRef<AnyMarker | null>(null);
+  const myPopupRef      = useRef<AnyPopup | null>(null);
+  const myAccuracyRef   = useRef<AnyMarker | null>(null);
+  const myAccuracyPxRef = useRef<number>(0);
+  const friendMarkersRef = useRef<Record<number, AnyMarker>>({});
+  const friendPopupsRef  = useRef<Record<number, AnyPopup>>({});
+  const placeMarkersRef  = useRef<Record<number, AnyMarker>>({});
+  const lastFocusRef     = useRef<number | undefined>(undefined);
 
-  // ── Init map ───────────────────────────────────────────────
-  useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
-    if (!token || token === 'pk.your_mapbox_public_token_here') {
-      setMapError(true);
-      return;
-    }
-
-    let mounted = true;
-
-    import('mapbox-gl').then((mgl) => {
-      if (!mounted || !mapContainer.current) return;
-      mgl.default.accessToken = token;
-
-      try {
-        const m = new mgl.default.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v12',
-          center: [90.4125, 23.8103],
-          zoom: 11,
-        });
-        mapRef.current = m;
-        m.addControl(new mgl.default.NavigationControl(), 'top-right');
-        m.addControl(
-          new mgl.default.GeolocateControl({
-            positionOptions: { enableHighAccuracy: true },
-            trackUserLocation: true,
-            showUserHeading: true,
-          }),
-          'top-right'
-        );
-        m.on('load', () => { if (mounted) setMapLoaded(true); });
-      } catch {
-        if (mounted) setMapError(true);
-      }
-    }).catch(() => { if (mounted) setMapError(true); });
-
-    return () => {
-      mounted = false;
-      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
-      myMarkerRef.current = null;
-      friendMarkersRef.current = {};
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Cache { Marker, Popup } after first dynamic import
+  const mglCacheRef = useRef<{ Marker: AnyMarker; Popup: AnyPopup } | null>(null);
+  const getMgl = useCallback(async () => {
+    if (mglCacheRef.current) return mglCacheRef.current;
+    const mgl = await import('maplibre-gl');
+    mglCacheRef.current = { Marker: mgl.Marker, Popup: mgl.Popup };
+    return mglCacheRef.current;
   }, []);
 
-  // ── Marker helper ──────────────────────────────────────────
-  const createMarkerEl = useCallback((name: string, isMe: boolean, letter: string, gradient: string): HTMLDivElement => {
-    const el = document.createElement('div');
-    el.className = 'localink-marker';
-    el.innerHTML = `
-      <div class="marker-wrapper">
-        <div class="marker-pin" style="background:${gradient};border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-          <span class="marker-letter">${letter}</span>
-          ${isMe ? '<span class="marker-pulse"></span>' : ''}
-        </div>
-        <div class="marker-label">${name}</div>
-        <div class="marker-arrow" style="background:${gradient}"></div>
-      </div>`;
-    return el;
-  }, []);
-
-  // ── My marker ──────────────────────────────────────────────
+  // ── My location marker + accuracy circle ────────────────────────────
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !myLocation) return;
-    const { latitude, longitude } = myLocation;
-    import('mapbox-gl').then((mgl) => {
+    if (!mapLoaded || !myLocation) return;
+    const { latitude, longitude, accuracy } = myLocation;
+    if (!isValidLatLng(latitude, longitude)) return;
+
+    getMgl().then(({ Marker, Popup }) => {
       if (!mapRef.current) return;
+
       if (!myMarkerRef.current) {
-        const el = createMarkerEl('You', true, user?.name?.charAt(0).toUpperCase() ?? 'M', 'linear-gradient(135deg,#6366f1,#8b5cf6)');
-        myMarkerRef.current = new mgl.default.Marker({ element: el, anchor: 'bottom' })
+        const el = createMarkerElement({
+          label: user?.name ?? 'You',
+          letter: (user?.name?.charAt(0) ?? 'Y').toUpperCase(),
+          gradient: ME_GRADIENT,
+          isMe: true,
+        });
+        const popup = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '200px' })
+          .setHTML(buildMePopup(user?.name ?? 'You', myLocation.city, latitude, longitude));
+        myPopupRef.current = popup;
+
+        myMarkerRef.current = new Marker({ element: el, anchor: 'bottom' })
           .setLngLat([longitude, latitude])
-          .setPopup(new mgl.default.Popup({ offset: 25 }).setHTML(
-            `<div style="padding:8px"><p style="font-weight:600;margin:0 0 4px">${user?.name ?? 'You'}</p><p style="color:#6b7280;font-size:12px;margin:0">${myLocation.city ?? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`}</p></div>`
-          ))
+          .setPopup(popup)
           .addTo(mapRef.current);
       } else {
         myMarkerRef.current.setLngLat([longitude, latitude]);
+        myPopupRef.current?.setHTML(
+          buildMePopup(user?.name ?? 'You', myLocation.city, latitude, longitude)
+        );
       }
-      if (!focusUserId) mapRef.current.easeTo({ center: [longitude, latitude], zoom: 14 });
-    });
-  }, [mapLoaded, myLocation, user, createMarkerEl, focusUserId]);
 
-  // ── Friend markers ─────────────────────────────────────────
+      // Accuracy circle
+      if (accuracy && accuracy > 0 && mapRef.current) {
+        const zoom = mapRef.current.getZoom();
+        const mpp = (156543.03392 * Math.cos((latitude * Math.PI) / 180)) / Math.pow(2, zoom);
+        const radiusPx = Math.max(20, Math.round(accuracy / mpp));
+
+        if (!myAccuracyRef.current) {
+          const accEl = createAccuracyElement();
+          const d = radiusPx * 2;
+          accEl.style.width = `${d}px`;
+          accEl.style.height = `${d}px`;
+          myAccuracyPxRef.current = radiusPx;
+          myAccuracyRef.current = new Marker({ element: accEl, anchor: 'center' })
+            .setLngLat([longitude, latitude])
+            .addTo(mapRef.current);
+        } else {
+          myAccuracyRef.current.setLngLat([longitude, latitude]);
+          if (Math.abs(radiusPx - myAccuracyPxRef.current) > ACC_THRESHOLD_PX) {
+            const accEl = myAccuracyRef.current.getElement() as HTMLDivElement;
+            const d = radiusPx * 2;
+            accEl.style.width = `${d}px`;
+            accEl.style.height = `${d}px`;
+            myAccuracyPxRef.current = radiusPx;
+          }
+        }
+      }
+    });
+  }, [mapLoaded, myLocation, user, getMgl, mapRef]);
+
+  // ── Friend markers ───────────────────────────────────────────────────
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !showFriends) return;
-    const GRADS = [
-      'linear-gradient(135deg,#10b981,#059669)',
-      'linear-gradient(135deg,#3b82f6,#2563eb)',
-      'linear-gradient(135deg,#f59e0b,#d97706)',
-      'linear-gradient(135deg,#ec4899,#db2777)',
-      'linear-gradient(135deg,#06b6d4,#0891b2)',
-    ];
-    import('mapbox-gl').then((mgl) => {
+    if (!mapLoaded || !showFriends) return;
+
+    getMgl().then(({ Marker, Popup }) => {
       if (!mapRef.current) return;
+
       friendsLocations.forEach((loc, userId) => {
-        const friend = friends.find((f) => f.id === userId);
-        if (!friend?.sharingLocation) return;
         const { latitude, longitude } = loc;
-        const grad = GRADS[userId % GRADS.length];
+        if (!isValidLatLng(latitude, longitude)) return;
+
+        const friend = friends.find((f) => f.id === userId);
+        if (friend && !friend.sharingLocation) return;
+
+        const name     = friend?.name ?? `User ${userId}`;
+        const isOnline = friend?.isOnline ?? false;
+
         if (friendMarkersRef.current[userId]) {
           friendMarkersRef.current[userId].setLngLat([longitude, latitude]);
+          friendPopupsRef.current[userId]?.setHTML(
+            buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp)
+          );
+          const dot = friendMarkersRef.current[userId]
+            .getElement()
+            ?.querySelector('.marker-online-dot') as HTMLSpanElement | null;
+          if (dot) dot.className = `marker-online-dot ${isOnline ? 'is-online' : 'is-offline'}`;
         } else {
-          const el = createMarkerEl(friend.name, false, friend.name.charAt(0).toUpperCase(), grad);
-          const marker = new mgl.default.Marker({ element: el, anchor: 'bottom' })
+          const grad = friendGradient(userId);
+          const el = createMarkerElement({ label: name, letter: name.charAt(0).toUpperCase(), gradient: grad, isOnline });
+          const popup = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '200px' })
+            .setHTML(buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp));
+          friendPopupsRef.current[userId] = popup;
+          friendMarkersRef.current[userId] = new Marker({ element: el, anchor: 'bottom' })
             .setLngLat([longitude, latitude])
-            .setPopup(new mgl.default.Popup({ offset: 25 }).setHTML(
-              `<div style="padding:8px"><p style="font-weight:600;margin:0 0 4px">${friend.name}</p><p style="color:${friend.isOnline ? '#10b981' : '#9ca3af'};font-size:11px;margin:0">${friend.isOnline ? '● Online' : '○ Offline'}</p></div>`
-            ))
+            .setPopup(popup)
             .addTo(mapRef.current!);
-          friendMarkersRef.current[userId] = marker;
         }
       });
+
       // Remove stale markers
       Object.keys(friendMarkersRef.current).forEach((key) => {
         const uid = Number(key);
         if (!friendsLocations.has(uid)) {
           friendMarkersRef.current[uid].remove();
+          friendPopupsRef.current[uid]?.remove();
           delete friendMarkersRef.current[uid];
+          delete friendPopupsRef.current[uid];
         }
       });
     });
-  }, [mapLoaded, friendsLocations, friends, showFriends, createMarkerEl]);
+  }, [mapLoaded, friendsLocations, friends, showFriends, getMgl, mapRef]);
 
-  // ── Focus user ─────────────────────────────────────────────
+  // ── Saved-place markers ──────────────────────────────────────────────
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !focusUserId) return;
-    const loc = friendsLocations.get(focusUserId);
-    if (loc) mapRef.current.flyTo({ center: [loc.longitude, loc.latitude], zoom: 15 });
-  }, [mapLoaded, focusUserId, friendsLocations]);
+    if (!mapLoaded || !savedPlaces?.length) return;
 
+    getMgl().then(({ Marker, Popup }) => {
+      if (!mapRef.current) return;
+
+      // Remove stale
+      Object.keys(placeMarkersRef.current).forEach((key) => {
+        const id = Number(key);
+        if (!savedPlaces.find((p) => p.id === id)) {
+          placeMarkersRef.current[id].remove();
+          delete placeMarkersRef.current[id];
+        }
+      });
+
+      savedPlaces.forEach((place) => {
+        if (!isValidLatLng(place.latitude, place.longitude)) return;
+        if (placeMarkersRef.current[place.id]) return;
+
+        const bg = place.color ?? '#6366f1';
+        const el = document.createElement('div');
+        el.className = 'localink-place-marker';
+        el.innerHTML = `
+          <div class="place-pin" style="background:${bg};">
+            <span class="place-icon">${place.icon ?? '📍'}</span>
+          </div>
+          <div class="place-arrow" style="background:${bg};"></div>`;
+
+        const popup = new Popup({ offset: [0, -38], closeButton: false, maxWidth: '160px' })
+          .setHTML(`<div style="padding:8px 10px;font-size:12px;font-weight:600">${place.name}</div>`);
+
+        placeMarkersRef.current[place.id] = new Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([place.longitude, place.latitude])
+          .setPopup(popup)
+          .addTo(mapRef.current!);
+      });
+    });
+  }, [mapLoaded, savedPlaces, getMgl, mapRef]);
+
+  // ── flyTo focused user ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!mapLoaded || !focusUserId || focusUserId === lastFocusRef.current) return;
+    lastFocusRef.current = focusUserId;
+    const loc = friendsLocations.get(focusUserId);
+    if (loc && isValidLatLng(loc.latitude, loc.longitude)) {
+      flyTo(loc.latitude, loc.longitude, 15);
+      setTimeout(() => friendMarkersRef.current[focusUserId]?.togglePopup(), 900);
+    }
+  }, [mapLoaded, focusUserId, friendsLocations, flyTo]);
+
+  useEffect(() => { if (!focusUserId) lastFocusRef.current = undefined; }, [focusUserId]);
+
+  // ── Auto fit-bounds on first load ─────────────────────────────────────
+  useEffect(() => {
+    if (!mapLoaded || focusUserId) return;
+
+    const pts: LatLng[] = [];
+    if (myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude)) {
+      pts.push({ latitude: myLocation.latitude, longitude: myLocation.longitude });
+    }
+    friendsLocations.forEach((loc) => {
+      if (isValidLatLng(loc.latitude, loc.longitude))
+        pts.push({ latitude: loc.latitude, longitude: loc.longitude });
+    });
+
+    if (pts.length > 1) fitToPoints(pts, 80);
+    else if (pts.length === 1) flyTo(pts[0].latitude, pts[0].longitude, 14);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapLoaded]);
+
+  // ── Cleanup on unmount ────────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      myMarkerRef.current?.remove();
+      myAccuracyRef.current?.remove();
+      myPopupRef.current?.remove();
+      myMarkerRef.current    = null;
+      myAccuracyRef.current  = null;
+      myPopupRef.current     = null;
+
+      Object.values(friendMarkersRef.current).forEach((m) => m.remove());
+      Object.values(friendPopupsRef.current).forEach((p) => p.remove());
+      Object.values(placeMarkersRef.current).forEach((m) => m.remove());
+      friendMarkersRef.current = {};
+      friendPopupsRef.current  = {};
+      placeMarkersRef.current  = {};
+    };
+  }, []);
+
+  // ── Error state ───────────────────────────────────────────────────────
   if (mapError) {
     return (
       <div className={cn('flex flex-col items-center justify-center bg-muted/50 rounded-2xl border border-border', className)}>
-        <div className="text-center p-8">
-          <p className="text-lg font-semibold mb-2">Map unavailable</p>
-          <p className="text-sm text-muted-foreground">
-            Set <code className="bg-muted px-1 rounded text-xs">NEXT_PUBLIC_MAPBOX_TOKEN</code> in <code className="bg-muted px-1 rounded text-xs">.env</code>
+        <div className="text-center p-8 space-y-3">
+          <WifiOff size={32} className="mx-auto text-muted-foreground/40" />
+          <p className="text-sm font-semibold">Map failed to load</p>
+          <p className="text-xs text-muted-foreground">
+            WebGL may be disabled or the network is unavailable.
           </p>
         </div>
       </div>
@@ -180,12 +348,27 @@ export function LiveMap({ className, showFriends = true, focusUserId }: LiveMapP
 
   return (
     <div className={cn('relative rounded-2xl overflow-hidden', className)}>
-      <div ref={mapContainer} className="w-full h-full" />
-      {!mapLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/80 backdrop-blur-sm">
+      {/* Canvas — containerRef goes here */}
+      <div ref={containerRef} className="w-full h-full" />
+
+      {/* Loading overlay */}
+      {!mapLoaded && !hideLoadingOverlay && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/80 backdrop-blur-sm rounded-2xl z-10">
           <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <Loader2 size={28} className="animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Loading map…</p>
+          </div>
+        </div>
+      )}
+
+      {/* No-location hint */}
+      {mapLoaded && !myLocation && showFriends && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border rounded-full px-4 py-2 shadow-lg">
+            <MapPin size={13} className="text-muted-foreground shrink-0" />
+            <p className="text-xs text-muted-foreground whitespace-nowrap">
+              Enable location sharing to see your position
+            </p>
           </div>
         </div>
       )}

@@ -191,90 +191,226 @@
   }
 }
 
-/* ── LocaLink Custom Map Markers ──────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   LocaLink Map System — MapLibre GL JS + OpenStreetMap
+   All styles scoped to .localink-* to avoid leaking into the app
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── User / Friend marker ─────────────────────────────────────── */
 .localink-marker {
   cursor: pointer;
+  /* Allow pointer events on the pin, not the transparent wrapper */
+  pointer-events: none;
 }
 
-.marker-wrapper {
+.localink-marker .marker-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  pointer-events: none;
 }
 
-.marker-pin {
-  width: 36px;
-  height: 36px;
+.localink-marker .marker-pin {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: transform 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  pointer-events: all;
+  will-change: transform;
 }
 
-.marker-pin:hover {
-  transform: scale(1.15);
+.localink-marker .marker-pin:hover {
+  transform: scale(1.18) translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-.marker-letter {
+.localink-marker .marker-letter {
   color: white;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
   user-select: none;
+  letter-spacing: -0.02em;
 }
 
-.marker-pulse {
+/* Pulse ring — shown only on the current user marker (isMe=true) */
+.localink-marker .marker-pulse {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  inset: -3px;
   border-radius: 50%;
-  animation: marker-pulse 2s infinite;
-  opacity: 0.5;
+  border: 3px solid currentColor;
+  animation: localink-pulse 2.4s ease-out infinite;
+  opacity: 0;
+  /* Inherits the pin's background colour via currentColor fallback */
+  color: rgba(99, 102, 241, 0.6); /* indigo tint */
 }
 
-@keyframes marker-pulse {
-  0% { transform: scale(1); opacity: 0.5; }
-  70% { transform: scale(1.5); opacity: 0; }
-  100% { transform: scale(1); opacity: 0; }
+@keyframes localink-pulse {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  70%  { transform: scale(1.8); opacity: 0;   }
+  100% { transform: scale(1);   opacity: 0;   }
 }
 
-.marker-label {
+/* Name label below the pin */
+.localink-marker .marker-label {
   background: white;
   color: #1e293b;
   font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
+  font-weight: 700;
+  padding: 2px 7px;
   border-radius: 999px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
   white-space: nowrap;
+  pointer-events: none;
+  /* Subtle fade-in */
+  animation: localink-label-in 0.2s ease;
 }
 
-.dark .marker-label {
+@keyframes localink-label-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.dark .localink-marker .marker-label {
   background: #1e293b;
-  color: white;
+  color: #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-.marker-arrow {
+/* Downward triangle arrow connecting label to pin */
+.localink-marker .marker-arrow {
   width: 8px;
-  height: 8px;
+  height: 5px;
   clip-path: polygon(50% 100%, 0 0, 100% 0);
-  margin-top: -1px;
+  margin-top: -3px;
+  opacity: 0.85;
 }
 
-/* ── Mapbox popup customization ───────────────────────────────── */
-.mapboxgl-popup-content {
+/* Online / offline dot overlaid on the bottom-right of the pin */
+.localink-marker .marker-online-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.localink-marker .marker-online-dot.is-online  { background: #10b981; }
+.localink-marker .marker-online-dot.is-offline { background: #94a3b8; }
+
+/* ── GPS accuracy circle ─────────────────────────────────────── */
+.localink-accuracy-circle {
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1.5px solid rgba(99, 102, 241, 0.3);
+  /* Size is set inline via JS (width/height in px) */
+  pointer-events: none;
+  transition: width 0.4s ease, height 0.4s ease;
+  will-change: width, height;
+}
+
+.dark .localink-accuracy-circle {
+  background: rgba(129, 140, 248, 0.12);
+  border-color: rgba(129, 140, 248, 0.35);
+}
+
+/* ── Saved-place marker ──────────────────────────────────────── */
+.localink-place-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.localink-place-marker .place-pin {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid white;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+  pointer-events: all;
+}
+
+.localink-place-marker .place-pin:hover {
+  transform: scale(1.15);
+}
+
+.localink-place-marker .place-icon {
+  font-size: 14px;
+  line-height: 1;
+  user-select: none;
+}
+
+.localink-place-marker .place-arrow {
+  width: 7px;
+  height: 5px;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  margin-top: -2px;
+  opacity: 0.85;
+}
+
+/* ── MapLibre GL popup overrides ─────────────────────────────── */
+.maplibregl-popup-content {
   border-radius: 12px !important;
   padding: 0 !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
-  border: 1px solid oklch(0.92 0.01 250) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  overflow: hidden;
 }
 
-.mapboxgl-popup-close-button {
-  padding: 4px 8px !important;
-  font-size: 16px !important;
-  color: #64748b !important;
+.dark .maplibregl-popup-content {
+  background: #1e293b !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: white !important;
+}
+
+.dark .maplibregl-popup-tip {
+  border-top-color: #1e293b !important;
+}
+
+.maplibregl-popup-close-button {
+  display: none !important;
+}
+
+/* MapLibre attribution — keep visible but compact */
+.maplibregl-ctrl-attrib {
+  font-size: 10px !important;
+  opacity: 0.75;
+}
+
+/* Navigation control buttons */
+.maplibregl-ctrl-group button {
+  transition: background 0.15s ease;
+}
+
+/* ── Map container enters / exits fullscreen ─────────────────── */
+:-webkit-full-screen .localink-marker .marker-pin {
+  width: 44px;
+  height: 44px;
+}
+
+:fullscreen .localink-marker .marker-pin {
+  width: 44px;
+  height: 44px;
 }
 
 /* ── Blob animation (Landing Page) ───────────────────────────── */

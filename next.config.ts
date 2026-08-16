@@ -11,8 +11,8 @@ const nextConfig: NextConfig = {
   },
   // Turbopack config (Next.js 16 default)
   turbopack: {},
-  // mapbox-gl needs to be transpiled
-  transpilePackages: ["mapbox-gl"],
+  // maplibre-gl needs to be transpiled for SSR compatibility
+  transpilePackages: ["maplibre-gl"],
 };
 
 export default nextConfig;
