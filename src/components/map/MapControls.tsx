@@ -3,19 +3,13 @@
 /**
  * MapControls
  * -----------
- * Floating action panel rendered above the LiveMap canvas.
+ * Controls bar rendered above the LiveMap canvas.
  *
- * Responsibilities:
- *  - Location-sharing toggle (calls Zustand + optional API)
- *  - "Fit all" button (fly map to contain all markers)
- *  - Fullscreen toggle
- *  - Sharing-status badge
- *
- * All map mutations go through the callbacks passed as props so
- * this component stays presentational and easy to test.
+ * Fix: useTransition does not support async callbacks in React 19 concurrent
+ * mode. Replaced with a plain useState isPending flag + try/finally pattern.
  */
 
-import React, { useTransition } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Radio, Maximize2, Minimize2, LocateFixed, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,15 +19,10 @@ import { toast } from '@/lib/toast';
 import type { LatLng } from '@/lib/mapUtils';
 
 export interface MapControlsProps {
-  /** Number of friends currently visible on the map. */
   activeFriendCount: number;
-  /** Called when the user clicks "Fit all markers". */
   onFitAll: () => void;
-  /** Called when the user clicks fullscreen toggle. */
   onFullscreen: () => void;
-  /** Whether the map container is currently in fullscreen. */
   isFullscreen: boolean;
-  /** All points currently on the map (for the fit-all button label). */
   allPoints: LatLng[];
   className?: string;
 }
@@ -47,26 +36,28 @@ export function MapControls({
   className,
 }: MapControlsProps) {
   const { isSharing, setSharing } = useLocationStore();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
-  const handleToggleSharing = () => {
+  const handleToggleSharing = async () => {
+    if (isPending) return;
     const next = !isSharing;
-    startTransition(async () => {
-      // Optimistic update
-      setSharing(next);
-      try {
-        await api.patch('/location/sharing', { sharing: next });
-      } catch {
-        // Roll back on failure
-        setSharing(!next);
-        toast.error('Failed to update sharing preference');
-      }
-    });
+    setIsPending(true);
+    // Optimistic update immediately
+    setSharing(next);
+    try {
+      await api.patch('/location/sharing', { sharing: next });
+    } catch {
+      // Roll back on network failure
+      setSharing(!next);
+      toast.error('Failed to update sharing preference');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
-    <div className={cn('flex items-center justify-between gap-3', className)}>
-      {/* Left: status badge */}
+    <div className={cn('flex items-center justify-between gap-3 flex-wrap', className)}>
+      {/* ── Left: status badges ─────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap">
         <div
           className={cn(
@@ -93,17 +84,15 @@ export function MapControls({
         )}
       </div>
 
-      {/* Right: action buttons */}
+      {/* ── Right: action buttons ───────────────────────────────── */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* Fit all */}
         {allPoints.length > 1 && (
-          <Button variant="outline" size="sm" onClick={onFitAll} title="Fit all markers">
+          <Button variant="outline" size="sm" onClick={onFitAll} title="Fit all markers in view">
             <LocateFixed size={13} className="mr-1.5" />
             Fit all
           </Button>
         )}
 
-        {/* Fullscreen */}
         <Button
           variant="outline"
           size="icon-sm"
@@ -113,7 +102,6 @@ export function MapControls({
           {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
         </Button>
 
-        {/* Sharing toggle */}
         <Button
           variant={isSharing ? 'outline' : 'default'}
           size="sm"
@@ -121,7 +109,7 @@ export function MapControls({
           disabled={isPending}
         >
           <Radio size={13} className="mr-1.5" />
-          {isSharing ? 'Pause' : 'Share location'}
+          {isPending ? 'Saving…' : isSharing ? 'Pause' : 'Share location'}
         </Button>
       </div>
     </div>

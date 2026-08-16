@@ -17,7 +17,7 @@
  *  - w-72 (lg+): FriendMarkerPanel sidebar
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { LiveMap } from '@/components/map/LiveMap';
 import { MapControls } from '@/components/map/MapControls';
 import { FriendMarkerPanel } from '@/components/map/FriendMarkerPanel';
@@ -28,14 +28,17 @@ import { useMapLibre } from '@/hooks/useMapLibre';
 import { isValidLatLng, type LatLng } from '@/lib/mapUtils';
 
 export default function MapPage() {
-  // ── Hydrate friends' locations from REST (socket keeps it live) ───────────
+  // ── All hooks at the top — Rules of Hooks ─────────────────────────────────
   useFriendsLocations();
 
   const { data: friends = [] } = useFriends();
   const { myLocation, friendsLocations } = useLocationStore();
   const [focusedUserId, setFocusedUserId] = useState<number | undefined>();
 
-  // ── Map lifecycle lifted to page so controls can call fitToPoints etc. ────
+  // Stable ref for allPoints — avoids stale closure in handleFitAll
+  const allPointsRef = useRef<LatLng[]>([]);
+
+  // ── Map lifecycle lifted to page ──────────────────────────────────────────
   const {
     containerRef,
     mapRef,
@@ -47,7 +50,7 @@ export default function MapPage() {
     isFullscreen,
   } = useMapLibre({ controls: true });
 
-  // ── Build the point-set for "Fit all" ─────────────────────────────────────
+  // ── Derived values (not hooks) ────────────────────────────────────────────
   const allPoints: LatLng[] = [];
   if (myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude)) {
     allPoints.push({ latitude: myLocation.latitude, longitude: myLocation.longitude });
@@ -62,11 +65,12 @@ export default function MapPage() {
     (f) => f.sharingLocation && friendsLocations.has(f.id)
   ).length;
 
+  // Keep ref in sync every render so handleFitAll always reads latest points
+  allPointsRef.current = allPoints;
+
   const handleFitAll = useCallback(() => {
-    fitToPoints(allPoints, 80);
-  // allPoints changes every render; fitToPoints is stable — this is intentional
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fitToPoints, JSON.stringify(allPoints)]);
+    fitToPoints(allPointsRef.current, 80);
+  }, [fitToPoints]);
 
   const handleFocusFriend = useCallback(
     (userId: number | undefined) => {

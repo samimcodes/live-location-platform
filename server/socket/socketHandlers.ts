@@ -110,6 +110,23 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
       }
 
       try {
+        // Guard: verify the user actually exists in the DB before any write.
+        // This prevents FK violations if a JWT is valid but the account was
+        // deleted (e.g. during dev/test resets).
+        const userExists = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, sharingLocation: true },
+        });
+
+        if (!userExists) {
+          console.warn(`location:update skipped — userId=${userId} not found in DB`);
+          socket.emit('error', { message: 'User account not found' });
+          return;
+        }
+
+        // Respect the user's own sharing preference
+        if (!userExists.sharingLocation) return;
+
         // Upsert current location
         await prisma.location.upsert({
           where: { userId },
@@ -172,10 +189,14 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
       console.log(`🔴 Socket disconnected: userId=${userId}`);
 
       try {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { isOnline: false, lastSeen: new Date() },
-        });
+        // Only update if user still exists (handles deleted accounts)
+        const exists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+        if (exists) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { isOnline: false, lastSeen: new Date() },
+          });
+        }
       } catch { /* non-critical */ }
 
       const offlineFriendIds = await getFriendIds(userId);

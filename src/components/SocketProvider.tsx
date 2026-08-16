@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
-import { connectSocket, disconnectSocket, getSocket } from '@/lib/socket';
+import { useQueryClient } from '@tanstack/react-query';
+import { connectSocket, disconnectSocket } from '@/lib/socket';
 import { useAppSelector } from '@/store/store';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
@@ -22,9 +23,13 @@ export const useSocketContext = () => useContext(SocketContext);
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { token, isAuthenticated } = useAppSelector((s) => s.auth);
   const socketRef = useRef<Socket | null>(null);
+
   const updateFriendLocation = useLocationStore((s) => s.updateFriendLocation);
   const removeFriendLocation = useLocationStore((s) => s.removeFriendLocation);
-  const addNotification = useNotificationStore((s) => s.addNotification);
+  const addNotification      = useNotificationStore((s) => s.addNotification);
+
+  // TanStack Query client — used to invalidate stale queries on socket events
+  const qc = useQueryClient();
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -36,7 +41,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     const s = connectSocket(token);
     socketRef.current = s;
 
-    // ── Location events ──────────────────────────────────────
+    // ── location:receive — real-time friend position update ──────────
     s.on('location:receive', (data: {
       userId: number;
       latitude: number;
@@ -51,17 +56,22 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       updateFriendLocation(data);
     });
 
-    // ── Friend online/offline ────────────────────────────────
+    // ── friend:online — friend connected; refresh their online flag ──
     s.on('friend:online', ({ userId }: { userId: number }) => {
-      // Could update friend online status in a friends store
-      console.log(`Friend ${userId} came online`);
+      // Invalidate the friends list so isOnline reflects the new state
+      // immediately in FriendMarkerPanel and elsewhere.
+      qc.invalidateQueries({ queryKey: ['friends'] });
+      console.debug(`[socket] friend:online userId=${userId}`);
     });
 
+    // ── friend:offline — remove their map marker + refresh list ──────
     s.on('friend:offline', ({ userId }: { userId: number }) => {
       removeFriendLocation(userId);
+      qc.invalidateQueries({ queryKey: ['friends'] });
+      console.debug(`[socket] friend:offline userId=${userId}`);
     });
 
-    // ── Notifications ────────────────────────────────────────
+    // ── notification ─────────────────────────────────────────────────
     s.on('notification', (data: {
       type: string;
       message: string;
@@ -78,13 +88,21 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       });
     });
 
+    // ── sharing:changed — a friend toggled their location sharing ─────
+    // Re-fetch their location list so sharingLocation flag stays accurate
+    s.on('sharing:changed', ({ userId: _uid }: { userId: number; sharing: boolean }) => {
+      qc.invalidateQueries({ queryKey: ['friends'] });
+      qc.invalidateQueries({ queryKey: ['friends-locations-initial'] });
+    });
+
     return () => {
       s.off('location:receive');
       s.off('friend:online');
       s.off('friend:offline');
       s.off('notification');
+      s.off('sharing:changed');
     };
-  }, [isAuthenticated, token, updateFriendLocation, removeFriendLocation, addNotification]);
+  }, [isAuthenticated, token, updateFriendLocation, removeFriendLocation, addNotification, qc]);
 
   const emit = (event: string, data?: unknown) => {
     socketRef.current?.emit(event, data);

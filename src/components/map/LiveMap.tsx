@@ -6,21 +6,17 @@
  * Production-ready MapLibre GL JS + OpenStreetMap live-location map.
  *
  * Modes:
- *  A) Controlled  — parent calls useMapLibre() and passes the refs in as props.
- *     Used by MapPage so the page can also call fitToPoints / toggleFullscreen.
- *  B) Self-contained (default) — LiveMap calls useMapLibre() internally.
- *     Used by mini/embedded maps (saved-places, history, etc.).
+ *  A) Controlled  — parent passes containerRef/mapRef/mapLoaded/mapError/flyTo/fitToPoints.
+ *     The internal useMapLibre() still runs but its map IS NOT created (controlled guard).
+ *     Used by MapPage so the page owns the map lifecycle.
+ *  B) Self-contained (default) — all refs managed internally.
+ *     Used for mini/embedded maps.
  *
- * Features:
- *  • OSM tiles, no API key
- *  • Current-user marker + accuracy circle + pulse animation
- *  • Friend markers — colour-coded, online dot, popup
- *  • Saved-place markers layer
- *  • Real-time Zustand updates (fed by Socket.IO in SocketProvider)
- *  • Auto fit-bounds on first load
- *  • flyTo on focusUserId change
- *  • Loading / error / no-location states
- *  • Full cleanup on unmount
+ * Fixes applied vs first version:
+ *  • Controlled-mode guard: internal hook only creates a map when no external ref is given.
+ *  • mapRef removed from useEffect dependency arrays (refs are stable objects, not reactive values).
+ *  • maplibre-gl CSS imported once via dynamic import side-effect.
+ *  • Stale-closure-safe getMgl via useRef (not re-created on every render).
  */
 
 import React, { useEffect, useRef, useCallback } from 'react';
@@ -44,11 +40,11 @@ import { MapPin, WifiOff, Loader2 } from 'lucide-react';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyMarker = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyPopup = any;
+type AnyPopup  = any;
 
 const ACC_THRESHOLD_PX = 5;
 
-// ── Saved-place overlay ───────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────
 export interface SavedPlacePoint {
   id: number;
   name: string;
@@ -58,24 +54,22 @@ export interface SavedPlacePoint {
   icon?: string;
 }
 
-// ── Controlled-mode props (all optional) ─────────────────────────────────
-type ControlledMapProps = Partial<
-  Pick<UseMapLibreReturn, 'containerRef' | 'mapRef' | 'mapLoaded' | 'mapError' | 'flyTo' | 'fitToPoints'>
+// All controlled-mode props are optional so the component works in both modes
+type ControlledProps = Partial<
+  Pick<
+    UseMapLibreReturn,
+    'containerRef' | 'mapRef' | 'mapLoaded' | 'mapError' | 'flyTo' | 'fitToPoints'
+  >
 >;
 
-export interface LiveMapProps extends ControlledMapProps {
+export interface LiveMapProps extends ControlledProps {
   className?: string;
-  /** Show friend markers. Default true. */
   showFriends?: boolean;
-  /** Fly to this userId when set. */
   focusUserId?: number;
-  /** Overlay saved-place markers. */
   savedPlaces?: SavedPlacePoint[];
-  /** Suppress the loading overlay (for mini maps). */
   hideLoadingOverlay?: boolean;
-  /** Map navigation controls (pass false for mini maps). */
+  /** Navigation controls — pass false for thumbnails. */
   controls?: boolean;
-  /** Initial zoom override. */
   zoom?: number;
 }
 
@@ -87,57 +81,64 @@ export function LiveMap({
   hideLoadingOverlay = false,
   controls = true,
   zoom,
-  // Controlled-mode overrides
-  containerRef: externalContainerRef,
-  mapRef: externalMapRef,
-  mapLoaded: externalMapLoaded,
-  mapError: externalMapError,
-  flyTo: externalFlyTo,
-  fitToPoints: externalFitToPoints,
+  containerRef: extContainerRef,
+  mapRef:       extMapRef,
+  mapLoaded:    extMapLoaded,
+  mapError:     extMapError,
+  flyTo:        extFlyTo,
+  fitToPoints:  extFitToPoints,
 }: LiveMapProps) {
-  // ── Self-contained mode: create our own map instance ──────────────────
-  const internal = useMapLibre({ controls, zoom });
+  // When running in controlled mode the parent already owns a map instance.
+  // We still call the hook unconditionally (Rules of Hooks) but pass
+  // `skipInit: true` so it does NOT create a second Map object.
+  const isControlled = extContainerRef !== undefined;
+  const internal = useMapLibre({ controls, zoom, skipInit: isControlled });
 
-  // Prefer external (controlled) values, fall back to internal
-  const containerRef = externalContainerRef ?? internal.containerRef;
-  const mapRef       = externalMapRef       ?? internal.mapRef;
-  const mapLoaded    = externalMapLoaded    ?? internal.mapLoaded;
-  const mapError     = externalMapError     ?? internal.mapError;
-  const flyTo        = externalFlyTo        ?? internal.flyTo;
-  const fitToPoints  = externalFitToPoints  ?? internal.fitToPoints;
+  const containerRef = extContainerRef ?? internal.containerRef;
+  const mapRef       = extMapRef       ?? internal.mapRef;
+  const mapLoaded    = extMapLoaded    ?? internal.mapLoaded;
+  const mapError     = extMapError     ?? internal.mapError;
+  const flyTo        = extFlyTo        ?? internal.flyTo;
+  const fitToPoints  = extFitToPoints  ?? internal.fitToPoints;
 
   const { myLocation, friendsLocations } = useLocationStore();
-  const { user } = useAppSelector((s) => s.auth);
-  const { data: friends = [] } = useFriends();
+  const { user }                         = useAppSelector((s) => s.auth);
+  const { data: friends = [] }           = useFriends();
 
-  // ── Marker registries ─────────────────────────────────────────────────
-  const myMarkerRef     = useRef<AnyMarker | null>(null);
-  const myPopupRef      = useRef<AnyPopup | null>(null);
-  const myAccuracyRef   = useRef<AnyMarker | null>(null);
-  const myAccuracyPxRef = useRef<number>(0);
+  // ── Marker registries ────────────────────────────────────────────────
+  const myMarkerRef      = useRef<AnyMarker | null>(null);
+  const myPopupRef       = useRef<AnyPopup  | null>(null);
+  const myAccuracyRef    = useRef<AnyMarker | null>(null);
+  const myAccuracyPxRef  = useRef<number>(0);
   const friendMarkersRef = useRef<Record<number, AnyMarker>>({});
-  const friendPopupsRef  = useRef<Record<number, AnyPopup>>({});
+  const friendPopupsRef  = useRef<Record<number, AnyPopup >>({});
   const placeMarkersRef  = useRef<Record<number, AnyMarker>>({});
   const lastFocusRef     = useRef<number | undefined>(undefined);
 
-  // Cache { Marker, Popup } after first dynamic import
+  // Stable cache for { Marker, Popup } — imported once, reused forever
   const mglCacheRef = useRef<{ Marker: AnyMarker; Popup: AnyPopup } | null>(null);
-  const getMgl = useCallback(async () => {
+
+  // getMgl is stored in a ref so it's never recreated and never stale
+  const getMglRef = useRef(async () => {
     if (mglCacheRef.current) return mglCacheRef.current;
     const mgl = await import('maplibre-gl');
     mglCacheRef.current = { Marker: mgl.Marker, Popup: mgl.Popup };
     return mglCacheRef.current;
-  }, []);
+  });
+  const getMgl = useCallback(() => getMglRef.current(), []);
 
-  // ── My location marker + accuracy circle ────────────────────────────
+  // ── My location marker + accuracy circle ─────────────────────────────
   useEffect(() => {
     if (!mapLoaded || !myLocation) return;
     const { latitude, longitude, accuracy } = myLocation;
     if (!isValidLatLng(latitude, longitude)) return;
+    const map = mapRef.current;
+    if (!map) return;
 
     getMgl().then(({ Marker, Popup }) => {
       if (!mapRef.current) return;
 
+      // Create marker on first appearance
       if (!myMarkerRef.current) {
         const el = createMarkerElement({
           label: user?.name ?? 'You',
@@ -148,12 +149,12 @@ export function LiveMap({
         const popup = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '200px' })
           .setHTML(buildMePopup(user?.name ?? 'You', myLocation.city, latitude, longitude));
         myPopupRef.current = popup;
-
         myMarkerRef.current = new Marker({ element: el, anchor: 'bottom' })
           .setLngLat([longitude, latitude])
           .setPopup(popup)
           .addTo(mapRef.current);
       } else {
+        // Update position
         myMarkerRef.current.setLngLat([longitude, latitude]);
         myPopupRef.current?.setHTML(
           buildMePopup(user?.name ?? 'You', myLocation.city, latitude, longitude)
@@ -161,35 +162,35 @@ export function LiveMap({
       }
 
       // Accuracy circle
-      if (accuracy && accuracy > 0 && mapRef.current) {
-        const zoom = mapRef.current.getZoom();
-        const mpp = (156543.03392 * Math.cos((latitude * Math.PI) / 180)) / Math.pow(2, zoom);
-        const radiusPx = Math.max(20, Math.round(accuracy / mpp));
+      if (accuracy && accuracy > 0) {
+        const z   = mapRef.current.getZoom();
+        const mpp = (156543.03392 * Math.cos((latitude * Math.PI) / 180)) / Math.pow(2, z);
+        const rpx = Math.max(20, Math.round(accuracy / mpp));
 
         if (!myAccuracyRef.current) {
           const accEl = createAccuracyElement();
-          const d = radiusPx * 2;
-          accEl.style.width = `${d}px`;
-          accEl.style.height = `${d}px`;
-          myAccuracyPxRef.current = radiusPx;
+          accEl.style.width  = `${rpx * 2}px`;
+          accEl.style.height = `${rpx * 2}px`;
+          myAccuracyPxRef.current = rpx;
           myAccuracyRef.current = new Marker({ element: accEl, anchor: 'center' })
             .setLngLat([longitude, latitude])
             .addTo(mapRef.current);
         } else {
           myAccuracyRef.current.setLngLat([longitude, latitude]);
-          if (Math.abs(radiusPx - myAccuracyPxRef.current) > ACC_THRESHOLD_PX) {
-            const accEl = myAccuracyRef.current.getElement() as HTMLDivElement;
-            const d = radiusPx * 2;
-            accEl.style.width = `${d}px`;
-            accEl.style.height = `${d}px`;
-            myAccuracyPxRef.current = radiusPx;
+          if (Math.abs(rpx - myAccuracyPxRef.current) > ACC_THRESHOLD_PX) {
+            const el = myAccuracyRef.current.getElement() as HTMLDivElement;
+            el.style.width  = `${rpx * 2}px`;
+            el.style.height = `${rpx * 2}px`;
+            myAccuracyPxRef.current = rpx;
           }
         }
       }
     });
-  }, [mapLoaded, myLocation, user, getMgl, mapRef]);
+  // mapRef is intentionally excluded — it's a stable ref object, not reactive
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapLoaded, myLocation, user, getMgl]);
 
-  // ── Friend markers ───────────────────────────────────────────────────
+  // ── Friend markers ────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapLoaded || !showFriends) return;
 
@@ -200,13 +201,14 @@ export function LiveMap({
         const { latitude, longitude } = loc;
         if (!isValidLatLng(latitude, longitude)) return;
 
-        const friend = friends.find((f) => f.id === userId);
+        const friend   = friends.find((f) => f.id === userId);
         if (friend && !friend.sharingLocation) return;
 
-        const name     = friend?.name ?? `User ${userId}`;
+        const name     = friend?.name    ?? `User ${userId}`;
         const isOnline = friend?.isOnline ?? false;
 
         if (friendMarkersRef.current[userId]) {
+          // Update existing marker
           friendMarkersRef.current[userId].setLngLat([longitude, latitude]);
           friendPopupsRef.current[userId]?.setHTML(
             buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp)
@@ -216,11 +218,12 @@ export function LiveMap({
             ?.querySelector('.marker-online-dot') as HTMLSpanElement | null;
           if (dot) dot.className = `marker-online-dot ${isOnline ? 'is-online' : 'is-offline'}`;
         } else {
-          const grad = friendGradient(userId);
-          const el = createMarkerElement({ label: name, letter: name.charAt(0).toUpperCase(), gradient: grad, isOnline });
-          const popup = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '200px' })
+          // Create new marker
+          const grad   = friendGradient(userId);
+          const el     = createMarkerElement({ label: name, letter: name.charAt(0).toUpperCase(), gradient: grad, isOnline });
+          const popup  = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '200px' })
             .setHTML(buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp));
-          friendPopupsRef.current[userId] = popup;
+          friendPopupsRef.current[userId]  = popup;
           friendMarkersRef.current[userId] = new Marker({ element: el, anchor: 'bottom' })
             .setLngLat([longitude, latitude])
             .setPopup(popup)
@@ -228,7 +231,7 @@ export function LiveMap({
         }
       });
 
-      // Remove stale markers
+      // Remove markers whose userId is no longer in the Zustand Map
       Object.keys(friendMarkersRef.current).forEach((key) => {
         const uid = Number(key);
         if (!friendsLocations.has(uid)) {
@@ -239,16 +242,18 @@ export function LiveMap({
         }
       });
     });
-  }, [mapLoaded, friendsLocations, friends, showFriends, getMgl, mapRef]);
+  // mapRef intentionally excluded — stable ref
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapLoaded, friendsLocations, friends, showFriends, getMgl]);
 
-  // ── Saved-place markers ──────────────────────────────────────────────
+  // ── Saved-place markers ───────────────────────────────────────────────
   useEffect(() => {
     if (!mapLoaded || !savedPlaces?.length) return;
 
     getMgl().then(({ Marker, Popup }) => {
       if (!mapRef.current) return;
 
-      // Remove stale
+      // Remove stale place markers
       Object.keys(placeMarkersRef.current).forEach((key) => {
         const id = Number(key);
         if (!savedPlaces.find((p) => p.id === id)) {
@@ -259,7 +264,7 @@ export function LiveMap({
 
       savedPlaces.forEach((place) => {
         if (!isValidLatLng(place.latitude, place.longitude)) return;
-        if (placeMarkersRef.current[place.id]) return;
+        if (placeMarkersRef.current[place.id]) return; // already on map
 
         const bg = place.color ?? '#6366f1';
         const el = document.createElement('div');
@@ -279,9 +284,11 @@ export function LiveMap({
           .addTo(mapRef.current!);
       });
     });
-  }, [mapLoaded, savedPlaces, getMgl, mapRef]);
+  // mapRef intentionally excluded
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapLoaded, savedPlaces, getMgl]);
 
-  // ── flyTo focused user ───────────────────────────────────────────────
+  // ── flyTo on focusUserId ──────────────────────────────────────────────
   useEffect(() => {
     if (!mapLoaded || !focusUserId || focusUserId === lastFocusRef.current) return;
     lastFocusRef.current = focusUserId;
@@ -292,24 +299,26 @@ export function LiveMap({
     }
   }, [mapLoaded, focusUserId, friendsLocations, flyTo]);
 
-  useEffect(() => { if (!focusUserId) lastFocusRef.current = undefined; }, [focusUserId]);
+  useEffect(() => {
+    if (!focusUserId) lastFocusRef.current = undefined;
+  }, [focusUserId]);
 
-  // ── Auto fit-bounds on first load ─────────────────────────────────────
+  // ── Auto fit-bounds when map first loads ──────────────────────────────
   useEffect(() => {
     if (!mapLoaded || focusUserId) return;
 
     const pts: LatLng[] = [];
-    if (myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude)) {
+    if (myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude))
       pts.push({ latitude: myLocation.latitude, longitude: myLocation.longitude });
-    }
     friendsLocations.forEach((loc) => {
       if (isValidLatLng(loc.latitude, loc.longitude))
         pts.push({ latitude: loc.latitude, longitude: loc.longitude });
     });
 
-    if (pts.length > 1) fitToPoints(pts, 80);
+    if (pts.length > 1)      fitToPoints(pts, 80);
     else if (pts.length === 1) flyTo(pts[0].latitude, pts[0].longitude, 14);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Run only when mapLoaded flips to true
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapLoaded]);
 
   // ── Cleanup on unmount ────────────────────────────────────────────────
@@ -318,9 +327,9 @@ export function LiveMap({
       myMarkerRef.current?.remove();
       myAccuracyRef.current?.remove();
       myPopupRef.current?.remove();
-      myMarkerRef.current    = null;
-      myAccuracyRef.current  = null;
-      myPopupRef.current     = null;
+      myMarkerRef.current   = null;
+      myAccuracyRef.current = null;
+      myPopupRef.current    = null;
 
       Object.values(friendMarkersRef.current).forEach((m) => m.remove());
       Object.values(friendPopupsRef.current).forEach((p) => p.remove());
@@ -334,7 +343,7 @@ export function LiveMap({
   // ── Error state ───────────────────────────────────────────────────────
   if (mapError) {
     return (
-      <div className={cn('flex flex-col items-center justify-center bg-muted/50 rounded-2xl border border-border', className)}>
+      <div className={cn('flex items-center justify-center bg-muted/50 rounded-2xl border border-border', className)}>
         <div className="text-center p-8 space-y-3">
           <WifiOff size={32} className="mx-auto text-muted-foreground/40" />
           <p className="text-sm font-semibold">Map failed to load</p>
@@ -348,7 +357,7 @@ export function LiveMap({
 
   return (
     <div className={cn('relative rounded-2xl overflow-hidden', className)}>
-      {/* Canvas — containerRef goes here */}
+      {/* Map canvas */}
       <div ref={containerRef} className="w-full h-full" />
 
       {/* Loading overlay */}

@@ -6,6 +6,7 @@ import { useGroup } from '@/hooks/useGroups';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LiveMap } from '@/components/map/LiveMap';
+import { useFriendsLocations } from '@/hooks/useFriendsLocations';
 import { Users, ArrowLeft, Navigation } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,9 @@ export default function GroupDetailPage() {
   const { id } = useParams() as { id: string };
   const { data: group, isLoading, error } = useGroup(Number(id));
   const { friendsLocations } = useLocationStore();
+
+  // Hydrate friend locations so group member pins appear on the map
+  useFriendsLocations();
 
   if (isLoading) {
     return (
