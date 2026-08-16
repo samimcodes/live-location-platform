@@ -1,10 +1,14 @@
 import { Response } from 'express';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { FriendService } from '../services/friendService';
 import { NotificationService } from '../services/notificationService';
 import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { AuthRequest } from '../middlewares/authMiddleware';
+
+// Single shared instance — avoids connection-pool exhaustion from
+// creating a new PrismaClient per request in respondToRequest.
+const prisma = new PrismaClient();
 
 export class FriendController {
   static searchUsers = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -59,11 +63,10 @@ export class FriendController {
     const result = await FriendService.respondToRequest(Number(id), userId, action);
 
     if (action === 'ACCEPTED') {
-      // We need the senderId — get it from the original request
-      const { PrismaClient } = await import('@prisma/client');
-      const p = new PrismaClient();
-      const original = await p.friendRequest.findUnique({ where: { id: Number(id) } });
-      await p.$disconnect();
+      // Reuse the module-level prisma instance — no connection leak
+      const original = await prisma.friendRequest.findUnique({
+        where: { id: Number(id) },
+      });
 
       if (original) {
         req.io?.to(`user:${original.senderId}`).emit('notification', {

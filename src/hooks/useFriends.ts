@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
 import { toast } from '@/lib/toast';
 
+// ─── Query hooks ──────────────────────────────────────────────────────────
+
 export function useFriends() {
   return useQuery({
     queryKey: ['friends'],
@@ -32,6 +34,21 @@ export function useSentRequests() {
   });
 }
 
+/** Polls unread (pending) request count every 30 s — used for nav badge. */
+export function usePendingRequestCount() {
+  return useQuery({
+    queryKey: ['friend-requests', 'pending-count'],
+    queryFn: async () => {
+      const { data } = await api.get('/friends/requests/pending');
+      return (data.data as FriendRequest[]).length;
+    },
+    refetchInterval: 30_000,
+    staleTime: 20_000,
+  });
+}
+
+// ─── Mutation hooks ───────────────────────────────────────────────────────
+
 export function useSendFriendRequest() {
   const qc = useQueryClient();
   return useMutation({
@@ -42,9 +59,10 @@ export function useSendFriendRequest() {
     onSuccess: () => {
       toast.success('Friend request sent!');
       qc.invalidateQueries({ queryKey: ['friend-requests', 'sent'] });
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      toast.error(err.response?.data?.message || 'Failed to send request');
+      toast.error(err.response?.data?.message ?? 'Failed to send request');
     },
   });
 }
@@ -59,9 +77,26 @@ export function useRespondToRequest() {
     onSuccess: (_, { action }) => {
       toast.success(action === 'ACCEPTED' ? 'Friend request accepted!' : 'Request rejected');
       qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
       qc.invalidateQueries({ queryKey: ['friends'] });
     },
     onError: () => toast.error('Failed to respond to request'),
+  });
+}
+
+export function useCancelRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestId: number) => {
+      const { data } = await api.delete(`/friends/requests/${requestId}`);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Request cancelled');
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'sent'] });
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
+    },
+    onError: () => toast.error('Failed to cancel request'),
   });
 }
 
@@ -80,7 +115,8 @@ export function useRemoveFriend() {
   });
 }
 
-// ─── Types ───────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────
+
 export interface Friend {
   id: number;
   name: string;
@@ -89,7 +125,12 @@ export interface Friend {
   isOnline: boolean;
   lastSeen: string;
   sharingLocation: boolean;
-  locations?: Array<{ latitude: number; longitude: number; updatedAt: string; city?: string }>;
+  locations?: Array<{
+    latitude: number;
+    longitude: number;
+    updatedAt: string;
+    city?: string;
+  }>;
 }
 
 export interface FriendRequest {

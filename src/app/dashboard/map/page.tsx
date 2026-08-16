@@ -17,7 +17,8 @@
  *  - w-72 (lg+): FriendMarkerPanel sidebar
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LiveMap } from '@/components/map/LiveMap';
 import { MapControls } from '@/components/map/MapControls';
 import { FriendMarkerPanel } from '@/components/map/FriendMarkerPanel';
@@ -31,6 +32,7 @@ export default function MapPage() {
   // ── All hooks at the top — Rules of Hooks ─────────────────────────────────
   useFriendsLocations();
 
+  const searchParams   = useSearchParams();
   const { data: friends = [] } = useFriends();
   const { myLocation, friendsLocations } = useLocationStore();
   const [focusedUserId, setFocusedUserId] = useState<number | undefined>();
@@ -67,6 +69,12 @@ export default function MapPage() {
 
   // Keep ref in sync every render so handleFitAll always reads latest points
   allPointsRef.current = allPoints;
+
+  // ── Focus friend from ?focus= query param (navigated from Friends page) ───
+  useEffect(() => {
+    const focusId = searchParams.get('focus');
+    if (focusId) setFocusedUserId(Number(focusId));
+  }, [searchParams]);
 
   const handleFitAll = useCallback(() => {
     fitToPoints(allPointsRef.current, 80);
