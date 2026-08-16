@@ -114,14 +114,20 @@ export class GroupService {
   });
 
   static addMember = catchServiceAsync(async (groupId: number, adminId: number, userId: number) => {
-    const member = await prisma.groupMember.findUnique({
+    const adminMember = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId, userId: adminId } },
     });
-    if (!member || member.role !== 'ADMIN') throw new Error('Only admin can add members');
+    if (!adminMember || adminMember.role !== 'ADMIN') throw new Error('Only admin can add members');
+
+    // Prevent duplicate membership
+    const existing = await prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId } },
+    });
+    if (existing) throw new Error('User is already a member of this group');
 
     return prisma.groupMember.create({
       data: { groupId, userId, role: 'MEMBER' },
-      include: { user: { select: { id: true, name: true, avatar: true } } },
+      include: { user: { select: { id: true, name: true, avatar: true, isOnline: true } } },
     });
   });
 

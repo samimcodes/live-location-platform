@@ -31,6 +31,11 @@ export class NotificationController {
     sendResponse(res, { statusCode: 200, message: result.message });
   });
 
+  static deleteAllRead = catchAsync(async (req: AuthRequest, res: Response) => {
+    const result = await NotificationService.deleteAllRead(req.user!.userId);
+    sendResponse(res, { statusCode: 200, message: result.message, data: { deleted: result.deleted } });
+  });
+
   static deleteNotification = catchAsync(async (req: AuthRequest, res: Response) => {
     const { id } = req.params as { id: string };
     const result = await NotificationService.deleteNotification(Number(id), req.user!.userId);

@@ -138,26 +138,35 @@ export class LocationController {
 
   // ── GET /history ─────────────────────────────────────────────────────────
   static getHistory = catchAsync(async (req: AuthRequest, res: Response) => {
-    const { startDate, endDate, limit } = req.query as {
+    const { startDate, endDate, limit, skip } = req.query as {
       startDate?: string;
       endDate?: string;
       limit?: string;
+      skip?: string;
     };
 
     const limitNum = limit ? Math.min(Number(limit), 500) : 100;
+    const skipNum  = skip  ? Math.max(Number(skip),  0)   : 0;
 
-    const history = await LocationService.getHistory(
+    const result = await LocationService.getHistory(
       req.user!.userId,
       startDate,
       endDate,
-      limitNum
+      limitNum,
+      skipNum,
     );
 
     sendResponse(res, {
       statusCode: 200,
-      message: `${history.length} history record(s)`,
-      data: history,
+      message: `${result.total} history record(s)`,
+      data: result,
     });
+  });
+
+  // ── GET /history/stats ────────────────────────────────────────────────────
+  static getHistoryStats = catchAsync(async (req: AuthRequest, res: Response) => {
+    const stats = await LocationService.getHistoryStats(req.user!.userId);
+    sendResponse(res, { statusCode: 200, message: 'Stats retrieved', data: stats });
   });
 
   // ── DELETE /history ───────────────────────────────────────────────────────

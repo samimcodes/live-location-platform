@@ -67,6 +67,13 @@ export class NotificationService {
     return { message: 'All notifications marked as read' };
   });
 
+  static deleteAllRead = catchServiceAsync(async (userId: number) => {
+    const { count } = await prisma.notification.deleteMany({
+      where: { userId, isRead: true },
+    });
+    return { message: `${count} notification${count !== 1 ? 's' : ''} deleted`, deleted: count };
+  });
+
   static deleteNotification = catchServiceAsync(async (notificationId: number, userId: number) => {
     const notification = await prisma.notification.findUnique({ where: { id: notificationId } });
     if (!notification) throw new Error('Notification not found');

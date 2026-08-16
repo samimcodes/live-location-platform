@@ -379,7 +379,6 @@ export default function RequestsPage() {
                             </p>
                           </div>
 
-                          {/* Direction arrow */}
                           <ChevronRight size={12} className="text-muted-foreground/40 shrink-0" />
 
                           {/* Status badge */}
