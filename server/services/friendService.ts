@@ -158,4 +158,51 @@ export class FriendService {
     await prisma.friendRequest.delete({ where: { id: requestId } });
     return { message: 'Request cancelled' };
   });
+
+  // ── Get request history (ACCEPTED + REJECTED, last 30 days) ──
+  static getRequestHistory = catchServiceAsync(async (userId: number) => {
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+
+    return prisma.friendRequest.findMany({
+      where: {
+        OR: [{ senderId: userId }, { receiverId: userId }],
+        status: { in: ['ACCEPTED', 'REJECTED'] },
+        updatedAt: { gte: since },
+      },
+      include: {
+        sender:   { select: { id: true, name: true, avatar: true, email: true } },
+        receiver: { select: { id: true, name: true, avatar: true, email: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
+    });
+  });
+
+  // ── Accept all pending requests ───────────────────────────────
+  static acceptAllRequests = catchServiceAsync(async (userId: number) => {
+    const pending = await prisma.friendRequest.findMany({
+      where: { receiverId: userId, status: 'PENDING' },
+      select: { id: true, senderId: true, receiverId: true },
+    });
+
+    if (pending.length === 0) return { accepted: 0 };
+
+    // Update all to ACCEPTED
+    await prisma.friendRequest.updateMany({
+      where: { receiverId: userId, status: 'PENDING' },
+      data: { status: 'ACCEPTED' },
+    });
+
+    // Create friendship records (user1Id < user2Id)
+    const friendships = pending.map(({ senderId, receiverId }) => {
+      const [user1Id, user2Id] = [senderId, receiverId].sort((a, b) => a - b);
+      return { user1Id, user2Id };
+    });
+
+    // createMany skips duplicates gracefully
+    await prisma.friendship.createMany({ data: friendships, skipDuplicates: true });
+
+    return { accepted: pending.length, senderIds: pending.map((r) => r.senderId) };
+  });
 }

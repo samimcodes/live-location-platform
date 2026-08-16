@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
 import { toast } from '@/lib/toast';
 
-// ─── Query hooks ──────────────────────────────────────────────────────────
+// ─── Query hooks ───────────────────────────────────────────────────────────
 
 export function useFriends() {
   return useQuery({
@@ -34,7 +34,7 @@ export function useSentRequests() {
   });
 }
 
-/** Polls unread (pending) request count every 30 s — used for nav badge. */
+/** Polls unread pending count every 30 s — drives nav badge. */
 export function usePendingRequestCount() {
   return useQuery({
     queryKey: ['friend-requests', 'pending-count'],
@@ -47,7 +47,19 @@ export function usePendingRequestCount() {
   });
 }
 
-// ─── Mutation hooks ───────────────────────────────────────────────────────
+/** Last 30 days of ACCEPTED + REJECTED requests. */
+export function useRequestHistory() {
+  return useQuery({
+    queryKey: ['friend-requests', 'history'],
+    queryFn: async () => {
+      const { data } = await api.get('/friends/requests/history');
+      return data.data as FriendRequest[];
+    },
+    staleTime: 60_000,
+  });
+}
+
+// ─── Mutation hooks ────────────────────────────────────────────────────────
 
 export function useSendFriendRequest() {
   const qc = useQueryClient();
@@ -78,6 +90,7 @@ export function useRespondToRequest() {
       toast.success(action === 'ACCEPTED' ? 'Friend request accepted!' : 'Request rejected');
       qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
       qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'history'] });
       qc.invalidateQueries({ queryKey: ['friends'] });
     },
     onError: () => toast.error('Failed to respond to request'),
@@ -100,6 +113,24 @@ export function useCancelRequest() {
   });
 }
 
+export function useAcceptAllRequests() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/friends/requests/accept-all');
+      return data as { message: string; data: { accepted: number } };
+    },
+    onSuccess: (res) => {
+      toast.success(res.message);
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'history'] });
+      qc.invalidateQueries({ queryKey: ['friends'] });
+    },
+    onError: () => toast.error('Failed to accept all requests'),
+  });
+}
+
 export function useRemoveFriend() {
   const qc = useQueryClient();
   return useMutation({
@@ -115,7 +146,7 @@ export function useRemoveFriend() {
   });
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────
 
 export interface Friend {
   id: number;
@@ -137,9 +168,10 @@ export interface FriendRequest {
   id: number;
   senderId: number;
   receiverId: number;
-  status: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   message?: string;
   createdAt: string;
+  updatedAt?: string;
   sender?: Pick<Friend, 'id' | 'name' | 'avatar' | 'email' | 'isOnline'>;
   receiver?: Pick<Friend, 'id' | 'name' | 'avatar' | 'email' | 'isOnline'>;
 }

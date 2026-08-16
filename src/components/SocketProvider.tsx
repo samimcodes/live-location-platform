@@ -86,6 +86,18 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         isRead: false,
         createdAt: new Date().toISOString(),
       });
+
+      // Invalidate friend-request queries so the requests page updates live
+      if (data.type === 'FRIEND_REQUEST') {
+        qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
+        qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
+      }
+      if (data.type === 'FRIEND_ACCEPTED') {
+        // Accepted → new friendship exists; refresh friends list + sent requests
+        qc.invalidateQueries({ queryKey: ['friends'] });
+        qc.invalidateQueries({ queryKey: ['friend-requests', 'sent'] });
+        qc.invalidateQueries({ queryKey: ['friend-requests', 'history'] });
+      }
     });
 
     // ── sharing:changed — a friend toggled their location sharing ─────

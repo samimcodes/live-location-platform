@@ -114,4 +114,38 @@ export class FriendController {
     const result = await FriendService.cancelRequest(Number(id), req.user!.userId);
     sendResponse(res, { statusCode: 200, message: result.message });
   });
+
+  static getRequestHistory = catchAsync(async (req: AuthRequest, res: Response) => {
+    const history = await FriendService.getRequestHistory(req.user!.userId);
+    sendResponse(res, { statusCode: 200, data: history });
+  });
+
+  static acceptAllRequests = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.userId;
+    const result = await FriendService.acceptAllRequests(userId);
+
+    // Notify every sender that their request was accepted
+    if (result.senderIds?.length) {
+      for (const senderId of result.senderIds) {
+        req.io?.to(`user:${senderId}`).emit('notification', {
+          type: 'FRIEND_ACCEPTED',
+          message: 'Your friend request was accepted',
+          data: { userId },
+        });
+        await NotificationService.create({
+          userId: senderId,
+          type: 'FRIEND_ACCEPTED',
+          title: 'Friend Request Accepted',
+          body: 'Your friend request was accepted',
+          data: { userId } as Prisma.InputJsonValue,
+        });
+      }
+    }
+
+    sendResponse(res, {
+      statusCode: 200,
+      message: `${result.accepted} request${result.accepted !== 1 ? 's' : ''} accepted`,
+      data: { accepted: result.accepted },
+    });
+  });
 }
