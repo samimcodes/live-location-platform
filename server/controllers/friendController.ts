@@ -31,20 +31,21 @@ export class FriendController {
 
     const request = await FriendService.sendFriendRequest(senderId, receiverId, message);
 
-    // Real-time notification via Socket.IO
-    req.io?.to(`user:${receiverId}`).emit('notification', {
-      type: 'FRIEND_REQUEST',
-      message: `${request.sender.name} sent you a friend request`,
-      data: { requestId: request.id, senderId },
-    });
-
-    // Persist notification
-    await NotificationService.create({
+    // Persist notification first so we have its db id
+    const notifRecord = await NotificationService.create({
       userId: receiverId,
       type: 'FRIEND_REQUEST',
       title: 'New Friend Request',
       body: `${request.sender.name} sent you a friend request`,
       data: { requestId: request.id, senderId } as Prisma.InputJsonValue,
+    });
+
+    // Real-time notification via Socket.IO (includes db id so client can mark/delete)
+    req.io?.to(`user:${receiverId}`).emit('notification', {
+      id: notifRecord?.id,
+      type: 'FRIEND_REQUEST',
+      message: `${request.sender.name} sent you a friend request`,
+      data: { requestId: request.id, senderId },
     });
 
     sendResponse(res, { statusCode: 201, message: 'Friend request sent', data: request });

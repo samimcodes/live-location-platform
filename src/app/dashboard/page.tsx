@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const { data: friends = [] } = useFriends();
   const { data: groups = [] } = useGroups();
   const { data: unreadCount = 0 } = useUnreadCount();
-  const { myLocation, friendsLocations, isSharing } = useLocationStore();
+  const { myLocation, isSharing } = useLocationStore();
 
   const stats = [
     {
@@ -115,7 +115,6 @@ export default function DashboardPage() {
               color={s.color}
               bg={s.bg}
               href={s.href}
-              delta={Math.round((Math.random() - 0.35) * 24)}
             />
           </motion.div>
         ))}
@@ -217,14 +216,10 @@ export default function DashboardPage() {
                         month: "short",
                         day: "numeric",
                       });
+                      // Use a deterministic sine wave so there's no hydration mismatch
                       const base = friends.length || 0;
-                      const variance = Math.round(
-                        Math.sin(i) * 3 + Math.random() * 3,
-                      );
-                      return {
-                        date: label,
-                        value: Math.max(0, base + variance),
-                      };
+                      const variance = Math.round(Math.sin(i * 1.3) * 2);
+                      return { date: label, value: Math.max(0, base + variance) };
                     });
                     return <StatsChart data={chartData} color="#7c3aed" />;
                   })()}

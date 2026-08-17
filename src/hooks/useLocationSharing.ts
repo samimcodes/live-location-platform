@@ -14,17 +14,19 @@ const LOCATION_OPTIONS: PositionOptions = {
 export function useLocationSharing() {
   const { emit } = useSocketContext();
   const { isSharing, setMyLocation, setWatchId, watchId } = useLocationStore();
-  const { isAuthenticated } = useAppSelector((s) => s.auth);
+  const { isAuthenticated, user } = useAppSelector((s) => s.auth);
 
-  // Keep a ref so callbacks never go stale without causing re-renders
-  const watchIdRef = useRef<number | null>(watchId);
-  const isAuthRef  = useRef(isAuthenticated);
+  // Keep refs so callbacks never go stale without causing re-renders
+  const watchIdRef   = useRef<number | null>(watchId);
+  const isAuthRef    = useRef(isAuthenticated);
   const isSharingRef = useRef(isSharing);
+  const userIdRef    = useRef<number>(user?.id ?? 0);
 
   // Sync refs on every render (no re-render side-effects)
   watchIdRef.current   = watchId;
   isAuthRef.current    = isAuthenticated;
   isSharingRef.current = isSharing;
+  userIdRef.current    = user?.id ?? 0;
 
   useEffect(() => {
     if (!isAuthenticated || !isSharing) {
@@ -44,13 +46,13 @@ export function useLocationSharing() {
     const id = navigator.geolocation.watchPosition(
       (position) => {
         const payload = {
-          userId: 0,
+          userId:    userIdRef.current,
           latitude:  position.coords.latitude,
           longitude: position.coords.longitude,
-          accuracy:  position.coords.accuracy   ?? undefined,
-          altitude:  position.coords.altitude   ?? undefined,
-          speed:     position.coords.speed      ?? undefined,
-          heading:   position.coords.heading    ?? undefined,
+          accuracy:  position.coords.accuracy  ?? undefined,
+          altitude:  position.coords.altitude  ?? undefined,
+          speed:     position.coords.speed     ?? undefined,
+          heading:   position.coords.heading   ?? undefined,
         };
         setMyLocation(payload);
         emit('location:update', payload);

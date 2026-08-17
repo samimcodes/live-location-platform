@@ -73,12 +73,18 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     // ── notification ─────────────────────────────────────────────────
     s.on('notification', (data: {
+      id?: number;
       type: string;
       message: string;
       data?: Record<string, unknown>;
     }) => {
+      // Use the server-provided id so mark-read/delete API calls use the
+      // correct database id. Fall back to a random int only if the server
+      // omits the id (should not happen in production).
+      const notifId = data.id ?? Math.floor(Math.random() * 1_000_000_000);
+
       addNotification({
-        id: Date.now(),
+        id: notifId,
         type: data.type,
         title: data.message,
         body: data.message,

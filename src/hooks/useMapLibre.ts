@@ -93,7 +93,7 @@ export function useMapLibre({
             style: OSM_STYLE,
             center,
             zoom,
-            attributionControl: true,
+            attributionControl: { compact: false },
           });
 
           mapRef.current = map;

@@ -43,7 +43,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       return React.cloneElement(
         children as React.ReactElement<React.HTMLAttributes<HTMLElement>>,
         {
-          // @ts-expect-error — className merging between button and link props
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           className: cn(
             buttonVariants({ variant, size }),
             className,

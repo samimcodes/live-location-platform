@@ -17,7 +17,7 @@ import Link from 'next/link';
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
 }).refine((d) => d.password === d.confirmPassword, {
   message: 'Passwords do not match',
@@ -86,7 +86,7 @@ export function SignUpForm() {
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
-            placeholder="Min 6 characters"
+            placeholder="Min 8 characters"
             {...register('password')}
             aria-invalid={!!errors.password}
           />

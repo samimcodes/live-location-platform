@@ -1,27 +1,15 @@
 'use client';
 
-/**
- * Map Page
- * --------
- * Full-page live-location map powered by MapLibre GL JS + OpenStreetMap.
- *
- * Architecture:
- *  - useMapLibre() is called HERE (lifted up) so MapPage can directly call
- *    fitToPoints() and toggleFullscreen() without a callback dance.
- *  - LiveMap receives containerRef + mapRef + mapLoaded + mapError as props
- *    (the "controlled map" pattern).
- *  - useFriendsLocations() hydrates Zustand from REST; socket keeps it live.
- *
- * Layout (responsive):
- *  - flex-1: MapControls bar + map canvas
- *  - w-72 (lg+): FriendMarkerPanel sidebar
- */
-
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { MapControls } from '@/components/map/MapControls';
 import { FriendMarkerPanel } from '@/components/map/FriendMarkerPanel';
+import { useFriends } from '@/hooks/useFriends';
+import { useFriendsLocations } from '@/hooks/useFriendsLocations';
+import { useLocationStore } from '@/store/useLocationStore';
+import { useMapLibre } from '@/hooks/useMapLibre';
+import { isValidLatLng, type LatLng } from '@/lib/mapUtils';
 
 // LiveMap must never render on the server — maplibre-gl uses
 // `new URL(worker, import.meta.url)` which is not Node-compatible.
@@ -29,37 +17,31 @@ const LiveMap = dynamic(
   () => import('@/components/map/LiveMap').then((m) => m.LiveMap),
   { ssr: false }
 );
-import { useFriends } from '@/hooks/useFriends';
-import { useFriendsLocations } from '@/hooks/useFriendsLocations';
-import { useLocationStore } from '@/store/useLocationStore';
-import { useMapLibre } from '@/hooks/useMapLibre';
-import { isValidLatLng, type LatLng } from '@/lib/mapUtils';
 
+// useSearchParams() must be inside a Suspense boundary for static export
 export default function MapPage() {
-  // ── All hooks at the top — Rules of Hooks ─────────────────────────────────
+  return (
+    <Suspense fallback={null}>
+      <MapPageInner />
+    </Suspense>
+  );
+}
+
+function MapPageInner() {
   useFriendsLocations();
 
-  const searchParams   = useSearchParams();
-  const { data: friends = [] } = useFriends();
+  const searchParams                     = useSearchParams();
+  const { data: friends = [] }           = useFriends();
   const { myLocation, friendsLocations } = useLocationStore();
   const [focusedUserId, setFocusedUserId] = useState<number | undefined>();
-
-  // Stable ref for allPoints — avoids stale closure in handleFitAll
   const allPointsRef = useRef<LatLng[]>([]);
 
-  // ── Map lifecycle lifted to page ──────────────────────────────────────────
   const {
-    containerRef,
-    mapRef,
-    mapLoaded,
-    mapError,
-    flyTo,
-    fitToPoints,
-    toggleFullscreen,
-    isFullscreen,
+    containerRef, mapRef, mapLoaded, mapError,
+    flyTo, fitToPoints, toggleFullscreen, isFullscreen,
   } = useMapLibre({ controls: true });
 
-  // ── Derived values (not hooks) ────────────────────────────────────────────
+  // Build allPoints for Fit-All
   const allPoints: LatLng[] = [];
   if (myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude)) {
     allPoints.push({ latitude: myLocation.latitude, longitude: myLocation.longitude });
@@ -74,10 +56,9 @@ export default function MapPage() {
     (f) => f.sharingLocation && friendsLocations.has(f.id)
   ).length;
 
-  // Keep ref in sync every render so handleFitAll always reads latest points
   allPointsRef.current = allPoints;
 
-  // ── Focus friend from ?focus= query param (navigated from Friends page) ───
+  // Read ?focus=ID from Friends page navigation
   useEffect(() => {
     const focusId = searchParams.get('focus');
     if (focusId) setFocusedUserId(Number(focusId));
@@ -102,7 +83,6 @@ export default function MapPage() {
 
   return (
     <div className="h-[calc(100vh-7rem)] flex gap-4">
-      {/* ── Left: controls + map ──────────────────────────────────── */}
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         <MapControls
           activeFriendCount={activeFriendCount}
@@ -111,8 +91,6 @@ export default function MapPage() {
           onFullscreen={toggleFullscreen}
           isFullscreen={isFullscreen}
         />
-
-        {/* LiveMap in "controlled" mode — receives the already-initialised refs */}
         <LiveMap
           className="flex-1"
           showFriends
@@ -126,7 +104,6 @@ export default function MapPage() {
         />
       </div>
 
-      {/* ── Right: friends panel (lg+) ────────────────────────────── */}
       <div className="hidden lg:flex flex-col w-72 shrink-0">
         <FriendMarkerPanel
           friends={friends}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { ReduxProvider } from '@/components/ReduxProvider';
 import { QueryProvider } from '@/components/QueryProvider';
 import { SocketProvider } from '@/components/SocketProvider';
@@ -27,15 +28,30 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    // suppressHydrationWarning is required for next-themes:
+    // ThemeProvider injects `style={{color-scheme:…}}` on the <html> tag
+    // client-side, which doesn't match the server-rendered HTML.
+    // This prop tells React to ignore that specific attribute mismatch.
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col">
         <ReduxProvider>
           <QueryProvider>
-            <SocketProvider>
-              <AuthInitializer />
-              {children}
-              <Toaster position="top-right" richColors />
-            </SocketProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <SocketProvider>
+                <AuthInitializer />
+                {children}
+                <Toaster position="top-right" richColors />
+              </SocketProvider>
+            </ThemeProvider>
           </QueryProvider>
         </ReduxProvider>
       </body>
