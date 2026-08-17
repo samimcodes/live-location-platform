@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Select, { Props as SelectProps } from "react-select"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/ThemeProvider"
 
 export function ReactSelect<
   Option,

@@ -40,7 +40,9 @@ export function SignInForm() {
       toast.success('Welcome back!', { description: 'Redirecting to dashboard…' });
       router.push('/dashboard');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Sign in failed';
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? (err instanceof Error ? err.message : 'Sign in failed');
       toast.error(msg);
     } finally {
       setIsLoading(false);

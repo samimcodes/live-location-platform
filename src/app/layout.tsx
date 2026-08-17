@@ -28,10 +28,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    // suppressHydrationWarning is required for next-themes:
-    // ThemeProvider injects `style={{color-scheme:…}}` on the <html> tag
-    // client-side, which doesn't match the server-rendered HTML.
-    // This prop tells React to ignore that specific attribute mismatch.
+    // suppressHydrationWarning prevents React from warning about the
+    // `style` and `class` attributes that ThemeProvider sets on <html>
+    // client-side (they differ from the server-rendered HTML).
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
@@ -41,9 +40,7 @@ export default function RootLayout({
         <ReduxProvider>
           <QueryProvider>
             <ThemeProvider
-              attribute="class"
               defaultTheme="system"
-              enableSystem
               disableTransitionOnChange
             >
               <SocketProvider>

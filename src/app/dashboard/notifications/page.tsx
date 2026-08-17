@@ -1,72 +1,114 @@
 'use client';
 
-import React from 'react';
-import { useNotifications, useMarkAllRead, useMarkRead, useDeleteNotification } from '@/hooks/useNotifications';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import {
+  useNotifications,
+  useMarkAllRead,
+  useMarkRead,
+  useDeleteNotification,
+  useDeleteAllRead,
+} from '@/hooks/useNotifications';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bell, Check, Trash2, UserPlus, MapPin, Users, Info } from 'lucide-react';
-import { motion } from 'framer-motion';
+import {
+  Bell, Check, Trash2, UserPlus,
+  MapPin, Users, Info, Loader2, CheckCheck,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from '@/lib/dateUtils';
 
 const typeIcon: Record<string, React.ElementType> = {
-  FRIEND_REQUEST: UserPlus,
+  FRIEND_REQUEST:  UserPlus,
   FRIEND_ACCEPTED: Users,
-  GROUP_INVITE: Users,
-  GROUP_JOINED: Users,
-  LOCATION_ALERT: MapPin,
-  SYSTEM: Info,
+  GROUP_INVITE:    Users,
+  GROUP_JOINED:    Users,
+  LOCATION_ALERT:  MapPin,
+  SYSTEM:          Info,
 };
 
 const typeBg: Record<string, string> = {
-  FRIEND_REQUEST: 'bg-indigo-50 dark:bg-indigo-950/50',
+  FRIEND_REQUEST:  'bg-indigo-50 dark:bg-indigo-950/50',
   FRIEND_ACCEPTED: 'bg-emerald-50 dark:bg-emerald-950/50',
-  GROUP_INVITE: 'bg-purple-50 dark:bg-purple-950/50',
-  GROUP_JOINED: 'bg-purple-50 dark:bg-purple-950/50',
-  LOCATION_ALERT: 'bg-orange-50 dark:bg-orange-950/50',
-  SYSTEM: 'bg-blue-50 dark:bg-blue-950/50',
+  GROUP_INVITE:    'bg-purple-50 dark:bg-purple-950/50',
+  GROUP_JOINED:    'bg-purple-50 dark:bg-purple-950/50',
+  LOCATION_ALERT:  'bg-orange-50 dark:bg-orange-950/50',
+  SYSTEM:          'bg-blue-50 dark:bg-blue-950/50',
 };
 
 const typeColor: Record<string, string> = {
-  FRIEND_REQUEST: 'text-indigo-500',
+  FRIEND_REQUEST:  'text-indigo-500',
   FRIEND_ACCEPTED: 'text-emerald-500',
-  GROUP_INVITE: 'text-purple-500',
-  GROUP_JOINED: 'text-purple-500',
-  LOCATION_ALERT: 'text-orange-500',
-  SYSTEM: 'text-blue-500',
+  GROUP_INVITE:    'text-purple-500',
+  GROUP_JOINED:    'text-purple-500',
+  LOCATION_ALERT:  'text-orange-500',
+  SYSTEM:          'text-blue-500',
 };
 
 export default function NotificationsPage() {
-  const { data, isLoading } = useNotifications();
-  const { mutate: markAllRead, isPending: markingAll } = useMarkAllRead();
-  const { mutate: markRead } = useMarkRead();
-  const { mutate: deleteNotif } = useDeleteNotification();
+  const [page, setPage] = useState(1);
 
-  const notifications = data?.notifications ?? [];
-  const unread = notifications.filter((n) => !n.isRead).length;
+  const { data, isLoading, isFetching }      = useNotifications(page);
+  const { mutate: markAllRead,  isPending: markingAll  } = useMarkAllRead();
+  const { mutate: markRead }                              = useMarkRead();
+  const { mutate: deleteNotif }                           = useDeleteNotification();
+  const { mutate: deleteAllRead, isPending: deletingAll } = useDeleteAllRead();
+
+  const notifications  = data?.notifications ?? [];
+  const totalPages     = data?.pagination?.totalPages ?? 1;
+  const total          = data?.pagination?.total ?? 0;
+  const unread         = notifications.filter((n) => !n.isRead).length;
+  const readCount      = notifications.filter((n) => n.isRead).length;
+  const hasMore        = page < totalPages;
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 max-w-2xl">
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">Notifications</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {total > 0 ? `${total} total` : 'No notifications'}
+            {unread > 0 && ` · ${unread} unread`}
+          </p>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 shrink-0">
+          {readCount > 0 && (
+            <Button
+              variant="outline" size="sm"
+              className="text-destructive border-destructive/30 hover:bg-destructive/10"
+              onClick={() => deleteAllRead()}
+              disabled={deletingAll}
+            >
+              {deletingAll
+                ? <Loader2 size={13} className="mr-2 animate-spin" />
+                : <Trash2 size={13} className="mr-2" />
+              }
+              Delete read
+            </Button>
+          )}
           {unread > 0 && (
-            <p className="text-sm text-muted-foreground mt-0.5">{unread} unread</p>
+            <Button variant="outline" size="sm" onClick={() => markAllRead()} disabled={markingAll}>
+              {markingAll
+                ? <Loader2 size={13} className="mr-2 animate-spin" />
+                : <CheckCheck size={13} className="mr-2" />
+              }
+              Mark all read
+            </Button>
           )}
         </div>
-        {unread > 0 && (
-          <Button variant="outline" size="sm" onClick={() => markAllRead()} disabled={markingAll}>
-            <Check size={14} className="mr-2" />
-            Mark all read
-          </Button>
-        )}
       </div>
 
+      {/* ── List ───────────────────────────────────────────────── */}
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
+          {isLoading && notifications.length === 0 ? (
             <div className="space-y-3 p-4">
-              {[1, 2, 3, 4].map((i) => <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />)}
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
+              ))}
             </div>
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center py-16 text-muted-foreground">
@@ -76,57 +118,84 @@ export default function NotificationsPage() {
             </div>
           ) : (
             <div>
-              {notifications.map((n, i) => {
-                const Icon = typeIcon[n.type] ?? Info;
-                return (
-                  <motion.div
-                    key={n.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                    className={cn(
-                      'flex items-start gap-3 px-4 py-4 border-b border-border/40 last:border-0 transition-colors group',
-                      !n.isRead && 'bg-primary/5'
-                    )}
-                  >
-                    <div className={cn(
-                      'h-9 w-9 rounded-full flex items-center justify-center shrink-0',
-                      typeBg[n.type] ?? 'bg-muted'
-                    )}>
-                      <Icon size={15} className={cn(typeColor[n.type] ?? 'text-muted-foreground')} />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className={cn('text-sm font-medium', !n.isRead && 'text-foreground')}>{n.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{n.body}</p>
-                      <p className="text-[11px] text-muted-foreground/60 mt-1">{formatDistanceToNow(n.createdAt)}</p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      {!n.isRead && (
-                        <button
-                          onClick={() => markRead(n.id)}
-                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-                          title="Mark as read"
-                        >
-                          <Check size={13} />
-                        </button>
+              <AnimatePresence initial={false}>
+                {notifications.map((n, i) => {
+                  const Icon = typeIcon[n.type] ?? Info;
+                  return (
+                    <motion.div
+                      key={n.id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                      className={cn(
+                        'flex items-start gap-3 px-4 py-4 border-b border-border/40 last:border-0 transition-colors group',
+                        !n.isRead && 'bg-primary/5'
                       )}
-                      <button
-                        onClick={() => deleteNotif(n.id)}
-                        className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                        title="Delete"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+                    >
+                      {/* Icon */}
+                      <div className={cn(
+                        'h-9 w-9 rounded-full flex items-center justify-center shrink-0',
+                        typeBg[n.type] ?? 'bg-muted'
+                      )}>
+                        <Icon size={15} className={cn(typeColor[n.type] ?? 'text-muted-foreground')} />
+                      </div>
 
-                    {!n.isRead && (
-                      <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />
-                    )}
-                  </motion.div>
-                );
-              })}
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <p className={cn('text-sm font-medium', !n.isRead && 'text-foreground')}>
+                          {n.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{n.body}</p>
+                        <p className="text-[11px] text-muted-foreground/60 mt-1">
+                          {formatDistanceToNow(n.createdAt)}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        {!n.isRead && (
+                          <button
+                            onClick={() => markRead(n.id)}
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                            title="Mark as read"
+                          >
+                            <Check size={13} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteNotif(n.id)}
+                          className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      {!n.isRead && (
+                        <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+
+              {/* Load More */}
+              {hasMore && (
+                <div className="flex justify-center p-4 border-t border-border/40">
+                  <Button
+                    variant="outline" size="sm"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={isFetching}
+                  >
+                    {isFetching
+                      ? <><Loader2 size={13} className="mr-2 animate-spin" />Loading…</>
+                      : `Load more`
+                    }
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

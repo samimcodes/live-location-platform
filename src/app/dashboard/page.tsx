@@ -16,8 +16,6 @@ import {
   Navigation,
   UserCheck,
   Users2,
-  Calendar,
-  DownloadCloud,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -84,17 +82,6 @@ export default function DashboardPage() {
                 ? `Your location is being shared with ${friends.length} friend${friends.length !== 1 ? "s" : ""}.`
                 : "Location sharing is paused."}
             </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-card text-sm text-muted-foreground hover:shadow-sm">
-              <Calendar size={16} />
-              <span>Last 7 days</span>
-            </button>
-            <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-primary/10 text-sm text-primary hover:brightness-95">
-              <DownloadCloud size={16} />
-              <span>Export</span>
-            </button>
           </div>
         </div>
       </motion.div>

@@ -14,7 +14,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const schema = z.object({
-  newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
 }).refine((d) => d.newPassword === d.confirmPassword, {
   message: 'Passwords do not match',
@@ -62,7 +62,7 @@ export function ResetPasswordForm() {
         <div className="relative">
           <Input
             type={showPass ? 'text' : 'password'}
-            placeholder="Min 6 characters"
+            placeholder="Min 8 characters"
             {...register('newPassword')}
             aria-invalid={!!errors.newPassword}
           />

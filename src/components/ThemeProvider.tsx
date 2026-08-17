@@ -1,38 +1,33 @@
 'use client';
 
 /**
- * ThemeProvider + useTheme
- * ------------------------
- * Lightweight drop-in replacement for next-themes that avoids the
- * React 19 <script> tag warning.
+ * Custom ThemeProvider — drops next-themes entirely.
  *
- * Strategy:
- *  - Reads initial theme from localStorage on mount (client-only)
- *  - Applies "dark" class to <html> element directly
- *  - Listens to system prefers-color-scheme changes
- *  - Persists preference to localStorage
- *  - Exposes the same useTheme() API surface as next-themes
+ * next-themes injects a <script> tag for FOUC prevention which React 19
+ * warns about. This implementation achieves the same result using:
+ *   1. A tiny <script> in globals.css @layer base via data attribute
+ *   2. Client-side localStorage read on mount
+ *   3. Direct classList manipulation on <html>
  *
- * FOUC prevention: a small inline script in globals.css @layer base
- * sets the correct class before React hydrates (no React component needed).
+ * Exposes the same useTheme() API: { theme, resolvedTheme, setTheme, systemTheme, themes }
  */
 
 import React, {
-  createContext, useContext, useState, useEffect,
-  useCallback, useMemo, type ReactNode,
+  createContext, useContext, useState,
+  useEffect, useCallback, useMemo, type ReactNode,
 } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark' | 'system';
 
 interface ThemeContextValue {
   theme: Theme;
   resolvedTheme: 'light' | 'dark';
-  setTheme: (theme: Theme) => void;
+  setTheme: (t: Theme) => void;
   themes: Theme[];
   systemTheme: 'light' | 'dark';
 }
 
-const ThemeContext = createContext<ThemeContextValue>({
+const Ctx = createContext<ThemeContextValue>({
   theme: 'system',
   resolvedTheme: 'light',
   setTheme: () => undefined,
@@ -40,91 +35,84 @@ const ThemeContext = createContext<ThemeContextValue>({
   systemTheme: 'light',
 });
 
-export function useTheme() {
-  return useContext(ThemeContext);
-}
+export const useTheme = () => useContext(Ctx);
 
-interface ThemeProviderProps {
+interface Props {
   children: ReactNode;
   defaultTheme?: Theme;
   storageKey?: string;
+  disableTransitionOnChange?: boolean;
+  // Accept but ignore next-themes compat props
   attribute?: string;
   enableSystem?: boolean;
-  disableTransitionOnChange?: boolean;
 }
 
 export function ThemeProvider({
   children,
-  defaultTheme   = 'system',
-  storageKey     = 'theme',
+  defaultTheme          = 'system',
+  storageKey            = 'theme',
   disableTransitionOnChange = false,
-}: ThemeProviderProps) {
-  const getSystemTheme = useCallback((): 'light' | 'dark' => {
-    if (typeof window === 'undefined') return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }, []);
+}: Props) {
 
-  const [theme, setThemeState] = useState<Theme>(defaultTheme);
+  const getSystem = useCallback((): 'light' | 'dark' =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark' : 'light',
+  []);
+
+  const [theme,       setThemeState] = useState<Theme>(defaultTheme);
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>('light');
 
-  // Hydrate from localStorage on mount
+  // Hydrate from localStorage on mount (client-only)
   useEffect(() => {
     const stored = localStorage.getItem(storageKey) as Theme | null;
     if (stored) setThemeState(stored);
-    setSystemTheme(getSystemTheme());
-  }, [storageKey, getSystemTheme]);
+    setSystemTheme(getSystem());
+  }, [storageKey, getSystem]);
 
-  // Watch system preference
+  // Watch OS preference
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => {
+    const handler = (e: MediaQueryListEvent) =>
       setSystemTheme(e.matches ? 'dark' : 'light');
-    };
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // Apply theme class to <html>
+  // Apply class + color-scheme to <html>
   useEffect(() => {
     const resolved = theme === 'system' ? systemTheme : theme;
     const root = document.documentElement;
 
-    let cleanup: (() => void) | undefined;
+    let restore: (() => void) | undefined;
     if (disableTransitionOnChange) {
-      const style = document.createElement('style');
-      style.textContent = '*,*::before,*::after{transition:none!important}';
-      document.head.appendChild(style);
-      cleanup = () => {
-        window.getComputedStyle(document.body); // force reflow
-        setTimeout(() => document.head.removeChild(style), 1);
+      const s = document.createElement('style');
+      s.textContent = '*,*::before,*::after{transition:none!important}';
+      document.head.appendChild(s);
+      restore = () => {
+        window.getComputedStyle(document.body);
+        setTimeout(() => document.head.removeChild(s), 1);
       };
     }
 
     root.classList.remove('light', 'dark');
     root.classList.add(resolved);
     root.style.colorScheme = resolved;
-
-    cleanup?.();
+    restore?.();
   }, [theme, systemTheme, disableTransitionOnChange]);
 
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
-    try { localStorage.setItem(storageKey, next); } catch { /* ignore */ }
+    try { localStorage.setItem(storageKey, next); } catch { /* quota */ }
   }, [storageKey]);
 
-  const resolvedTheme = theme === 'system' ? systemTheme : theme;
+  const resolvedTheme: 'light' | 'dark' =
+    theme === 'system' ? systemTheme : theme;
 
   const value = useMemo<ThemeContextValue>(() => ({
-    theme,
-    resolvedTheme,
-    setTheme,
+    theme, resolvedTheme, setTheme,
     themes: ['light', 'dark', 'system'],
     systemTheme,
   }), [theme, resolvedTheme, setTheme, systemTheme]);
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
