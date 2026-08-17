@@ -19,9 +19,16 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { LiveMap } from '@/components/map/LiveMap';
+import dynamic from 'next/dynamic';
 import { MapControls } from '@/components/map/MapControls';
 import { FriendMarkerPanel } from '@/components/map/FriendMarkerPanel';
+
+// LiveMap must never render on the server — maplibre-gl uses
+// `new URL(worker, import.meta.url)` which is not Node-compatible.
+const LiveMap = dynamic(
+  () => import('@/components/map/LiveMap').then((m) => m.LiveMap),
+  { ssr: false }
+);
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendsLocations } from '@/hooks/useFriendsLocations';
 import { useLocationStore } from '@/store/useLocationStore';

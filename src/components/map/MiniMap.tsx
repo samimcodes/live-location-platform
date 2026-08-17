@@ -60,6 +60,7 @@ export function MiniMap({
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    if (typeof window === 'undefined') return;
     let mounted = true;
 
     import('maplibre-gl').then((mgl) => {

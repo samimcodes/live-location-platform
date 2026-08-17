@@ -77,6 +77,8 @@ export function useMapLibre({
     // In controlled mode the parent owns the map — do nothing
     if (skipInit) return;
     if (!containerRef.current || mapRef.current) return;
+    // Guard: never import maplibre-gl on the server
+    if (typeof window === 'undefined') return;
 
     let mounted = true;
 

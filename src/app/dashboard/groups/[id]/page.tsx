@@ -17,7 +17,12 @@ import { useFriendsLocations } from '@/hooks/useFriendsLocations';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useAppSelector } from '@/store/store';
 import { useSocketContext } from '@/components/SocketProvider';
-import { LiveMap } from '@/components/map/LiveMap';
+import dynamic from 'next/dynamic';
+
+const LiveMap = dynamic(
+  () => import('@/components/map/LiveMap').then((m) => m.LiveMap),
+  { ssr: false }
+);
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,43 +1,153 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { useTheme } from 'next-themes';
 import { useAppSelector, useAppDispatch } from '@/store/store';
-import { setUser } from '@/store/slices/authSlice';
-import { setTheme } from '@/store/slices/appSlice';
+import { setUser, clearAuth } from '@/store/slices/authSlice';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Lock, Bell, Map, Sun, Moon, Monitor } from 'lucide-react';
+import {
+  User, Lock, MapPin, Sun, Moon, Monitor,
+  Camera, Loader2, AlertTriangle, Check, X,
+} from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { motion } from 'framer-motion';
 import api from '@/lib/axios';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useMutation } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
+// ── Password strength checker ──────────────────────────────────────────────
+interface StrengthRule {
+  label: string;
+  test: (p: string) => boolean;
+}
+
+const PASSWORD_RULES: StrengthRule[] = [
+  { label: 'At least 8 characters',      test: (p) => p.length >= 8 },
+  { label: 'One uppercase letter (A–Z)',  test: (p) => /[A-Z]/.test(p) },
+  { label: 'One number (0–9)',            test: (p) => /[0-9]/.test(p) },
+  { label: 'One special character (!@#…)',test: (p) => /[^A-Za-z0-9]/.test(p) },
+];
+
+function PasswordStrength({ password }: { password: string }) {
+  if (!password) return null;
+  const passed = PASSWORD_RULES.filter((r) => r.test(password)).length;
+  const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-emerald-500'];
+  const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+
+  return (
+    <div className="space-y-2 mt-1">
+      {/* Strength bar */}
+      <div className="flex gap-1">
+        {PASSWORD_RULES.map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'flex-1 h-1 rounded-full transition-all duration-300',
+              i < passed ? colors[passed - 1] : 'bg-muted'
+            )}
+          />
+        ))}
+      </div>
+      {/* Label */}
+      <p className={cn('text-xs font-medium', passed < 2 ? 'text-red-500' : passed < 4 ? 'text-yellow-600' : 'text-emerald-600')}>
+        {labels[passed - 1] ?? 'Too weak'}
+      </p>
+      {/* Rules checklist */}
+      <ul className="space-y-1">
+        {PASSWORD_RULES.map((rule) => {
+          const ok = rule.test(password);
+          return (
+            <li key={rule.label} className={cn('flex items-center gap-1.5 text-xs', ok ? 'text-emerald-600' : 'text-muted-foreground')}>
+              {ok ? <Check size={11} /> : <X size={11} />}
+              {rule.label}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
-  const dispatch = useAppDispatch();
-  const user = useAppSelector((s) => s.auth.user);
-  const theme = useAppSelector((s) => s.app.theme);
+  const dispatch   = useAppDispatch();
+  const router     = useRouter();
+  const { theme, setTheme } = useTheme();
+  const user       = useAppSelector((s) => s.auth.user);
   const { isSharing, setSharing } = useLocationStore();
 
+  // ── Profile form — syncs when Redux user changes ───────────────────────
   const [profile, setProfile] = useState({
-    name: user?.name ?? '',
+    name:  user?.name  ?? '',
     phone: user?.phone ?? '',
-    bio: user?.bio ?? '',
+    bio:   user?.bio   ?? '',
   });
 
-  const [passwords, setPasswords] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
+  useEffect(() => {
+    setProfile({
+      name:  user?.name  ?? '',
+      phone: user?.phone ?? '',
+      bio:   user?.bio   ?? '',
+    });
+  }, [user?.name, user?.phone, user?.bio]);
 
-  // Update profile
+  // ── Avatar upload ──────────────────────────────────────────────────────
+  const fileInputRef  = useRef<HTMLInputElement>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Local preview
+    const reader = new FileReader();
+    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    // Upload — endpoint is /api/v1/upload/single with field name 'file'
+    const formData = new FormData();
+    formData.append('file', file);
+    setUploadingAvatar(true);
+    try {
+      const { data } = await api.post('/upload/single', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const rawUrl: string = data.data.url;
+      // Normalize: if backend returns a relative path like /uploads/…
+      // prefix it with the current origin so next/image can load it.
+      const url = rawUrl.startsWith('http')
+        ? rawUrl
+        : `${window.location.origin}${rawUrl}`;
+
+      // Save avatar URL to profile
+      const { data: profileData } = await api.patch('/users/profile', { avatar: url });
+      if (profileData.success && profileData.data) dispatch(setUser(profileData.data));
+      toast.success('Avatar updated');
+    } catch {
+      toast.error('Failed to upload avatar');
+      setAvatarPreview(null);
+    } finally {
+      setUploadingAvatar(false);
+      // Reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // ── Profile save ───────────────────────────────────────────────────────
   const { mutate: updateProfile, isPending: savingProfile } = useMutation({
     mutationFn: async () => {
-      const { data } = await api.patch('/users/profile', profile);
+      const { data } = await api.patch('/users/profile', {
+        name:  profile.name.trim()  || undefined,
+        phone: profile.phone.trim() || undefined,
+        bio:   profile.bio.trim()   || undefined,
+      });
       return data;
     },
     onSuccess: (data) => {
@@ -47,12 +157,27 @@ export default function SettingsPage() {
     onError: () => toast.error('Failed to update profile'),
   });
 
-  // Update password
+  // ── Password ───────────────────────────────────────────────────────────
+  const [passwords, setPasswords] = useState({
+    currentPassword:  '',
+    newPassword:      '',
+    confirmPassword:  '',
+  });
+
+  const allRulesPassed = PASSWORD_RULES.every((r) => r.test(passwords.newPassword));
+  const passwordsMatch = passwords.newPassword === passwords.confirmPassword;
+  const canChangePassword =
+    passwords.currentPassword &&
+    passwords.newPassword &&
+    passwords.confirmPassword &&
+    allRulesPassed &&
+    passwordsMatch;
+
   const { mutate: updatePassword, isPending: savingPassword } = useMutation({
     mutationFn: async () => {
       const { data } = await api.patch('/auth/update-password', {
         currentPassword: passwords.currentPassword,
-        newPassword: passwords.newPassword,
+        newPassword:     passwords.newPassword,
       });
       return data;
     },
@@ -61,67 +186,121 @@ export default function SettingsPage() {
       setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      toast.error(err.response?.data?.message ?? 'Failed to update password');
+      toast.error(err.response?.data?.message ?? 'Incorrect current password');
     },
   });
 
-  // Toggle location sharing
-  const { mutate: toggleSharing } = useMutation({
+  // ── Location sharing toggle ────────────────────────────────────────────
+  const { mutate: toggleSharing, isPending: togglingSharing } = useMutation({
     mutationFn: async (sharing: boolean) => {
       const { data } = await api.patch('/location/sharing', { sharing });
-      return data;
+      return { data, sharing };
     },
-    onSuccess: (_, sharing) => {
+    onSuccess: ({ sharing }) => {
       setSharing(sharing);
       toast.success(`Location sharing ${sharing ? 'enabled' : 'disabled'}`);
     },
+    onError: () => toast.error('Failed to update sharing preference'),
   });
 
-  const handleThemeChange = (t: 'light' | 'dark' | 'system') => {
-    dispatch(setTheme(t));
-    if (typeof document !== 'undefined') {
-      if (t === 'dark') document.documentElement.classList.add('dark');
-      else if (t === 'light') document.documentElement.classList.remove('dark');
-      else {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.classList.toggle('dark', prefersDark);
-      }
-    }
+  // ── Delete account ─────────────────────────────────────────────────────
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const DELETE_CONFIRM_PHRASE = 'delete my account';
+
+  const { mutate: deleteAccount, isPending: deletingAccount } = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/users/${user?.id}`);
+    },
+    onSuccess: () => {
+      toast.success('Account deleted');
+      localStorage.removeItem('token');
+      dispatch(clearAuth());
+      router.push('/login');
+    },
+    onError: () => toast.error('Failed to delete account'),
+  });
+
+  const handleDeleteAccount = () => {
+    if (deleteConfirmText !== DELETE_CONFIRM_PHRASE) return;
+    deleteAccount();
   };
 
-  const sections = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'security', label: 'Security', icon: Lock },
-    { id: 'location', label: 'Location', icon: Map },
-    { id: 'appearance', label: 'Appearance', icon: Sun },
-  ];
+  // ── Derived display avatar ─────────────────────────────────────────────
+  const displayAvatar = avatarPreview ?? user?.avatar ?? null;
+  const initials      = (user?.name ?? 'U').charAt(0).toUpperCase();
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-5 max-w-2xl">
       <h1 className="text-2xl font-bold">Settings</h1>
 
-      {/* Profile */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+      {/* ── Profile ───────────────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <User size={15} className="text-primary" />
               Profile
             </CardTitle>
-            <CardDescription className="text-xs">Update your display name and contact info</CardDescription>
+            <CardDescription className="text-xs">
+              Update your display name, photo, and contact info
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Avatar placeholder */}
+          <CardContent className="space-y-5">
+            {/* Avatar + basic info */}
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
-                {user?.name?.charAt(0) ?? 'U'}
+              {/* Avatar with upload overlay */}
+              <div className="relative group shrink-0">
+                <div className="h-16 w-16 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                  {displayAvatar ? (
+                    <Image
+                      src={displayAvatar}
+                      alt={user?.name ?? 'Avatar'}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span className="text-white text-2xl font-bold">{initials}</span>
+                  )}
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl">
+                      <Loader2 size={18} className="animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+                {/* Upload button overlay */}
+                {!uploadingAvatar && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute inset-0 bg-black/0 group-hover:bg-black/40 rounded-2xl transition-all flex items-center justify-center"
+                    title="Change avatar"
+                  >
+                    <Camera size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarSelect}
+                />
               </div>
+
               <div>
                 <p className="font-semibold">{user?.name}</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs text-primary hover:underline mt-0.5"
+                  disabled={uploadingAvatar}
+                >
+                  Change photo
+                </button>
               </div>
             </div>
 
+            {/* Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Full Name</Label>
@@ -136,7 +315,7 @@ export default function SettingsPage() {
                 <Input
                   value={profile.phone}
                   onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  placeholder="+1 234 567 8900"
+                  placeholder="+880 1234 567890"
                 />
               </div>
             </div>
@@ -148,15 +327,22 @@ export default function SettingsPage() {
                 placeholder="A short bio about yourself"
               />
             </div>
-            <Button size="sm" onClick={() => updateProfile()} disabled={savingProfile}>
-              {savingProfile ? 'Saving…' : 'Save Changes'}
+            <Button
+              size="sm"
+              onClick={() => updateProfile()}
+              disabled={savingProfile || !profile.name.trim()}
+            >
+              {savingProfile
+                ? <><Loader2 size={13} className="mr-2 animate-spin" />Saving…</>
+                : 'Save Changes'
+              }
             </Button>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Password */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}>
+      {/* ── Security ──────────────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
@@ -173,6 +359,7 @@ export default function SettingsPage() {
                 value={passwords.currentPassword}
                 onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
                 placeholder="••••••••"
+                autoComplete="current-password"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -182,8 +369,10 @@ export default function SettingsPage() {
                   type="password"
                   value={passwords.newPassword}
                   onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
-                  placeholder="Min 6 characters"
+                  placeholder="Min 8 characters"
+                  autoComplete="new-password"
                 />
+                <PasswordStrength password={passwords.newPassword} />
               </div>
               <div className="space-y-1.5">
                 <Label>Confirm New Password</Label>
@@ -192,52 +381,64 @@ export default function SettingsPage() {
                   value={passwords.confirmPassword}
                   onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
                   placeholder="••••••••"
+                  autoComplete="new-password"
+                  className={cn(
+                    passwords.confirmPassword && !passwordsMatch
+                      ? 'border-destructive focus-visible:ring-destructive'
+                      : ''
+                  )}
                 />
+                {passwords.confirmPassword && !passwordsMatch && (
+                  <p className="text-xs text-destructive">Passwords do not match</p>
+                )}
+                {passwords.confirmPassword && passwordsMatch && passwords.newPassword && (
+                  <p className="text-xs text-emerald-600 flex items-center gap-1">
+                    <Check size={11} /> Passwords match
+                  </p>
+                )}
               </div>
             </div>
             <Button
               size="sm"
               onClick={() => updatePassword()}
-              disabled={
-                savingPassword ||
-                !passwords.currentPassword ||
-                !passwords.newPassword ||
-                passwords.newPassword !== passwords.confirmPassword
-              }
+              disabled={!canChangePassword || savingPassword}
             >
-              {savingPassword ? 'Updating…' : 'Update Password'}
+              {savingPassword
+                ? <><Loader2 size={13} className="mr-2 animate-spin" />Updating…</>
+                : 'Update Password'
+              }
             </Button>
-            {passwords.newPassword && passwords.confirmPassword && passwords.newPassword !== passwords.confirmPassword && (
-              <p className="text-xs text-destructive">Passwords do not match</p>
-            )}
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Location Sharing */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
+      {/* ── Location Privacy ──────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
-              <Map size={15} className="text-primary" />
+              <MapPin size={15} className="text-primary" />
               Location Privacy
             </CardTitle>
-            <CardDescription className="text-xs">Control who can see your location</CardDescription>
+            <CardDescription className="text-xs">
+              Control who can see your live location
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between py-2">
+          <CardContent>
+            <div className="flex items-center justify-between py-1">
               <div>
                 <p className="text-sm font-medium">Share my location</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {isSharing
                     ? 'Your friends can see you on the map'
-                    : 'You are invisible on your friends\' maps'}
+                    : "You are invisible on your friends' maps"}
                 </p>
               </div>
               <button
                 onClick={() => toggleSharing(!isSharing)}
+                disabled={togglingSharing}
                 className={cn(
-                  'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none',
+                  'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none disabled:opacity-60',
                   isSharing ? 'bg-primary' : 'bg-muted-foreground/30'
                 )}
                 role="switch"
@@ -253,8 +454,8 @@ export default function SettingsPage() {
         </Card>
       </motion.div>
 
-      {/* Appearance */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}>
+      {/* ── Appearance ────────────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
         <Card>
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
@@ -266,13 +467,13 @@ export default function SettingsPage() {
           <CardContent>
             <div className="flex gap-3">
               {([
-                { value: 'light', label: 'Light', icon: Sun },
-                { value: 'dark', label: 'Dark', icon: Moon },
+                { value: 'light',  label: 'Light',  icon: Sun     },
+                { value: 'dark',   label: 'Dark',   icon: Moon    },
                 { value: 'system', label: 'System', icon: Monitor },
               ] as const).map(({ value, label, icon: Icon }) => (
                 <button
                   key={value}
-                  onClick={() => handleThemeChange(value)}
+                  onClick={() => setTheme(value)}
                   className={cn(
                     'flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border transition-all',
                     theme === value
@@ -284,6 +485,52 @@ export default function SettingsPage() {
                   <span className="text-xs font-medium">{label}</span>
                 </button>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ── Danger Zone ───────────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2 text-destructive">
+              <AlertTriangle size={15} />
+              Danger Zone
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Permanently delete your account and all your data
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+              <p className="text-sm font-medium">Delete Account</p>
+              <p className="text-xs text-muted-foreground">
+                This will permanently delete your profile, location history, saved places, groups, and all other data.
+                <strong className="text-foreground"> This action cannot be undone.</strong>
+              </p>
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Type <span className="font-mono font-bold text-destructive">{DELETE_CONFIRM_PHRASE}</span> to confirm
+                </Label>
+                <Input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder={DELETE_CONFIRM_PHRASE}
+                  className="border-destructive/40 focus-visible:ring-destructive"
+                />
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={deleteConfirmText !== DELETE_CONFIRM_PHRASE || deletingAccount}
+                onClick={handleDeleteAccount}
+              >
+                {deletingAccount
+                  ? <><Loader2 size={13} className="mr-2 animate-spin" />Deleting…</>
+                  : 'Delete my account'
+                }
+              </Button>
             </div>
           </CardContent>
         </Card>
