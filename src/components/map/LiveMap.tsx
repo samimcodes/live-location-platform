@@ -24,6 +24,7 @@ import { useMapLibre, type UseMapLibreReturn } from '@/hooks/useMapLibre';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useAppSelector } from '@/store/store';
 import { useFriends } from '@/hooks/useFriends';
+import { MapControls, type MapControlsProps } from '@/components/map/MapControls';
 import {
   createMarkerElement,
   createAccuracyElement,
@@ -35,7 +36,7 @@ import {
   type LatLng,
 } from '@/lib/mapUtils';
 import { cn } from '@/lib/utils';
-import { MapPin, WifiOff, Loader2 } from 'lucide-react';
+import { MapPin, WifiOff } from 'lucide-react';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyMarker = any;
@@ -68,9 +69,10 @@ export interface LiveMapProps extends ControlledProps {
   focusUserId?: number;
   savedPlaces?: SavedPlacePoint[];
   hideLoadingOverlay?: boolean;
-  /** Navigation controls — pass false for thumbnails. */
   controls?: boolean;
   zoom?: number;
+  /** Props for the overlay MapControls. When provided, controls render inside the canvas. */
+  overlayControls?: Omit<MapControlsProps, 'className'>;
 }
 
 export function LiveMap({
@@ -81,6 +83,7 @@ export function LiveMap({
   hideLoadingOverlay = false,
   controls = true,
   zoom,
+  overlayControls,
   containerRef: extContainerRef,
   mapRef:       extMapRef,
   mapLoaded:    extMapLoaded,
@@ -132,8 +135,7 @@ export function LiveMap({
     if (!mapLoaded || !myLocation) return;
     const { latitude, longitude, accuracy } = myLocation;
     if (!isValidLatLng(latitude, longitude)) return;
-    const map = mapRef.current;
-    if (!map) return;
+    if (!mapRef.current) return;
 
     getMgl().then(({ Marker, Popup }) => {
       if (!mapRef.current) return;
@@ -360,21 +362,56 @@ export function LiveMap({
       {/* Map canvas */}
       <div ref={containerRef} className="w-full h-full" />
 
-      {/* Loading overlay */}
-      {!mapLoaded && !hideLoadingOverlay && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/80 backdrop-blur-sm rounded-2xl z-10">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 size={28} className="animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Loading map…</p>
+      {/* ── Overlay controls (floating inside canvas, top bar) ──── */}
+      {overlayControls && mapLoaded && (
+        <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
+          <div className="m-3 pointer-events-auto rounded-xl overflow-hidden
+            bg-card/80 dark:bg-card/75 backdrop-blur-xl
+            border border-white/20 dark:border-white/10
+            shadow-lg shadow-black/10">
+            <MapControls {...overlayControls} />
           </div>
         </div>
       )}
 
-      {/* No-location hint */}
+      {/* ── Loading skeleton ──────────────────────────────────────── */}
+      {!mapLoaded && !hideLoadingOverlay && (
+        <div className="absolute inset-0 z-10 rounded-2xl overflow-hidden bg-muted">
+          {/* Fake map tiles grid */}
+          <div className="absolute inset-0 grid grid-cols-4 grid-rows-3 opacity-30">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                key={i}
+                className="border border-muted-foreground/10 animate-pulse"
+                style={{ animationDelay: `${(i % 4) * 120}ms` }}
+              />
+            ))}
+          </div>
+          {/* Fake roads */}
+          <svg className="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
+            <line x1="0" y1="40%" x2="100%" y2="35%" stroke="currentColor" strokeWidth="2" />
+            <line x1="0" y1="65%" x2="100%" y2="70%" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="30%" y1="0" x2="25%" y2="100%" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="70%" y1="0" x2="72%" y2="100%" stroke="currentColor" strokeWidth="1" />
+          </svg>
+          {/* Spinner */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+            <div className="relative">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <MapPin size={22} className="text-primary" />
+              </div>
+              <div className="absolute inset-0 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+            </div>
+            <p className="text-sm font-medium text-muted-foreground">Loading map…</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── No-location hint ─────────────────────────────────────── */}
       {mapLoaded && !myLocation && showFriends && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-          <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border rounded-full px-4 py-2 shadow-lg">
-            <MapPin size={13} className="text-muted-foreground shrink-0" />
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border/60 rounded-full px-4 py-2 shadow-lg">
+            <MapPin size={12} className="text-muted-foreground shrink-0" />
             <p className="text-xs text-muted-foreground whitespace-nowrap">
               Enable location sharing to see your position
             </p>

@@ -3,14 +3,14 @@
 /**
  * MapControls
  * -----------
- * Controls bar rendered above the LiveMap canvas.
+ * Floating overlay bar rendered INSIDE the map canvas (absolute positioned).
+ * Glass-morphic style — backdrop blur + semi-transparent background.
  *
- * Fix: useTransition does not support async callbacks in React 19 concurrent
- * mode. Replaced with a plain useState isPending flag + try/finally pattern.
+ * Rendered by LiveMap via the `overlayControls` prop so it sits on top of
+ * the map tiles rather than above the canvas.
  */
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Radio, Maximize2, Minimize2, LocateFixed, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import api from '@/lib/axios';
@@ -20,11 +20,41 @@ import type { LatLng } from '@/lib/mapUtils';
 
 export interface MapControlsProps {
   activeFriendCount: number;
-  onFitAll: () => void;
+  onFitAll:     () => void;
   onFullscreen: () => void;
   isFullscreen: boolean;
-  allPoints: LatLng[];
+  allPoints:    LatLng[];
+  /** Position inside the map canvas */
   className?: string;
+}
+
+// ── Icon button ────────────────────────────────────────────────────────────
+function MapBtn({
+  onClick, title, children, active, danger,
+}: {
+  onClick: () => void;
+  title:   string;
+  children: React.ReactNode;
+  active?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={cn(
+        'h-8 w-8 rounded-lg flex items-center justify-center transition-all',
+        'backdrop-blur-md border shadow-sm text-xs font-semibold',
+        active
+          ? 'bg-primary text-primary-foreground border-primary/60 shadow-primary/20'
+          : danger
+          ? 'bg-background/80 text-destructive border-border/50 hover:bg-destructive/10'
+          : 'bg-background/80 text-foreground border-border/50 hover:bg-background/95',
+      )}
+    >
+      {children}
+    </button>
+  );
 }
 
 export function MapControls({
@@ -42,12 +72,10 @@ export function MapControls({
     if (isPending) return;
     const next = !isSharing;
     setIsPending(true);
-    // Optimistic update immediately
     setSharing(next);
     try {
       await api.patch('/location/sharing', { sharing: next });
     } catch {
-      // Roll back on network failure
       setSharing(!next);
       toast.error('Failed to update sharing preference');
     } finally {
@@ -56,61 +84,54 @@ export function MapControls({
   };
 
   return (
-    <div className={cn('flex items-center justify-between gap-3 flex-wrap', className)}>
-      {/* ── Left: status badges ─────────────────────────────────── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <div
+    <div className={cn('flex items-center justify-between gap-2 px-3 py-2', className)}>
+
+      {/* ── Left: live status pill ───────────────────────────────── */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleToggleSharing}
+          disabled={isPending}
+          title={isSharing ? 'Pause location sharing' : 'Start sharing location'}
           className={cn(
-            'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border select-none',
+            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold',
+            'backdrop-blur-md border shadow-sm transition-all select-none',
             isSharing
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900'
-              : 'bg-muted text-muted-foreground border-border'
+              ? 'bg-emerald-500/90 text-white border-emerald-400/60 shadow-emerald-500/20'
+              : 'bg-background/80 text-muted-foreground border-border/50 hover:bg-background/95',
           )}
         >
-          <span
-            className={cn(
-              'h-1.5 w-1.5 rounded-full',
-              isSharing ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'
-            )}
+          <Radio
+            size={11}
+            className={isSharing && !isPending ? 'animate-pulse' : ''}
           />
-          {isSharing ? 'Sharing your location' : 'Location hidden'}
-        </div>
+          {isPending ? 'Saving…' : isSharing ? 'Live' : 'Paused'}
+        </button>
 
         {activeFriendCount > 0 && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900">
+          <div className={cn(
+            'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold',
+            'backdrop-blur-md border shadow-sm',
+            'bg-background/80 text-foreground border-border/50',
+          )}>
             <Users size={11} />
-            {activeFriendCount} friend{activeFriendCount !== 1 ? 's' : ''} on map
+            {activeFriendCount}
           </div>
         )}
       </div>
 
-      {/* ── Right: action buttons ───────────────────────────────── */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* ── Right: action buttons ────────────────────────────────── */}
+      <div className="flex items-center gap-1.5">
         {allPoints.length > 1 && (
-          <Button variant="outline" size="sm" onClick={onFitAll} title="Fit all markers in view">
-            <LocateFixed size={13} className="mr-1.5" />
-            Fit all
-          </Button>
+          <MapBtn onClick={onFitAll} title="Fit all markers">
+            <LocateFixed size={14} />
+          </MapBtn>
         )}
-
-        <Button
-          variant="outline"
-          size="icon-sm"
+        <MapBtn
           onClick={onFullscreen}
           title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
         >
-          {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-        </Button>
-
-        <Button
-          variant={isSharing ? 'outline' : 'default'}
-          size="sm"
-          onClick={handleToggleSharing}
-          disabled={isPending}
-        >
-          <Radio size={13} className="mr-1.5" />
-          {isPending ? 'Saving…' : isSharing ? 'Pause' : 'Share location'}
-        </Button>
+          {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+        </MapBtn>
       </div>
     </div>
   );
