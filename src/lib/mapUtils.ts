@@ -38,17 +38,22 @@ export const DEFAULT_ZOOM = parseFloat(
 );
 
 // ── Marker colour palette ──────────────────────────────────────────────────
+// Using CSS custom properties so markers respect the design token theme.
+// The inline style.background strings support var() in all modern browsers.
 export const FRIEND_GRADIENTS = [
-  { from: '#10b981', to: '#059669' }, // emerald
-  { from: '#3b82f6', to: '#2563eb' }, // blue
-  { from: '#f59e0b', to: '#d97706' }, // amber
-  { from: '#ec4899', to: '#db2777' }, // pink
-  { from: '#06b6d4', to: '#0891b2' }, // cyan
-  { from: '#8b5cf6', to: '#7c3aed' }, // violet
-  { from: '#f97316', to: '#ea580c' }, // orange
+  { from: 'var(--chart-5)',  to: 'color-mix(in oklch, var(--chart-5) 80%, black)'  }, // emerald
+  { from: 'var(--chart-3)',  to: 'color-mix(in oklch, var(--chart-3) 80%, black)'  }, // blue/indigo
+  { from: 'var(--chart-4)',  to: 'color-mix(in oklch, var(--chart-4) 80%, black)'  }, // amber
+  { from: 'var(--chart-2)',  to: 'color-mix(in oklch, var(--chart-2) 80%, black)'  }, // pink/violet
+  { from: 'var(--chart-1)',  to: 'color-mix(in oklch, var(--chart-1) 80%, black)'  }, // purple
+  { from: 'var(--ring)',     to: 'color-mix(in oklch, var(--ring) 80%, black)'     }, // ring/violet
+  { from: 'var(--primary)',  to: 'color-mix(in oklch, var(--primary) 80%, black)'  }, // primary
 ] as const;
 
-export const ME_GRADIENT = { from: '#6366f1', to: '#8b5cf6' }; // indigo→purple
+export const ME_GRADIENT = {
+  from: 'var(--primary)',
+  to:   'color-mix(in oklch, var(--primary) 70%, var(--chart-2))',
+};
 
 /** Pick a stable gradient for a friend based on their numeric id. */
 export function friendGradient(userId: number): { from: string; to: string } {
@@ -113,17 +118,21 @@ export function createAccuracyElement(): HTMLDivElement {
 // ── Saved-place marker element ─────────────────────────────────────────────
 export interface PlaceMarkerOptions {
   color: string;
-  icon: string; // Unicode emoji or single letter
+  icon: string; // Unicode emoji or single letter — must be sanitized before passing
+  name?: string; // Accessible label for aria-label
 }
 
 export function createPlaceMarkerElement(opts: PlaceMarkerOptions): HTMLDivElement {
+  // Sanitize: only allow emoji / short text — strip any HTML tags
+  const safeIcon = escapeHtml(opts.icon.slice(0, 4)); // max 4 chars, no HTML
   const el = document.createElement('div');
   el.className = 'localink-place-marker';
+  if (opts.name) el.setAttribute('aria-label', opts.name);
   el.innerHTML = /* html */ `
-    <div class="place-pin" style="background:${opts.color};">
-      <span class="place-icon">${opts.icon}</span>
+    <div class="place-pin" style="background:${escapeHtml(opts.color)};">
+      <span class="place-icon">${safeIcon}</span>
     </div>
-    <div class="place-arrow" style="background:${opts.color};"></div>`;
+    <div class="place-arrow" style="background:${escapeHtml(opts.color)};"></div>`;
   return el;
 }
 
@@ -179,14 +188,26 @@ export function accuracyToPixels(
 }
 
 // ── Popup HTML builders ────────────────────────────────────────────────────
+
+/** Escape HTML special characters to prevent XSS in innerHTML popup strings. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function buildMePopup(name: string, city?: string, lat?: number, lng?: number): string {
-  const loc =
-    city ?? (lat !== undefined && lng !== undefined ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : '');
+  const safeName = escapeHtml(name);
+  const rawLoc = city ?? (lat !== undefined && lng !== undefined ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : '');
+  const safeLoc = rawLoc ? escapeHtml(rawLoc) : '';
   return /* html */ `
     <div style="padding:10px 12px;min-width:140px">
-      <p style="font-weight:700;margin:0 0 4px;font-size:13px">${name}</p>
-      ${loc ? `<p style="color:#6b7280;font-size:11px;margin:0">${loc}</p>` : ''}
-      <p style="color:#6366f1;font-size:11px;margin:4px 0 0;font-weight:500">● You</p>
+      <p style="font-weight:700;margin:0 0 4px;font-size:13px">${safeName}</p>
+      ${safeLoc ? `<p style="color:var(--muted-foreground,#6b7280);font-size:11px;margin:0">${safeLoc}</p>` : ''}
+      <p style="color:var(--primary,#6366f1);font-size:11px;margin:4px 0 0;font-weight:500">● You</p>
     </div>`;
 }
 
@@ -199,23 +220,27 @@ export function buildFriendPopup(
   speed?: number,
   timestamp?: string
 ): string {
-  const loc =
-    city ?? (lat !== undefined && lng !== undefined ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : '');
+  const safeName = escapeHtml(name);
+  const rawLoc = city ?? (lat !== undefined && lng !== undefined ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : '');
+  const safeLoc = rawLoc ? escapeHtml(rawLoc) : '';
   const speedStr =
     speed !== undefined && speed > 0 ? `${(speed * 3.6).toFixed(0)} km/h` : null;
   const timeStr = timestamp
     ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : null;
+  // online/offline use CSS custom properties so they respect the theme
+  const onlineColor   = isOnline ? 'var(--chart-5,#10b981)' : 'var(--muted-foreground,#9ca3af)';
+  const secondaryColor = 'var(--muted-foreground,#9ca3af)';
   return /* html */ `
     <div style="padding:10px 12px;min-width:140px">
-      <p style="font-weight:700;margin:0 0 4px;font-size:13px">${name}</p>
-      ${loc ? `<p style="color:#6b7280;font-size:11px;margin:0 0 3px">${loc}</p>` : ''}
-      ${speedStr ? `<p style="color:#6b7280;font-size:11px;margin:0 0 3px">🚗 ${speedStr}</p>` : ''}
+      <p style="font-weight:700;margin:0 0 4px;font-size:13px">${safeName}</p>
+      ${safeLoc ? `<p style="color:${secondaryColor};font-size:11px;margin:0 0 3px">${safeLoc}</p>` : ''}
+      ${speedStr ? `<p style="color:${secondaryColor};font-size:11px;margin:0 0 3px">🚗 ${escapeHtml(speedStr)}</p>` : ''}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px">
-        <span style="color:${isOnline ? '#10b981' : '#9ca3af'};font-size:11px;font-weight:500">
+        <span style="color:${onlineColor};font-size:11px;font-weight:500">
           ${isOnline ? '● Online' : '○ Offline'}
         </span>
-        ${timeStr ? `<span style="color:#9ca3af;font-size:10px">${timeStr}</span>` : ''}
+        ${timeStr ? `<span style="color:${secondaryColor};font-size:10px">${escapeHtml(timeStr)}</span>` : ''}
       </div>
     </div>`;
 }

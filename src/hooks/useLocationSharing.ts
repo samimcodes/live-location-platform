@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSocketContext } from '@/components/SocketProvider';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useAppSelector } from '@/store/store';
@@ -11,10 +11,17 @@ const LOCATION_OPTIONS: PositionOptions = {
   timeout: 10_000,
 };
 
-export function useLocationSharing() {
+export interface LocationSharingResult {
+  isSharing: boolean;
+  /** Set when the browser denies or fails to provide geolocation. */
+  geoError: GeolocationPositionError | null;
+}
+
+export function useLocationSharing(): LocationSharingResult {
   const { emit } = useSocketContext();
   const { isSharing, setMyLocation, setWatchId, watchId } = useLocationStore();
   const { isAuthenticated, user } = useAppSelector((s) => s.auth);
+  const [geoError, setGeoError] = useState<GeolocationPositionError | null>(null);
 
   // Keep refs so callbacks never go stale without causing re-renders
   const watchIdRef   = useRef<number | null>(watchId);
@@ -43,8 +50,13 @@ export function useLocationSharing() {
 
     if (!navigator.geolocation) return;
 
+    // Clear any previous error when starting a new watch
+    setGeoError(null);
+
     const id = navigator.geolocation.watchPosition(
       (position) => {
+        // Clear any previous error on success
+        setGeoError(null);
         const payload = {
           userId:    userIdRef.current,
           latitude:  position.coords.latitude,
@@ -57,7 +69,11 @@ export function useLocationSharing() {
         setMyLocation(payload);
         emit('location:update', payload);
       },
-      (err) => console.warn('Geolocation error:', err.message),
+      (err) => {
+        // Surface the error so the UI can show a permissions prompt or warning
+        setGeoError(err);
+        console.warn('Geolocation error:', err.message);
+      },
       LOCATION_OPTIONS
     );
 
@@ -71,5 +87,5 @@ export function useLocationSharing() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isSharing]);
 
-  return { isSharing };
+  return { isSharing, geoError };
 }

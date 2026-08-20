@@ -36,7 +36,8 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
   }
 
   try {
-    const secret = process.env.JWT_SECRET || 'fallback_secret';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET environment variable is not set');
     const decoded = jwt.verify(token, secret) as JwtPayload;
     req.user = decoded;
     next();
@@ -61,7 +62,8 @@ export const optionalAuth = (req: AuthRequest, _res: Response, next: NextFunctio
 
   if (token) {
     try {
-      const secret = process.env.JWT_SECRET || 'fallback_secret';
+      const secret = process.env.JWT_SECRET;
+      if (!secret) throw new Error('JWT_SECRET environment variable is not set');
       const decoded = jwt.verify(token, secret) as JwtPayload;
       req.user = decoded;
     } catch {

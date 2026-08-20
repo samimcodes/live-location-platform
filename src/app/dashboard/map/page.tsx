@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect, Suspense } from 'react';
+import React, { useState, useCallback, useRef, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { FriendMarkerPanel } from '@/components/map/FriendMarkerPanel';
@@ -42,18 +42,23 @@ function MapPageInner() {
     flyTo, fitToPoints, toggleFullscreen, isFullscreen,
   } = useMapLibre({ controls: true });
 
-  // Collect all visible points for the "Fit all" action
-  const allPoints: LatLng[] = [];
-  if (myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude))
-    allPoints.push({ latitude: myLocation.latitude, longitude: myLocation.longitude });
-  friendsLocations.forEach((loc) => {
-    if (isValidLatLng(loc.latitude, loc.longitude))
-      allPoints.push({ latitude: loc.latitude, longitude: loc.longitude });
-  });
+  // Memoize allPoints so it only recalculates when locations actually change,
+  // preventing unnecessary LiveMap re-renders on every unrelated state update.
+  const allPoints = useMemo<LatLng[]>(() => {
+    const pts: LatLng[] = [];
+    if (myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude))
+      pts.push({ latitude: myLocation.latitude, longitude: myLocation.longitude });
+    friendsLocations.forEach((loc) => {
+      if (isValidLatLng(loc.latitude, loc.longitude))
+        pts.push({ latitude: loc.latitude, longitude: loc.longitude });
+    });
+    return pts;
+  }, [myLocation, friendsLocations]);
 
-  const activeFriendCount = friends.filter(
-    (f) => f.sharingLocation && friendsLocations.has(f.id)
-  ).length;
+  const activeFriendCount = useMemo(
+    () => friends.filter((f) => f.sharingLocation && friendsLocations.has(f.id)).length,
+    [friends, friendsLocations]
+  );
 
   allPointsRef.current = allPoints;
 
@@ -134,7 +139,7 @@ function MapPageInner() {
                 <div className="relative">
                   <Users size={16} className="text-foreground" />
                   {activeFriendCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-emerald-500 text-white text-[8px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-chart-5 text-white text-[8px] font-bold flex items-center justify-center">
                       {activeFriendCount > 9 ? '9+' : activeFriendCount}
                     </span>
                   )}

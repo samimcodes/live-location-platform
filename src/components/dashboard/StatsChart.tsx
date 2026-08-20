@@ -22,9 +22,19 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function StatsChart({ data, color = "#7c3aed", height = 160 }: Props) {
+export default function StatsChart({ data, color, height = 160 }: Props) {
   const uid    = useId();
   const gradId = `chart-grad-${uid.replace(/:/g, "")}`;
+
+  // Resolve CSS variable at render time so Recharts SVG attrs get a real color value.
+  // Falls back to the token's own value string if getComputedStyle is unavailable (SSR).
+  const resolvedColor = React.useMemo(() => {
+    if (typeof window === "undefined") return "oklch(0.65 0.2 280)"; // --chart-1 light value
+    if (color) return color;
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue("--chart-1")
+      .trim() || "oklch(0.65 0.2 280)";
+  }, [color]);
 
   return (
     <div style={{ height }}>
@@ -32,8 +42,8 @@ export default function StatsChart({ data, color = "#7c3aed", height = 160 }: Pr
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor={color} stopOpacity={0.2} />
-              <stop offset="100%" stopColor={color} stopOpacity={0}   />
+              <stop offset="0%"   stopColor={resolvedColor} stopOpacity={0.2} />
+              <stop offset="100%" stopColor={resolvedColor} stopOpacity={0}   />
             </linearGradient>
           </defs>
           <CartesianGrid
@@ -56,15 +66,15 @@ export default function StatsChart({ data, color = "#7c3aed", height = 160 }: Pr
             tickLine={false}
             allowDecimals={false}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: color, strokeWidth: 1, strokeDasharray: "4 4" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: resolvedColor, strokeWidth: 1, strokeDasharray: "4 4" }} />
           <Area
             type="monotone"
             dataKey="value"
-            stroke={color}
+            stroke={resolvedColor}
             fill={`url(#${gradId})`}
             strokeWidth={2}
             dot={false}
-            activeDot={{ r: 4, fill: color, stroke: "white", strokeWidth: 2 }}
+            activeDot={{ r: 4, fill: resolvedColor, stroke: "white", strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>

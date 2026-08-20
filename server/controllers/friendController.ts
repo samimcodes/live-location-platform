@@ -1,14 +1,10 @@
 import { Response } from 'express';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { FriendService } from '../services/friendService';
 import { NotificationService } from '../services/notificationService';
 import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { AuthRequest } from '../middlewares/authMiddleware';
-
-// Single shared instance — avoids connection-pool exhaustion from
-// creating a new PrismaClient per request in respondToRequest.
-const prisma = new PrismaClient();
 
 export class FriendController {
   static searchUsers = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -26,6 +22,10 @@ export class FriendController {
     const { receiverId, message } = req.body as { receiverId?: number; message?: string };
     if (!receiverId) {
       sendResponse(res, { statusCode: 400, message: 'receiverId is required' });
+      return;
+    }
+    if (message !== undefined && message.length > 500) {
+      sendResponse(res, { statusCode: 400, message: 'Message must be 500 characters or fewer' });
       return;
     }
 
@@ -63,27 +63,21 @@ export class FriendController {
 
     const result = await FriendService.respondToRequest(Number(id), userId, action);
 
-    if (action === 'ACCEPTED') {
-      // Reuse the module-level prisma instance — no connection leak
-      const original = await prisma.friendRequest.findUnique({
-        where: { id: Number(id) },
+    if (action === 'ACCEPTED' && result.senderId) {
+      // senderId is returned by the service — no extra DB query needed
+      req.io?.to(`user:${result.senderId}`).emit('notification', {
+        type: 'FRIEND_ACCEPTED',
+        message: 'Your friend request was accepted',
+        data: { userId },
       });
 
-      if (original) {
-        req.io?.to(`user:${original.senderId}`).emit('notification', {
-          type: 'FRIEND_ACCEPTED',
-          message: 'Your friend request was accepted',
-          data: { userId },
-        });
-
-        await NotificationService.create({
-          userId: original.senderId,
-          type: 'FRIEND_ACCEPTED',
-          title: 'Friend Request Accepted',
-          body: 'Your friend request was accepted',
-          data: { userId } as Prisma.InputJsonValue,
-        });
-      }
+      await NotificationService.create({
+        userId: result.senderId,
+        type: 'FRIEND_ACCEPTED',
+        title: 'Friend Request Accepted',
+        body: 'Your friend request was accepted',
+        data: { userId } as Prisma.InputJsonValue,
+      });
     }
 
     sendResponse(res, { statusCode: 200, message: result.message });
@@ -125,22 +119,29 @@ export class FriendController {
     const userId = req.user!.userId;
     const result = await FriendService.acceptAllRequests(userId);
 
-    // Notify every sender that their request was accepted
+    // Notify every sender in parallel — avoid sequential awaits in a loop
     if (result.senderIds?.length) {
-      for (const senderId of result.senderIds) {
-        req.io?.to(`user:${senderId}`).emit('notification', {
-          type: 'FRIEND_ACCEPTED',
-          message: 'Your friend request was accepted',
-          data: { userId },
-        });
-        await NotificationService.create({
-          userId: senderId,
-          type: 'FRIEND_ACCEPTED',
-          title: 'Friend Request Accepted',
-          body: 'Your friend request was accepted',
-          data: { userId } as Prisma.InputJsonValue,
-        });
-      }
+      const event = {
+        type: 'FRIEND_ACCEPTED',
+        message: 'Your friend request was accepted',
+        data: { userId },
+      };
+      // Fire socket emits immediately (non-blocking)
+      result.senderIds.forEach((senderId) => {
+        req.io?.to(`user:${senderId}`).emit('notification', event);
+      });
+      // Persist notifications concurrently
+      await Promise.all(
+        result.senderIds.map((senderId) =>
+          NotificationService.create({
+            userId: senderId,
+            type: 'FRIEND_ACCEPTED',
+            title: 'Friend Request Accepted',
+            body: 'Your friend request was accepted',
+            data: { userId } as Prisma.InputJsonValue,
+          })
+        )
+      );
     }
 
     sendResponse(res, {

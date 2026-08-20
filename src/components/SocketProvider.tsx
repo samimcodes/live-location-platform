@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useCallback } from 'react';
 import { Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
@@ -122,9 +122,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isAuthenticated, token, updateFriendLocation, removeFriendLocation, addNotification, qc]);
 
-  const emit = (event: string, data?: unknown) => {
+  // Stable emit — wrapped in useCallback so the function reference stays the
+  // same across re-renders, preventing unnecessary effect re-runs in consumers.
+  const emit = useCallback((event: string, data?: unknown) => {
     socketRef.current?.emit(event, data);
-  };
+  }, []);
 
   return (
     <SocketContext.Provider value={{ socket: socketRef.current, emit }}>

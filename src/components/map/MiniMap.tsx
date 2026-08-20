@@ -50,7 +50,7 @@ export function MiniMap({
   zoom = 13,
   markers = [],
   routeCoords,
-  routeColor = '#6366f1',
+  routeColor = 'var(--primary,oklch(0.55 0.2 280))',
   className,
   controls = false,
 }: MiniMapProps) {
@@ -58,8 +58,17 @@ export function MiniMap({
   const mapRef = useRef<AnyMap | null>(null) as React.MutableRefObject<AnyMap | null>;
   const [loaded, setLoaded] = useState(false);
 
+  // Re-centre and re-drop markers when center/zoom/markers change.
+  // We destroy and recreate the map instance because MapLibre GL does not
+  // expose a simple "update all layers" API on a static thumbnail.
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    // Tear down any existing map so the effect runs fresh on prop changes
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+      setLoaded(false);
+    }
+    if (!containerRef.current) return;
     if (typeof window === 'undefined') return;
     let mounted = true;
 
@@ -91,7 +100,7 @@ export function MiniMap({
           const el = document.createElement('div');
           el.style.cssText = `
             width:12px;height:12px;border-radius:50%;
-            background:${color ?? '#6366f1'};
+            background:${color ?? 'var(--primary,oklch(0.55 0.2 280))'};
             border:2px solid white;
             box-shadow:0 2px 4px rgba(0,0,0,.3);`;
           new mgl.Marker({ element: el }).setLngLat([longitude, latitude]).addTo(map);
@@ -129,7 +138,7 @@ export function MiniMap({
           const startEl = document.createElement('div');
           startEl.style.cssText = `
             width:10px;height:10px;border-radius:50%;
-            background:#10b981;border:2px solid white;
+            background:var(--chart-5,oklch(0.8 0.15 150));border:2px solid white;
             box-shadow:0 2px 4px rgba(0,0,0,.3);`;
           new mgl.Marker({ element: startEl })
             .setLngLat(routeCoords[routeCoords.length - 1])
@@ -139,7 +148,7 @@ export function MiniMap({
           const endEl = document.createElement('div');
           endEl.style.cssText = `
             width:10px;height:10px;border-radius:50%;
-            background:#ef4444;border:2px solid white;
+            background:var(--destructive,oklch(0.577 0.245 27.325));border:2px solid white;
             box-shadow:0 2px 4px rgba(0,0,0,.3);`;
           new mgl.Marker({ element: endEl })
             .setLngLat(routeCoords[0])
@@ -169,7 +178,7 @@ export function MiniMap({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [center[0], center[1], zoom, markers, routeCoords, routeColor, controls]);
 
   return (
     <div className={cn('relative overflow-hidden rounded-xl', className)}>

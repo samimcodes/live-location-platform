@@ -87,7 +87,11 @@ export class FriendService {
       await prisma.friendship.create({ data: { user1Id, user2Id } });
     }
 
-    return { message: action === 'ACCEPTED' ? 'Friend request accepted' : 'Friend request rejected' };
+    return {
+      message: action === 'ACCEPTED' ? 'Friend request accepted' : 'Friend request rejected',
+      // Surface senderId so the controller can notify them without a second DB round-trip
+      senderId: action === 'ACCEPTED' ? request.senderId : null,
+    };
   });
 
   // ── Get pending requests ─────────────────────────────────────

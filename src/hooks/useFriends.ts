@@ -34,14 +34,17 @@ export function useSentRequests() {
   });
 }
 
-/** Polls unread pending count every 30 s — drives nav badge. */
+/** Polls unread pending count every 30 s — drives nav badge.
+ *  Reuses the same cache key as usePendingRequests to avoid a duplicate HTTP request.
+ */
 export function usePendingRequestCount() {
   return useQuery({
-    queryKey: ['friend-requests', 'pending-count'],
+    queryKey: ['friend-requests', 'pending'],
     queryFn: async () => {
       const { data } = await api.get('/friends/requests/pending');
-      return (data.data as FriendRequest[]).length;
+      return data.data as FriendRequest[];
     },
+    select: (data) => data.length,
     refetchInterval: 30_000,
     staleTime: 20_000,
   });
@@ -71,7 +74,7 @@ export function useSendFriendRequest() {
     onSuccess: () => {
       toast.success('Friend request sent!');
       qc.invalidateQueries({ queryKey: ['friend-requests', 'sent'] });
-      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
       toast.error(err.response?.data?.message ?? 'Failed to send request');
@@ -89,7 +92,6 @@ export function useRespondToRequest() {
     onSuccess: (_, { action }) => {
       toast.success(action === 'ACCEPTED' ? 'Friend request accepted!' : 'Request rejected');
       qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
-      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
       qc.invalidateQueries({ queryKey: ['friend-requests', 'history'] });
       qc.invalidateQueries({ queryKey: ['friends'] });
     },
@@ -107,7 +109,7 @@ export function useCancelRequest() {
     onSuccess: () => {
       toast.success('Request cancelled');
       qc.invalidateQueries({ queryKey: ['friend-requests', 'sent'] });
-      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
+      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
     },
     onError: () => toast.error('Failed to cancel request'),
   });
@@ -123,7 +125,6 @@ export function useAcceptAllRequests() {
     onSuccess: (res) => {
       toast.success(res.message);
       qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
-      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending-count'] });
       qc.invalidateQueries({ queryKey: ['friend-requests', 'history'] });
       qc.invalidateQueries({ queryKey: ['friends'] });
     },
@@ -141,6 +142,8 @@ export function useRemoveFriend() {
     onSuccess: () => {
       toast.success('Friend removed');
       qc.invalidateQueries({ queryKey: ['friends'] });
+      // Also clear the removed friend's location from the initial-hydration cache
+      qc.invalidateQueries({ queryKey: ['friends-locations-initial'] });
     },
     onError: () => toast.error('Failed to remove friend'),
   });

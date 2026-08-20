@@ -73,9 +73,11 @@ export class SocialAuthService {
       });
     }
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET ?? 'fallback_secret',
+      jwtSecret,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { expiresIn: (process.env.JWT_EXPIRES_IN ?? '30d') as any }
     );

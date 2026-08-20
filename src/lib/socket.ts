@@ -24,4 +24,7 @@ export const disconnectSocket = (): void => {
   if (socket?.connected) {
     socket.disconnect();
   }
+  // Always null the singleton so the next connectSocket call creates a fresh
+  // instance with the correct auth token rather than reusing a stale one.
+  socket = null;
 };

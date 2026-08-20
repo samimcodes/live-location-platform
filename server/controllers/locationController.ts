@@ -190,11 +190,18 @@ export class LocationController {
 
     const result = await LocationService.toggleSharing(req.user!.userId, sharing);
 
-    // Notify the user's friends about the sharing change via socket
+    // Notify the user's friends about the sharing change via socket.
+    // We broadcast to each friend's personal room so their maps update live.
     if (req.io) {
-      req.io
-        .to(`user:${req.user!.userId}`)
-        .emit('sharing:changed', { userId: req.user!.userId, sharing });
+      try {
+        // Reuse the friends list from LocationService (already has Prisma client)
+        const rawLocations = await LocationService.getFriendsLocations(req.user!.userId);
+        const friendIds = (rawLocations as Array<{ userId: number }>).map((l) => l.userId);
+        const event = { userId: req.user!.userId, sharing };
+        friendIds.forEach((fid) => {
+          req.io!.to(`user:${fid}`).emit('sharing:changed', event);
+        });
+      } catch { /* non-critical — socket broadcast failure should not fail the REST response */ }
     }
 
     sendResponse(res, {

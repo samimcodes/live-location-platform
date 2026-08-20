@@ -28,7 +28,7 @@ interface LocationState {
 export const useLocationStore = create<LocationState>((set) => ({
   myLocation: null,
   friendsLocations: new Map(),
-  isSharing: true,
+  isSharing: false,
   watchId: null,
 
   setMyLocation: (loc) => set({ myLocation: loc }),

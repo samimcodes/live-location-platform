@@ -74,7 +74,19 @@ export default function DashboardPage() {
   const sharingFriends = onlineFriends.filter((f) => f.sharingLocation && friendsLocations.has(f.id));
   const base           = Math.max(1, friends.length);
 
-  // ── KPI config — accent colors are hex equivalents of design tokens ───
+  // ── Resolve CSS token colors for WebGL/SVG contexts (e.g. MiniMap markers) ──
+  // These are computed once on mount. Falls back to visible values for SSR.
+  const markerActiveColor  = React.useMemo(() =>
+    typeof window !== "undefined"
+      ? getComputedStyle(document.documentElement).getPropertyValue("--chart-5").trim() || "oklch(0.8 0.15 150)"
+      : "oklch(0.8 0.15 150)"
+  , []);
+  const markerPausedColor  = React.useMemo(() =>
+    typeof window !== "undefined"
+      ? getComputedStyle(document.documentElement).getPropertyValue("--muted-foreground").trim() || "oklch(0.55 0.02 250)"
+      : "oklch(0.55 0.02 250)"
+  , []);
+
   const kpis = [
     {
       label:     "Friends",
@@ -82,7 +94,7 @@ export default function DashboardPage() {
       icon:      UserCheck,
       color:     "text-primary",
       bg:        "bg-primary/10",
-      accent:    "#7c3aed",          // primary token (oklch 0.55 0.2 280 ≈ #7c3aed)
+      accentVar: "--primary",
       href:      "/dashboard/friends",
       sub:       onlineFriends.length > 0 ? `${onlineFriends.length} online` : "None online",
       sparkData: makeSparkData(base, 0),
@@ -93,10 +105,10 @@ export default function DashboardPage() {
       icon:      Users2,
       color:     "text-chart-2",
       bg:        "bg-chart-2/10",
-      accent:    "#a855f7",          // chart-2 token
+      accentVar: "--chart-2",
       href:      "/dashboard/groups",
       sub:       groups.length > 0
-        ? `${groups.reduce((a, g) => a + (g._count?.members ?? g.members.length), 0)} members`
+        ? `${groups.reduce((a, g) => a + (g._count?.members ?? (g.members ?? []).length), 0)} members`
         : "Create your first",
       sparkData: makeSparkData(Math.max(1, groups.length), 1.2),
     },
@@ -106,7 +118,7 @@ export default function DashboardPage() {
       icon:      Navigation,
       color:     "text-chart-5",
       bg:        "bg-chart-5/10",
-      accent:    "#10b981",          // chart-5 token (oklch 0.8 0.15 150 ≈ emerald)
+      accentVar: "--chart-5",
       href:      "/dashboard/map",
       sub:       sharingFriends.length > 0 ? `${sharingFriends.length} sharing now` : "Open map",
       sparkData: makeSparkData(Math.max(1, friendsLocations.size), 2.4),
@@ -117,7 +129,7 @@ export default function DashboardPage() {
       icon:      Bell,
       color:     "text-chart-4",
       bg:        "bg-chart-4/10",
-      accent:    "#f59e0b",          // chart-4 token (oklch 0.75 0.15 200 ≈ amber)
+      accentVar: "--chart-4",
       href:      "/dashboard/notifications",
       sub:       unreadCount > 0 ? "Needs attention" : "All caught up",
       sparkData: makeSparkData(Math.max(0, unreadCount), 3.6),
@@ -138,150 +150,141 @@ export default function DashboardPage() {
     <div className="space-y-6 pb-8">
 
       {/* ══════════════════════════════════════════════════════════════
-          HERO BANNER — reference design: lavender bg, greeting left,
-          map illustration + friend avatars right, two status pills
+          HERO BANNER — gradient mesh bg, glassmorphism stat row,
+          animated orbs, real-data badges, avatar stack.
+          All colors use CSS design tokens — no hardcoded values.
          ══════════════════════════════════════════════════════════════ */}
       <motion.div {...fadeUp(0)}>
-        <div
-          className="relative rounded-2xl overflow-hidden border-0"
-          style={{ background: "oklch(0.94 0.04 280)" }}
-        >
-          {/* Dark mode override */}
-          <div className="dark:hidden absolute inset-0 rounded-2xl" style={{ background: "oklch(0.94 0.04 280)" }} />
-          <div className="hidden dark:block absolute inset-0 rounded-2xl" style={{ background: "oklch(0.22 0.04 280)" }} />
+        <div className="relative rounded-2xl overflow-hidden welcome-gradient border border-border/40">
 
-          {/* Subtle radial glow — top-right, uses primary */}
-          <div
-            className="absolute top-0 right-0 w-[55%] h-full pointer-events-none"
-            style={{
-              background: "radial-gradient(ellipse at 80% 30%, oklch(0.75 0.12 280 / 0.25) 0%, transparent 70%)",
-            }}
-          />
+          {/* ── Gradient mesh orbs — use CSS token vars via Tailwind ── */}
+          {/* primary orb — top-left */}
+          <div className="absolute -top-10 -left-10 h-52 w-52 rounded-full blur-3xl opacity-25 dark:opacity-20 pointer-events-none bg-primary" />
+          {/* chart-3 orb — top-right */}
+          <div className="absolute -top-8 right-16 h-40 w-40 rounded-full blur-3xl opacity-15 dark:opacity-10 pointer-events-none bg-chart-3" />
+          {/* chart-4 orb — bottom-right */}
+          <div className="absolute -bottom-12 right-8 h-48 w-48 rounded-full blur-3xl opacity-20 dark:opacity-15 pointer-events-none bg-chart-4" />
+          {/* chart-5 orb — bottom-left */}
+          <div className="absolute bottom-0 left-1/3 h-32 w-32 rounded-full blur-2xl opacity-10 dark:opacity-10 pointer-events-none bg-chart-5" />
 
-          {/* ── Content row ───────────────────────────────────────── */}
-          <div className="relative flex items-center justify-between min-h-[160px] px-7 py-7 sm:px-10 sm:py-8">
+          {/* ── Main content ────────────────────────────────────────── */}
+          <div className="relative z-10 px-7 py-8 sm:px-10 sm:py-10">
 
-            {/* LEFT: greeting + subtitle + pills */}
-            <div className="flex flex-col justify-center gap-4 flex-1 min-w-0 pr-4 sm:pr-8 z-10">
+            {/* Top row: greeting left, avatar stack right */}
+            <div className="flex items-start justify-between gap-4">
 
-              {/* Greeting */}
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground leading-tight">
+              {/* LEFT — greeting */}
+              <div className="flex-1 min-w-0">
+                {/* Eyebrow */}
+                <p className="text-[11px] font-bold tracking-widest uppercase text-primary/60 mb-2">
+                  Dashboard
+                </p>
+                <h1 className="text-2xl sm:text-[2rem] font-extrabold tracking-tight leading-tight text-foreground">
                   Good {getGreeting()},{" "}
-                  <span className="text-primary">{user?.name?.split(" ")[0]}</span>! 👋
+                  {/* gradient text using existing .gradient-border token colors via Tailwind */}
+                  <span className="text-primary">
+                    {user?.name?.split(" ")[0] ?? "there"}
+                  </span>{" "}
+                  <span>👋</span>
                 </h1>
-                <p className="text-sm text-muted-foreground mt-1.5 font-medium">
-                  Stay connected with the people who matter.
+                <p className="text-sm text-muted-foreground mt-1.5 max-w-xs">
+                  {onlineFriends.length > 0
+                    ? `${onlineFriends.length} friend${onlineFriends.length !== 1 ? "s" : ""} online right now.`
+                    : "No friends online right now."}
+                  {" "}Stay connected.
                 </p>
               </div>
 
-              {/* Two status pills — matching reference exactly */}
-              <div className="flex items-center gap-2.5 flex-wrap">
-
-                {/* Location sharing pill */}
-                <div className={cn(
-                  "inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold transition-all duration-300",
-                  isSharing
-                    ? "bg-white/70 dark:bg-card/60 text-chart-5 border border-chart-5/30 shadow-sm backdrop-blur-sm"
-                    : "bg-white/50 dark:bg-card/40 text-muted-foreground border border-border/40 backdrop-blur-sm",
-                )}>
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    {isSharing && (
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-chart-5 opacity-60" />
+              {/* RIGHT — online avatar stack (desktop only) */}
+              {onlineFriends.length > 0 && (
+                <div className="hidden sm:flex flex-col items-end gap-2 shrink-0">
+                  <div className="flex items-center -space-x-2.5">
+                    {onlineFriends.slice(0, 5).map((f, idx) => (
+                      <div
+                        key={f.id}
+                        className={cn(
+                          "h-9 w-9 rounded-full border-2 border-card",
+                          "flex items-center justify-center text-primary-foreground text-xs font-bold shadow-md shrink-0",
+                          // cycle through chart color bg tokens
+                          [
+                            "bg-chart-1",
+                            "bg-chart-3",
+                            "bg-chart-5",
+                            "bg-chart-2",
+                            "bg-chart-4",
+                          ][idx % 5],
+                        )}
+                        style={{ zIndex: 10 - idx }}
+                      >
+                        {f.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                    ))}
+                    {onlineFriends.length > 5 && (
+                      <div className="h-9 w-9 rounded-full border-2 border-card bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shadow-md shrink-0">
+                        +{onlineFriends.length - 5}
+                      </div>
                     )}
-                    <span className={cn(
-                      "relative inline-flex rounded-full h-2 w-2",
-                      isSharing ? "bg-chart-5" : "bg-muted-foreground/40",
-                    )} />
-                  </span>
-                  {isSharing ? "Location sharing is active" : "Location sharing paused"}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground font-medium">
+                    {onlineFriends.length} online now
+                  </p>
                 </div>
-
-                {/* Live tracking pill */}
-                <div className={cn(
-                  "inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold",
-                  "bg-white/70 dark:bg-card/60 border backdrop-blur-sm shadow-sm",
-                  friendsLocations.size > 0
-                    ? "text-primary border-primary/25"
-                    : "text-muted-foreground border-border/40",
-                )}>
-                  <MapPin size={11} className={friendsLocations.size > 0 ? "text-primary" : "text-muted-foreground/50"} />
-                  {friendsLocations.size > 0 ? "Live tracking enabled" : "No live tracking"}
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* RIGHT: Illustration — map + floating friend avatars */}
-            <div
-              className="hidden sm:flex relative shrink-0 items-center justify-center"
-              style={{ width: 260, height: 140 }}
-              aria-hidden="true"
-            >
-              {/* Map card illustration */}
-              <div
-                className="absolute inset-x-8 inset-y-2 rounded-2xl overflow-hidden shadow-lg border border-primary/10"
-                style={{ background: "oklch(0.97 0.02 280)" }}
-              >
-                {/* Grid lines — subtle map look */}
-                <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
-                  {/* Horizontal roads */}
-                  <line x1="0" y1="38%" x2="100%" y2="42%" stroke="currentColor" strokeWidth="3.5" className="text-primary/50" strokeLinecap="round" />
-                  <line x1="0" y1="68%" x2="100%" y2="65%" stroke="currentColor" strokeWidth="2" className="text-primary/30" strokeLinecap="round" />
-                  {/* Vertical roads */}
-                  <line x1="30%" y1="0" x2="28%" y2="100%" stroke="currentColor" strokeWidth="2" className="text-primary/30" strokeLinecap="round" />
-                  <line x1="68%" y1="0" x2="70%" y2="100%" stroke="currentColor" strokeWidth="3" className="text-primary/40" strokeLinecap="round" />
-                  {/* Dashed path between pins */}
-                  <path d="M 48 72 Q 90 30 140 52 Q 170 65 190 48" stroke="currentColor" strokeWidth="1.5" className="text-primary/60" strokeDasharray="5 4" fill="none" strokeLinecap="round" />
-                </svg>
+            {/* Bottom row: stat badges + CTA */}
+            <div className="mt-6 flex flex-wrap items-center gap-2.5">
 
-                {/* Center map pin — primary */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[65%] flex flex-col items-center">
-                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-                    <MapPin size={18} className="text-white" />
-                  </div>
-                  <div className="h-2 w-2 rounded-full bg-primary/40 mt-0.5" />
-                </div>
+              {/* Location sharing badge */}
+              <div className={cn(
+                "inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold",
+                "border backdrop-blur-md shadow-sm transition-colors duration-300",
+                isSharing
+                  ? "bg-card/60 text-chart-5 border-chart-5/30"
+                  : "bg-card/40 text-muted-foreground border-border/50",
+              )}>
+                <span className="relative flex h-2 w-2 shrink-0">
+                  {isSharing && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-chart-5 opacity-60" />
+                  )}
+                  <span className={cn(
+                    "relative inline-flex h-2 w-2 rounded-full",
+                    isSharing ? "bg-chart-5" : "bg-muted-foreground/40",
+                  )} />
+                </span>
+                {isSharing ? "Sharing location" : "Sharing paused"}
               </div>
 
-              {/* Floating friend avatars — scattered around the map */}
-              {/* Top-left avatar */}
-              <div className="absolute top-0 left-10 z-10">
-                <div className="relative">
-                  <div
-                    className="h-10 w-10 rounded-full border-2 border-white dark:border-card shadow-md flex items-center justify-center text-white text-sm font-bold"
-                    style={{ background: "oklch(0.6 0.15 320)" }}
-                  >
-                    {onlineFriends[0]?.name.charAt(0).toUpperCase() ?? (
-                      <Users size={14} className="text-white/70" />
-                    )}
-                  </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-chart-5 border-2 border-white dark:border-card" />
-                </div>
+              {/* Friends badge */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card/60 border border-border/50 backdrop-blur-md shadow-sm text-foreground">
+                <UserCheck size={12} className="text-primary shrink-0" />
+                <span>{friends.length} friend{friends.length !== 1 ? "s" : ""}</span>
               </div>
 
-              {/* Bottom-right avatar */}
-              <div className="absolute bottom-0 right-6 z-10">
-                <div className="relative">
-                  <div
-                    className="h-10 w-10 rounded-full border-2 border-white dark:border-card shadow-md flex items-center justify-center text-white text-sm font-bold"
-                    style={{ background: "oklch(0.65 0.15 200)" }}
-                  >
-                    {onlineFriends[1]?.name.charAt(0).toUpperCase() ?? (
-                      <Users size={14} className="text-white/70" />
-                    )}
-                  </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-chart-5 border-2 border-white dark:border-card" />
+              {/* On map badge */}
+              {friendsLocations.size > 0 && (
+                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card/60 border border-border/50 backdrop-blur-md shadow-sm text-foreground">
+                  <Navigation size={12} className="text-chart-5 shrink-0" />
+                  <span>{friendsLocations.size} on map</span>
                 </div>
-              </div>
+              )}
 
-              {/* Small secondary pin — top-right */}
-              <div className="absolute top-3 right-3 z-10">
-                <div
-                  className="h-7 w-7 rounded-full flex items-center justify-center shadow-md border-2 border-white dark:border-card"
-                  style={{ background: "oklch(0.75 0.15 150)" }}
-                >
-                  <MapPin size={12} className="text-white" />
+              {/* Notifications badge */}
+              {unreadCount > 0 && (
+                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card/60 border border-chart-4/30 backdrop-blur-md shadow-sm text-chart-4">
+                  <Bell size={12} className="shrink-0" />
+                  <span>{unreadCount} unread</span>
                 </div>
+              )}
+
+              {/* Spacer + CTA */}
+              <div className="ml-auto hidden sm:block">
+                <Button asChild size="sm" className="gap-2 shadow-md shadow-primary/20 font-semibold">
+                  <Link href="/dashboard/map">
+                    <Navigation size={13} />
+                    Open Map
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -320,7 +323,7 @@ export default function DashboardPage() {
                   markers={[{
                     latitude:  myLocation.latitude,
                     longitude: myLocation.longitude,
-                    color:     isSharing ? "#10b981" : "#94a3b8",
+                    color:     isSharing ? markerActiveColor : markerPausedColor,
                   }]}
                   className="h-44 rounded-none"
                 />
@@ -438,8 +441,8 @@ export default function DashboardPage() {
                 View all <ArrowRight size={12} />
               </Link>
             </div>
-            {/* StatsChart color uses CSS custom property --chart-1 via the hex equivalent */}
-            <StatsChart data={chartData} color="oklch(0.65 0.2 280)" height={158} />
+            {/* StatsChart auto-resolves --chart-1 CSS variable — no color prop needed */}
+            <StatsChart data={chartData} height={158} />
           </div>
 
           {/* Online Now */}
@@ -498,7 +501,7 @@ export default function DashboardPage() {
                       className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/30 transition-colors group"
                     >
                       <div className="relative shrink-0">
-                        <div className="h-9 w-9 rounded-full overflow-hidden bg-gradient-to-br from-primary/60 to-ring/80 flex items-center justify-center text-white font-bold text-xs">
+                        <div className="relative h-9 w-9 rounded-full overflow-hidden bg-gradient-to-br from-primary/60 to-ring/80 flex items-center justify-center text-white font-bold text-xs">
                           {friend.avatar ? (
                             <Image src={friend.avatar} alt={friend.name} fill sizes="36px" className="object-cover" />
                           ) : (
@@ -559,7 +562,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm font-bold">My Groups</p>
                   <p className="text-xs text-muted-foreground">
-                    {groups.length} group{groups.length !== 1 ? "s" : ""} · {groups.reduce((a, g) => a + (g._count?.members ?? g.members.length), 0)} total members
+                    {groups.length} group{groups.length !== 1 ? "s" : ""} · {groups.reduce((a, g) => a + (g._count?.members ?? (g.members ?? []).length), 0)} total members
                   </p>
                 </div>
               </div>
@@ -575,7 +578,7 @@ export default function DashboardPage() {
               {/* Mobile scroll */}
               <div className="flex sm:hidden overflow-x-auto scrollbar-none gap-3 px-4 py-4">
                 {groups.slice(0, 6).map((g) => {
-                  const online = g.members.filter((m) => m.user.isOnline).length;
+                  const online = (g.members ?? []).filter((m) => m.user.isOnline).length;
                   return (
                     <Link key={g.id} href={`/dashboard/groups/${g.id}`}
                       className="flex flex-col items-center gap-2 shrink-0 w-20 py-2 rounded-xl hover:bg-muted/50 transition-colors">
@@ -592,8 +595,8 @@ export default function DashboardPage() {
               {/* Desktop rows */}
               <div className="hidden sm:block divide-y divide-border/20">
                 {groups.slice(0, 3).map((g) => {
-                  const memberCount = g._count?.members ?? g.members.length;
-                  const online      = g.members.filter((m) => m.user.isOnline).length;
+                  const memberCount = g._count?.members ?? (g.members ?? []).length;
+                  const online      = (g.members ?? []).filter((m) => m.user.isOnline).length;
                   return (
                     <Link key={g.id} href={`/dashboard/groups/${g.id}`}
                       className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors group">
@@ -613,7 +616,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <AvatarStack
-                        items={g.members.slice(0, 4).map((m) => ({ id: m.userId, name: m.user.name, avatar: m.user.avatar }))}
+                        items={(g.members ?? []).slice(0, 4).map((m) => ({ id: m.userId, name: m.user.name, avatar: m.user.avatar }))}
                         max={4}
                         size={24}
                       />

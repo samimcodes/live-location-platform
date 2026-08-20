@@ -57,15 +57,19 @@ export class AuthService {
     const valid = await bcrypt.compare(passwordInput, user.password);
     if (!valid) throw new Error('Invalid email or password');
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'fallback_secret',
+      jwtSecret,
       { expiresIn: (process.env.JWT_EXPIRES_IN as string | undefined) ?? '30d' } as Parameters<typeof jwt.sign>[2]
     );
 
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+    if (!refreshSecret) throw new Error('JWT_REFRESH_SECRET environment variable is not set');
     const refreshToken = jwt.sign(
       { userId: user.id },
-      process.env.JWT_REFRESH_SECRET || 'refresh_secret',
+      refreshSecret,
       { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as string | undefined) ?? '7d' } as Parameters<typeof jwt.sign>[2]
     );
 
@@ -127,7 +131,7 @@ export class AuthService {
   static refreshToken = catchServiceAsync(async (refreshToken: string) => {
     const decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_REFRESH_SECRET || 'refresh_secret'
+      process.env.JWT_REFRESH_SECRET ?? (() => { throw new Error('JWT_REFRESH_SECRET is not set'); })()
     ) as { userId: number };
 
     const user = await prisma.user.findFirst({
@@ -135,9 +139,11 @@ export class AuthService {
     });
     if (!user) throw new Error('Invalid refresh token');
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'fallback_secret',
+      jwtSecret,
       { expiresIn: (process.env.JWT_EXPIRES_IN as string | undefined) ?? '30d' } as Parameters<typeof jwt.sign>[2]
     );
 

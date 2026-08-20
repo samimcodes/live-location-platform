@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, TrendingUp, TrendingDown } from "lucide-react";
@@ -14,8 +14,12 @@ interface KpiCardProps {
   color?:    string;
   /** Tailwind bg class for icon wrapper (light tint) */
   bg?:       string;
-  /** hex color — used for sparkline, progress bar, orb, left accent */
-  accent?:   string;
+  /**
+   * CSS variable name (e.g. "--primary", "--chart-2") whose resolved value
+   * is used for sparkline, progress bar, orb, and left accent.
+   * Defaults to "--primary".
+   */
+  accentVar?: string;
   href?:     string;
   sub?:      string;
   /** 7 data-points (oldest → newest) for sparkline + trend */
@@ -43,19 +47,37 @@ function useCountUp(target: number, duration = 700) {
   return count;
 }
 
+/** Resolve a CSS custom property to its computed string value. */
+function useCssVar(varName: string, fallback = "oklch(0.55 0.2 280)"): string {
+  return useMemo(() => {
+    if (typeof window === "undefined") return fallback;
+    return (
+      getComputedStyle(document.documentElement)
+        .getPropertyValue(varName)
+        .trim() || fallback
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [varName]);
+}
+
 export default function KpiCard({
   label,
   value,
-  icon:  Icon,
-  color    = "text-primary",
-  bg       = "bg-primary/10",
-  accent   = "#7c3aed",
-  href     = "#",
+  icon:     Icon,
+  color     = "text-primary",
+  bg        = "bg-primary/10",
+  accentVar = "--primary",
+  href      = "#",
   sub,
   sparkData,
 }: KpiCardProps) {
   const numericValue  = typeof value === "number" ? value : 0;
-  const displayValue  = typeof value === "number" ? useCountUp(numericValue) : value;
+  // Always call hook unconditionally — Rules of Hooks require consistent call order
+  const countedValue  = useCountUp(numericValue);
+  const displayValue  = typeof value === "number" ? countedValue : value;
+
+  // Resolved accent color from CSS design token
+  const accent = useCssVar(accentVar);
 
   // Trend: last point minus first point of sparkData
   const trend =
@@ -129,8 +151,8 @@ export default function KpiCard({
                   className={cn(
                     "inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
                     trend > 0
-                      ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
-                      : "bg-destructive/10 text-destructive dark:bg-destructive/20",
+                      ? "bg-chart-5/15 text-chart-5"
+                      : "bg-destructive/10 text-destructive",
                   )}
                 >
                   {trend > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}

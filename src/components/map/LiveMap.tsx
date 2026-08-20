@@ -28,6 +28,7 @@ import { MapControls, type MapControlsProps } from '@/components/map/MapControls
 import {
   createMarkerElement,
   createAccuracyElement,
+  createPlaceMarkerElement,
   friendGradient,
   ME_GRADIENT,
   buildMePopup,
@@ -111,10 +112,12 @@ export function LiveMap({
   // ── Marker registries ────────────────────────────────────────────────
   const myMarkerRef      = useRef<AnyMarker | null>(null);
   const myPopupRef       = useRef<AnyPopup  | null>(null);
+  const myPopupHtmlRef   = useRef<string>(''); // cache last HTML to skip redundant setHTML
   const myAccuracyRef    = useRef<AnyMarker | null>(null);
   const myAccuracyPxRef  = useRef<number>(0);
   const friendMarkersRef = useRef<Record<number, AnyMarker>>({});
   const friendPopupsRef  = useRef<Record<number, AnyPopup >>({});
+  const friendPopupHtmlRef = useRef<Record<number, string>>({}); // cache last HTML to skip redundant setHTML
   const placeMarkersRef  = useRef<Record<number, AnyMarker>>({});
   const lastFocusRef     = useRef<number | undefined>(undefined);
 
@@ -148,8 +151,10 @@ export function LiveMap({
           gradient: ME_GRADIENT,
           isMe: true,
         });
+        const html = buildMePopup(user?.name ?? 'You', myLocation.city, latitude, longitude);
+        myPopupHtmlRef.current = html;
         const popup = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '200px' })
-          .setHTML(buildMePopup(user?.name ?? 'You', myLocation.city, latitude, longitude));
+          .setHTML(html);
         myPopupRef.current = popup;
         myMarkerRef.current = new Marker({ element: el, anchor: 'bottom' })
           .setLngLat([longitude, latitude])
@@ -158,9 +163,12 @@ export function LiveMap({
       } else {
         // Update position
         myMarkerRef.current.setLngLat([longitude, latitude]);
-        myPopupRef.current?.setHTML(
-          buildMePopup(user?.name ?? 'You', myLocation.city, latitude, longitude)
-        );
+        // Only rebuild popup HTML when content actually changes
+        const newHtml = buildMePopup(user?.name ?? 'You', myLocation.city, latitude, longitude);
+        if (newHtml !== myPopupHtmlRef.current) {
+          myPopupHtmlRef.current = newHtml;
+          myPopupRef.current?.setHTML(newHtml);
+        }
       }
 
       // Accuracy circle
@@ -212,9 +220,12 @@ export function LiveMap({
         if (friendMarkersRef.current[userId]) {
           // Update existing marker
           friendMarkersRef.current[userId].setLngLat([longitude, latitude]);
-          friendPopupsRef.current[userId]?.setHTML(
-            buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp)
-          );
+          // Only rebuild popup HTML when content changed (avoids DOM teardown on every tick)
+          const newHtml = buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp);
+          if (newHtml !== friendPopupHtmlRef.current[userId]) {
+            friendPopupHtmlRef.current[userId] = newHtml;
+            friendPopupsRef.current[userId]?.setHTML(newHtml);
+          }
           const dot = friendMarkersRef.current[userId]
             .getElement()
             ?.querySelector('.marker-online-dot') as HTMLSpanElement | null;
@@ -223,8 +234,10 @@ export function LiveMap({
           // Create new marker
           const grad   = friendGradient(userId);
           const el     = createMarkerElement({ label: name, letter: name.charAt(0).toUpperCase(), gradient: grad, isOnline });
+          const html   = buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp);
+          friendPopupHtmlRef.current[userId] = html;
           const popup  = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '200px' })
-            .setHTML(buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp));
+            .setHTML(html);
           friendPopupsRef.current[userId]  = popup;
           friendMarkersRef.current[userId] = new Marker({ element: el, anchor: 'bottom' })
             .setLngLat([longitude, latitude])
@@ -268,17 +281,18 @@ export function LiveMap({
         if (!isValidLatLng(place.latitude, place.longitude)) return;
         if (placeMarkersRef.current[place.id]) return; // already on map
 
-        const bg = place.color ?? '#6366f1';
-        const el = document.createElement('div');
-        el.className = 'localink-place-marker';
-        el.innerHTML = `
-          <div class="place-pin" style="background:${bg};">
-            <span class="place-icon">${place.icon ?? '📍'}</span>
-          </div>
-          <div class="place-arrow" style="background:${bg};"></div>`;
+        // Use the shared factory which sanitizes icon and color
+        const el = createPlaceMarkerElement({
+          color: place.color ?? 'var(--primary)',
+          icon:  place.icon ?? '📍',
+          name:  place.name,
+        });
 
+        // Sanitize place.name before injecting into popup innerHTML
+        const safeName = place.name
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const popup = new Popup({ offset: [0, -38], closeButton: false, maxWidth: '160px' })
-          .setHTML(`<div style="padding:8px 10px;font-size:12px;font-weight:600">${place.name}</div>`);
+          .setHTML(`<div style="padding:8px 10px;font-size:12px;font-weight:600">${safeName}</div>`);
 
         placeMarkersRef.current[place.id] = new Marker({ element: el, anchor: 'bottom' })
           .setLngLat([place.longitude, place.latitude])
@@ -297,7 +311,9 @@ export function LiveMap({
     const loc = friendsLocations.get(focusUserId);
     if (loc && isValidLatLng(loc.latitude, loc.longitude)) {
       flyTo(loc.latitude, loc.longitude, 15);
-      setTimeout(() => friendMarkersRef.current[focusUserId]?.togglePopup(), 900);
+      // Clear the timer on cleanup so stale callbacks don't fire on unmount
+      const timer = setTimeout(() => friendMarkersRef.current[focusUserId]?.togglePopup(), 900);
+      return () => clearTimeout(timer);
     }
   }, [mapLoaded, focusUserId, friendsLocations, flyTo]);
 
@@ -336,9 +352,10 @@ export function LiveMap({
       Object.values(friendMarkersRef.current).forEach((m) => m.remove());
       Object.values(friendPopupsRef.current).forEach((p) => p.remove());
       Object.values(placeMarkersRef.current).forEach((m) => m.remove());
-      friendMarkersRef.current = {};
-      friendPopupsRef.current  = {};
-      placeMarkersRef.current  = {};
+      friendMarkersRef.current  = {};
+      friendPopupsRef.current   = {};
+      friendPopupHtmlRef.current = {};
+      placeMarkersRef.current   = {};
     };
   }, []);
 

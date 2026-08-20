@@ -1,8 +1,12 @@
 /**
  * Simple date utility — no extra dependency needed.
  */
-export function formatDistanceToNow(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+export function formatDistanceToNow(dateStr: string | null | undefined): string {
+  if (!dateStr) return 'Unknown';
+  const ts = new Date(dateStr).getTime();
+  if (isNaN(ts)) return 'Unknown';
+
+  const diff = Date.now() - ts;
   const s = Math.floor(diff / 1000);
   if (s < 60) return 'just now';
   const m = Math.floor(s / 60);

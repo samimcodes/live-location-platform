@@ -57,7 +57,8 @@ const authenticateSocket = (socket: AuthSocket, next: (err?: Error) => void): vo
   }
 
   try {
-    const secret = process.env.JWT_SECRET || 'fallback_secret';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET environment variable is not set');
     const decoded = jwt.verify(token, secret) as { userId: number; email: string };
     socket.userId = decoded.userId;
     next();
@@ -72,7 +73,14 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
 
   io.on('connection', async (rawSocket: Socket) => {
     const socket = rawSocket as AuthSocket;
-    const userId = socket.userId!;
+
+    // Runtime guard — should never fire since authenticateSocket middleware runs first,
+    // but protects against type-system gaps.
+    if (!socket.userId) {
+      socket.disconnect(true);
+      return;
+    }
+    const userId = socket.userId;
 
     console.log(`🟢 Socket connected: userId=${userId}, socketId=${socket.id}`);
 

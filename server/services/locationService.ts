@@ -67,14 +67,17 @@ export class LocationService {
     limit = 100,
     skip = 0
   ) => {
+    const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
     const where: { userId: number; recordedAt?: { gte?: Date; lte?: Date } } = { userId };
 
     if (startDate || endDate) {
       where.recordedAt = {};
       if (startDate) {
+        if (!ISO_DATE_RE.test(startDate)) throw new Error('Invalid startDate format — expected YYYY-MM-DD');
         where.recordedAt.gte = new Date(startDate + 'T00:00:00.000Z');
       }
       if (endDate) {
+        if (!ISO_DATE_RE.test(endDate)) throw new Error('Invalid endDate format — expected YYYY-MM-DD');
         // Include the full end day up to 23:59:59.999
         where.recordedAt.lte = new Date(endDate + 'T23:59:59.999Z');
       }
