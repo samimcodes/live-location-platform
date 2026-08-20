@@ -4,148 +4,133 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, TrendingUp, TrendingDown } from "lucide-react";
+import Sparkline from "./Sparkline";
 
 interface KpiCardProps {
-  label:  string;
-  value:  number | string;
-  icon:   React.ComponentType<{ size?: number; className?: string }>;
-  color?: string;    // Tailwind text-color class
-  bg?:    string;    // Tailwind bg class for icon wrapper
-  accent?: string;   // hex color for glow + accents
-  href?:  string;
-  sub?:   string;
-  /** 7 data-points for trend calculation (oldest → newest) */
+  label:     string;
+  value:     number | string;
+  icon:      React.ComponentType<{ size?: number; className?: string }>;
+  /** Tailwind text-color class */
+  color?:    string;
+  /** Tailwind bg class for icon wrapper (light tint) */
+  bg?:       string;
+  /** hex color — used for sparkline, progress bar, orb, left accent */
+  accent?:   string;
+  href?:     string;
+  sub?:      string;
+  /** 7 data-points (oldest → newest) for sparkline + trend */
   sparkData?: number[];
 }
 
-/** Animated counter hook — counts from 0 → target */
-function useCountUp(target: number, duration = 600) {
+/** Count-up animation — 0 → target in `duration` ms with easeOutCubic */
+function useCountUp(target: number, duration = 700) {
   const [count, setCount] = useState(0);
-  const ref = useRef<number | null>(null);
+  const raf = useRef<number | null>(null);
 
   useEffect(() => {
-    if (typeof target !== "number" || target === 0) {
-      setCount(target);
-      return;
-    }
+    if (typeof target !== "number" || target === 0) { setCount(target); return; }
     const start = performance.now();
-    const step = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      // easeOutCubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(eased * target));
-      if (progress < 1) {
-        ref.current = requestAnimationFrame(step);
-      }
+    const tick  = (now: number) => {
+      const t  = Math.min((now - start) / duration, 1);
+      const e  = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      setCount(Math.round(e * target));
+      if (t < 1) raf.current = requestAnimationFrame(tick);
     };
-    ref.current = requestAnimationFrame(step);
-    return () => { if (ref.current) cancelAnimationFrame(ref.current); };
+    raf.current = requestAnimationFrame(tick);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
   }, [target, duration]);
 
   return count;
 }
 
-/** Extract RGB from hex for CSS custom properties */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const h = hex.replace("#", "");
-  return {
-    r: parseInt(h.substring(0, 2), 16),
-    g: parseInt(h.substring(2, 4), 16),
-    b: parseInt(h.substring(4, 6), 16),
-  };
-}
-
 export default function KpiCard({
   label,
   value,
-  icon: Icon,
-  color   = "text-primary",
-  bg      = "bg-primary/10",
-  accent  = "#7c3aed",
-  href    = "#",
+  icon:  Icon,
+  color    = "text-primary",
+  bg       = "bg-primary/10",
+  accent   = "#7c3aed",
+  href     = "#",
   sub,
   sparkData,
 }: KpiCardProps) {
-  const numericValue = typeof value === "number" ? value : 0;
-  const animatedCount = useCountUp(numericValue);
-  const displayValue  = typeof value === "number" ? animatedCount : value;
+  const numericValue  = typeof value === "number" ? value : 0;
+  const displayValue  = typeof value === "number" ? useCountUp(numericValue) : value;
 
-  // Trend direction from sparkData
+  // Trend: last point minus first point of sparkData
   const trend =
     sparkData && sparkData.length >= 2
       ? sparkData[sparkData.length - 1] - sparkData[0]
       : null;
 
-  const rgb = hexToRgb(accent);
+  // Progress bar width — capped 0–100
+  const barWidth = Math.min(100, Math.max(8, numericValue === 0 ? 8 : numericValue * 12));
 
   return (
     <Link href={href} className="group block h-full">
       <div
         className={cn(
+          // Layout & shape
           "relative flex flex-col justify-between h-full overflow-hidden",
-          "rounded-2xl bg-card",
-          "border border-border/60",
-          "p-5 transition-all duration-300 ease-out",
+          "rounded-2xl bg-card border border-border/60",
+          "p-5",
+          // Transitions — uses globals.css .card-shine and .glow-shadow
+          "transition-all duration-300 ease-out",
           "hover:shadow-xl hover:-translate-y-1",
           "card-shine glow-shadow",
         )}
-        style={{
-          "--glow-r": rgb.r,
-          "--glow-g": rgb.g,
-          "--glow-b": rgb.b,
-        } as React.CSSProperties}
       >
-        {/* Subtle gradient accent on the left edge */}
+        {/* ── Left edge accent line ─────────────────────────────── */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ background: `linear-gradient(180deg, ${accent}, ${accent}80)` }}
+          className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ background: `linear-gradient(180deg, ${accent}, ${accent}60)` }}
         />
 
-        {/* Background gradient orb — very subtle */}
+        {/* ── Soft background orb ──────────────────────────────── */}
         <div
-          className="absolute -top-8 -right-8 h-24 w-24 rounded-full opacity-[0.07] group-hover:opacity-[0.12] transition-opacity duration-500 blur-2xl"
+          className="absolute -top-10 -right-10 h-28 w-28 rounded-full blur-2xl opacity-[0.06] group-hover:opacity-[0.11] transition-opacity duration-500"
           style={{ background: accent }}
         />
 
-        {/* Top row: icon + arrow */}
+        {/* ── Icon row ─────────────────────────────────────────── */}
         <div className="flex items-start justify-between mb-4 relative z-[2]">
           <div
             className={cn(
-              "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
-              "shadow-sm transition-transform duration-300 group-hover:scale-110",
+              "h-11 w-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+              "transition-transform duration-300 group-hover:scale-110",
+              bg,
             )}
-            style={{
-              background: `linear-gradient(135deg, ${accent}18, ${accent}30)`,
-            }}
           >
             <Icon size={19} className={color} />
           </div>
           <ArrowUpRight
             size={15}
-            className="text-muted-foreground/20 group-hover:text-muted-foreground/70 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300 mt-0.5"
+            className={cn(
+              "mt-0.5 text-muted-foreground/25",
+              "group-hover:text-muted-foreground/70",
+              "group-hover:translate-x-0.5 group-hover:-translate-y-0.5",
+              "transition-all duration-300",
+            )}
           />
         </div>
 
-        {/* Value + label */}
+        {/* ── Value + label ─────────────────────────────────────── */}
         <div className="relative z-[2]">
           <p className="text-3xl font-extrabold tracking-tight tabular-nums leading-none animate-count-up">
             {displayValue}
           </p>
-          <p className="text-sm text-muted-foreground font-medium mt-1.5">
-            {label}
-          </p>
+          <p className="text-sm text-muted-foreground font-medium mt-1.5">{label}</p>
 
-          {/* Sub-label with trend indicator */}
+          {/* Sub with trend badge */}
           {sub && (
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               {trend !== null && trend !== 0 && (
                 <span
                   className={cn(
                     "inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
                     trend > 0
                       ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
-                      : "bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-400",
+                      : "bg-destructive/10 text-destructive dark:bg-destructive/20",
                   )}
                 >
                   {trend > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
@@ -157,16 +142,25 @@ export default function KpiCard({
           )}
         </div>
 
-        {/* Bottom accent line */}
-        <div className="mt-4 h-1 rounded-full overflow-hidden bg-muted/50">
-          <div
-            className="h-full rounded-full transition-all duration-700 ease-out"
-            style={{
-              width: `${Math.min(100, Math.max(15, numericValue * 10))}%`,
-              background: `linear-gradient(90deg, ${accent}, ${accent}90)`,
-            }}
-          />
-        </div>
+        {/* ── Sparkline ─────────────────────────────────────────── */}
+        {sparkData && sparkData.length > 1 && (
+          <div className="mt-3 -mx-1 relative z-[2]">
+            <Sparkline data={sparkData} color={accent} height={34} />
+          </div>
+        )}
+
+        {/* ── Bottom progress bar — uses border token for bg ─────── */}
+        {!sparkData && (
+          <div className="mt-4 h-1 rounded-full overflow-hidden bg-border/50 relative z-[2]">
+            <div
+              className="h-full rounded-full transition-all duration-700 ease-out"
+              style={{
+                width:      `${barWidth}%`,
+                background: `linear-gradient(90deg, ${accent}, ${accent}70)`,
+              }}
+            />
+          </div>
+        )}
       </div>
     </Link>
   );

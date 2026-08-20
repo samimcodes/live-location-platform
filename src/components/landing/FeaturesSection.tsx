@@ -60,7 +60,7 @@ export function FeaturesSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 0.6, ease: 'easeOut' as const }}
           className="text-center mb-16 sm:mb-24"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-6 shadow-sm border border-primary/20">
@@ -83,7 +83,7 @@ export function FeaturesSection() {
               initial={{ opacity: 0, y: 24, scale: 0.95 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: i * 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
+              transition={{ duration: 0.5, delay: i * 0.1, ease: 'easeOut' as const }}
               className={cn(
                 "group relative bg-card rounded-[2rem] border border-border/50 hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col",
                 f.colSpan

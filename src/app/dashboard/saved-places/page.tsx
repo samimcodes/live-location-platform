@@ -60,7 +60,7 @@ function validateForm(f: ReturnType<typeof emptyForm>): string | null {
 const fadeUp = (delay = 0) => ({
   initial:    { opacity: 0, y: 16 },
   animate:    { opacity: 1, y: 0 },
-  transition: { duration: 0.35, delay, ease: [0.25, 0.46, 0.45, 0.94] },
+  transition: { duration: 0.35, delay, ease: 'easeOut' as const },
 });
 
 // ── PlaceForm modal (shared by create + edit) ──────────────────────────────
@@ -481,8 +481,7 @@ export default function SavedPlacesPage() {
                         longitude: place.longitude,
                         color:     place.color ?? t.color,
                       }]}
-                      className="absolute inset-0 h-[calc(100%+40px)] -top-[20px]" // Hack to hide mapbox logo in tiny preview
-                      interactive={false}
+                      className="absolute inset-0 h-full rounded-none"
                     />
                     
                     {/* Floating type badge */}

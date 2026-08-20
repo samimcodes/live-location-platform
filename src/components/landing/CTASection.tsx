@@ -15,7 +15,7 @@ export function CTASection() {
           initial={{ opacity: 0, y: 40, scale: 0.98 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 0.8, ease: 'easeOut' as const }}
           className="relative overflow-hidden rounded-[3rem] bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 p-10 sm:p-16 md:p-20 text-center shadow-2xl shadow-indigo-600/20 border border-white/10"
         >
           {/* ── Background decoration ── */}
