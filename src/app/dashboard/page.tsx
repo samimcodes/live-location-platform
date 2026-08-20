@@ -150,12 +150,11 @@ export default function DashboardPage() {
     <div className="space-y-6 pb-8">
 
       {/* ══════════════════════════════════════════════════════════════
-          HERO BANNER — gradient mesh bg, glassmorphism stat row,
-          animated orbs, real-data badges, avatar stack.
-          All colors use CSS design tokens — no hardcoded values.
+          HERO BANNER — full-bleed: negative margins cancel layout
+          padding so the banner stretches edge-to-edge.
          ══════════════════════════════════════════════════════════════ */}
-      <motion.div {...fadeUp(0)}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border border-border/40">
+      <motion.div {...fadeUp(0)} className="-mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
+        <div className="relative overflow-hidden welcome-gradient border-b border-border/40">
 
           {/* ── Gradient mesh orbs — use CSS token vars via Tailwind ── */}
           {/* primary orb — top-left */}
@@ -168,7 +167,7 @@ export default function DashboardPage() {
           <div className="absolute bottom-0 left-1/3 h-32 w-32 rounded-full blur-2xl opacity-10 dark:opacity-10 pointer-events-none bg-chart-5" />
 
           {/* ── Main content ────────────────────────────────────────── */}
-          <div className="relative z-10 px-7 py-8 sm:px-10 sm:py-10">
+          <div className="relative z-10 px-4 py-8 sm:px-6 sm:py-10 max-w-7xl mx-auto">
 
             {/* Top row: greeting left, avatar stack right */}
             <div className="flex items-start justify-between gap-4">
