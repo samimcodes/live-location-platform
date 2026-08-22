@@ -3,178 +3,177 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { MapPin, ArrowRight, Shield, Zap, Heart, Lock, Globe } from 'lucide-react';
+import { MapPin, ArrowRight, ShieldCheck, Zap, Globe, Lock, Navigation, Smartphone } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden pt-20 pb-16">
+    <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden pt-28 pb-20">
       {/* ── Animated Background ── */}
       <div className="absolute inset-0 -z-10 bg-background overflow-hidden">
-        {/* Subtle grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px] opacity-15" />
         
-        {/* Glow orbs */}
-        <div className="absolute top-[10%] left-[10%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] bg-indigo-500/20 rounded-full blur-[100px] mix-blend-screen animate-blob" />
-        <div className="absolute top-[20%] right-[10%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] bg-purple-500/20 rounded-full blur-[100px] mix-blend-screen animate-blob animation-delay-2000" />
-        <div className="absolute bottom-[-10%] left-[20%] w-[50vw] h-[50vw] max-w-[800px] max-h-[800px] bg-fuchsia-500/15 rounded-full blur-[120px] mix-blend-screen animate-blob animation-delay-4000" />
+        {/* Soft background glow orbs */}
+        <div className="absolute top-[15%] left-[15%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[10%] right-[15%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] bg-purple-500/10 rounded-full blur-[140px] pointer-events-none" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
         <div className="flex flex-col items-center text-center">
           
-          {/* Badge */}
+          {/* Live Status Badge */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.9, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' as const }}
-            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/10 text-primary text-sm font-semibold mb-8 shadow-sm backdrop-blur-md"
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-primary/25 bg-primary/10 text-primary text-xs sm:text-sm font-bold mb-8 shadow-sm backdrop-blur-md"
           >
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
             </span>
-            Real-time location sharing is now live
+            LocaLink 2.0 is now live — Real-time Family GPS Platform
           </motion.div>
 
-          {/* Headline */}
+          {/* Main Headline */}
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' as const }}
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-foreground mb-6 max-w-4xl"
+            transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
+            className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-foreground mb-6 max-w-5xl leading-[1.1]"
           >
-            Stay close to{' '}
-            <span className="relative inline-block">
-              <span className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 blur-2xl opacity-30 animate-pulse"></span>
-              <span className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
-                everyone
-              </span>
-            </span>
-            <br className="hidden sm:block" />
-            {' '}you love
+            Always stay close to{' '}
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+              the people
+            </span>{' '}
+            you love.
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' as const }}
-            className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
+            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+            className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-normal"
           >
-            LocaLink brings your family and friends together on one beautiful, secure, real-time map.
+            LocaLink brings your family and friends together on a beautifully simple, secure, real-time map with automatic safety alerts.
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* Action Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3, ease: 'easeOut' as const }}
+            transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
             className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center"
           >
-            <Button size="lg" className="h-14 px-8 text-base font-bold rounded-2xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all hover:-translate-y-1 group" asChild>
+            <Button size="lg" className="h-14 px-8 text-base font-bold rounded-2xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5 group" asChild>
               <Link href="/register">
                 Get Started Free
                 <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button variant="outline" size="lg" className="h-14 px-8 text-base font-bold rounded-2xl border-border/60 bg-background/50 backdrop-blur-md hover:bg-muted/80 transition-all" asChild>
+            <Button variant="outline" size="lg" className="h-14 px-8 text-base font-bold rounded-2xl border-border/80 bg-card/60 backdrop-blur-md hover:bg-muted/80 transition-all" asChild>
               <Link href="/login">Sign In to Dashboard</Link>
             </Button>
           </motion.div>
 
-          {/* Feature Micro-Badges */}
+          {/* Micro Trust Badges */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.6 }}
-            className="flex flex-wrap justify-center gap-x-8 gap-y-4 mt-12 text-sm font-medium text-muted-foreground/80"
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="flex flex-wrap justify-center gap-x-8 gap-y-3 mt-10 text-xs sm:text-sm font-semibold text-muted-foreground"
           >
-            {[
-              { icon: Shield, text: 'End-to-End Encrypted' },
-              { icon: Globe, text: 'Global GPS Precision' },
-              { icon: Zap, text: 'Live 15s Updates' },
-            ].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-2">
-                <Icon size={16} className="text-primary/70" />
-                {text}
-              </div>
-            ))}
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={16} className="text-primary" />
+              End-to-End Encrypted
+            </div>
+            <div className="flex items-center gap-2">
+              <Globe size={16} className="text-primary" />
+              High-Precision GPS
+            </div>
+            <div className="flex items-center gap-2">
+              <Zap size={16} className="text-primary" />
+              Instant Socket Sync
+            </div>
           </motion.div>
 
-          {/* ── Mock Dashboard Preview ── */}
+          {/* ── Mock Dashboard & Live Map Preview ── */}
           <motion.div
-            initial={{ opacity: 0, y: 60, scale: 0.95 }}
+            id="map-preview"
+            initial={{ opacity: 0, y: 50, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 1, delay: 0.4, ease: 'easeOut' as const }}
-            className="mt-20 w-full max-w-5xl relative"
+            transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
+            className="mt-16 w-full max-w-5xl relative scroll-mt-28"
           >
-            {/* Outer Glow */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 opacity-20 blur-2xl rounded-3xl -z-10" />
+            {/* Outer Subtle Ambient Glow */}
+            <div className="absolute -inset-3 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-fuchsia-500/20 rounded-3xl blur-xl -z-10" />
             
-            {/* Glassmorphic Container */}
-            <div className="relative rounded-3xl overflow-hidden border border-border/60 shadow-2xl bg-card/40 backdrop-blur-2xl">
-              {/* Fake Window Header */}
-              <div className="h-12 border-b border-border/40 flex items-center px-4 bg-muted/20">
+            {/* Container Frame */}
+            <div className="relative rounded-3xl overflow-hidden border border-border/80 shadow-2xl bg-card">
+              {/* Header Window Controller */}
+              <div className="h-12 border-b border-border/60 flex items-center justify-between px-4 bg-muted/40">
                 <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                  <div className="w-3 h-3 rounded-full bg-amber-500/60" />
-                  <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
+                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
                 </div>
-                <div className="mx-auto px-4 py-1 rounded-md bg-background/50 border border-border/30 text-[10px] font-mono text-muted-foreground flex items-center gap-2">
-                  <Lock size={10} className="text-emerald-500" />
-                  localink.app/dashboard
+                <div className="px-4 py-1 rounded-lg bg-background/80 border border-border/50 text-[11px] font-mono text-muted-foreground flex items-center gap-2 shadow-inner">
+                  <Lock size={11} className="text-emerald-500" />
+                  localink.app/dashboard/map
+                </div>
+                <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  Live Socket Active
                 </div>
               </div>
 
-              {/* Fake Map Content */}
-              <div className="relative aspect-[16/10] md:aspect-[21/9] bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950 flex items-center justify-center overflow-hidden">
-                {/* Map Grid/Texture */}
-                <div className="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/light-v11/static/0,0,2,0,0/1200x600?access_token=pk.eyJ1IjoiZmFrZSIsImEiOiJmYWtlIn0.fake')] bg-cover bg-center opacity-30 dark:invert dark:opacity-20 mix-blend-luminosity" />
+              {/* Map Preview Stage */}
+              <div className="relative aspect-[16/10] md:aspect-[21/9] bg-muted/20 flex items-center justify-center overflow-hidden">
+                {/* Background Grid Pattern */}
+                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#6366f1_1.5px,transparent_1.5px)] [background-size:20px_20px]" />
                 
-                {/* Center Callout */}
-                <div className="relative z-10 text-center p-6 rounded-3xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl max-w-sm">
-                  <div className="inline-flex h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 items-center justify-center mb-4 shadow-lg ring-4 ring-card">
-                    <MapPin size={32} className="text-white" />
+                {/* Center Callout Pill */}
+                <div className="relative z-10 text-center p-6 rounded-2xl bg-card/90 backdrop-blur-xl border border-border/80 shadow-xl max-w-xs">
+                  <div className="inline-flex h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 items-center justify-center mb-3 shadow-md text-white">
+                    <MapPin size={24} />
                   </div>
-                  <h3 className="font-bold text-lg mb-1">Live Map Preview</h3>
-                  <p className="text-sm text-muted-foreground">Sign in to start tracking your family and friends in real-time.</p>
+                  <h3 className="font-bold text-foreground text-base mb-1">Interactive Family Map</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Sign in to track real-time locations, battery levels, and route history.</p>
                 </div>
 
-                {/* Floating Mock Markers */}
+                {/* Simulated Floating Markers */}
                 {[
-                  { top: '20%', left: '15%', name: 'Mom', img: 'M', color: 'from-emerald-400 to-teal-500', delay: 0 },
-                  { top: '65%', left: '25%', name: 'Dad', img: 'D', color: 'from-blue-400 to-indigo-500', delay: 0.2 },
-                  { top: '35%', left: '75%', name: 'Alex', img: 'A', color: 'from-fuchsia-400 to-pink-500', delay: 0.4 },
-                  { top: '70%', left: '80%', name: 'Sarah', img: 'S', color: 'from-orange-400 to-amber-500', delay: 0.6 },
+                  { top: '22%', left: '16%', name: 'Mom', letter: 'M', info: 'At Home • 92% Battery', color: 'from-emerald-500 to-teal-600', delay: 0 },
+                  { top: '68%', left: '22%', name: 'Dad', letter: 'D', info: 'Speed: 45 km/h', color: 'from-blue-500 to-indigo-600', delay: 0.15 },
+                  { top: '30%', left: '76%', name: 'Alex', letter: 'A', info: 'Arrived at Campus', color: 'from-purple-500 to-fuchsia-600', delay: 0.3 },
+                  { top: '72%', left: '78%', name: 'Sarah', letter: 'S', info: 'At Gym • 2.1 km away', color: 'from-amber-500 to-orange-600', delay: 0.45 },
                 ].map((m) => (
                   <motion.div
                     key={m.name}
-                    initial={{ opacity: 0, scale: 0, y: 20 }}
-                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.8 + m.delay, type: 'spring' }}
-                    className="absolute flex flex-col items-center gap-1.5"
+                    initial={{ opacity: 0, scale: 0, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.6 + m.delay, type: 'spring' }}
+                    className="absolute flex flex-col items-center gap-1"
                     style={{ top: m.top, left: m.left }}
                   >
                     <div className="relative">
-                      {/* Ping animation */}
-                      <div className={cn("absolute -inset-1 rounded-full opacity-50 animate-ping bg-gradient-to-br", m.color)} />
-                      {/* Avatar */}
-                      <div className={cn("relative h-12 w-12 rounded-full border-[3px] border-card shadow-xl flex items-center justify-center text-white text-lg font-bold bg-gradient-to-br", m.color)}>
-                        {m.img}
+                      <div className={cn("absolute -inset-1 rounded-full opacity-60 animate-ping bg-gradient-to-br", m.color)} />
+                      <div className={cn("relative h-11 w-11 rounded-full border-2 border-background shadow-lg flex items-center justify-center text-white text-base font-bold bg-gradient-to-br", m.color)}>
+                        {m.letter}
                       </div>
                     </div>
-                    <span className="text-[11px] font-bold bg-card/90 backdrop-blur-md px-2.5 py-1 rounded-full shadow-lg border border-border/50 text-foreground">
-                      {m.name}
-                    </span>
+                    <div className="bg-card/95 backdrop-blur-md px-2.5 py-1 rounded-xl shadow-lg border border-border/80 text-foreground flex flex-col items-center text-center">
+                      <span className="text-[11px] font-extrabold">{m.name}</span>
+                      <span className="text-[9px] text-muted-foreground">{m.info}</span>
+                    </div>
                   </motion.div>
                 ))}
               </div>
             </div>
           </motion.div>
-          
+
         </div>
       </div>
     </section>

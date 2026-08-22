@@ -66,7 +66,11 @@ export class GroupService {
               select: {
                 id: true, name: true, avatar: true, isOnline: true,
                 lastSeen: true, sharingLocation: true,
+                // Take only the single most-recent location row — no take:1
+                // would return every historical row, causing memory issues.
                 locations: {
+                  take: 1,
+                  orderBy: { updatedAt: 'desc' },
                   select: { latitude: true, longitude: true, updatedAt: true, city: true },
                 },
               },
@@ -89,13 +93,13 @@ export class GroupService {
     userId: number,
     data: Partial<{ name: string; description: string; avatar: string }>
   ) => {
-    const group = await prisma.group.findUnique({ where: { id: groupId } });
-    if (!group) throw new Error('Group not found');
-
+    // Single query: verify membership + admin role in one round-trip
     const member = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId, userId } },
+      include: { group: { select: { id: true } } },
     });
-    if (!member || member.role !== 'ADMIN') throw new Error('Only group admin can update the group');
+    if (!member) throw new Error('Group not found or you are not a member');
+    if (member.role !== 'ADMIN') throw new Error('Only group admin can update the group');
 
     return prisma.group.update({
       where: { id: groupId },
@@ -151,6 +155,10 @@ export class GroupService {
       include: { members: true },
     });
     if (!group) throw new Error('Group not found');
+
+    // Verify the user is actually a member before attempting deletion
+    const isMember = group.members.some((m) => m.userId === userId);
+    if (!isMember) throw new Error('You are not a member of this group');
 
     if (group.createdById === userId) {
       throw new Error('Group creator cannot leave. Transfer ownership or delete the group.');

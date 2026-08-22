@@ -8,9 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
+  { label: 'Live Map', href: '#map-preview' },
   { label: 'Features', href: '#features' },
   { label: 'How it works', href: '#how-it-works' },
-  { label: 'Pricing', href: '#cta' },
+  { label: 'FAQ', href: '#faq' },
 ];
 
 export function LandingNavbar() {
@@ -26,23 +27,21 @@ export function LandingNavbar() {
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out',
-        scrolled
-          ? 'py-3'
-          : 'py-5'
+        'fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out',
+        scrolled ? 'py-3.5' : 'py-5'
       )}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className={cn(
-          'transition-all duration-500 ease-out flex items-center justify-between',
+          'transition-all duration-300 ease-out flex items-center justify-between',
           scrolled
-            ? 'bg-background/70 backdrop-blur-xl border border-border/50 shadow-sm shadow-black/5 rounded-2xl px-5 h-16'
+            ? 'bg-background/80 backdrop-blur-xl border border-border/60 shadow-lg shadow-black/5 rounded-2xl px-5 h-16'
             : 'bg-transparent px-2 h-14'
         )}>
           
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300">
               <MapPin size={18} className="text-white" />
             </div>
             <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
@@ -56,7 +55,7 @@ export function LandingNavbar() {
               <a
                 key={l.label}
                 href={l.href}
-                className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:scale-105 transition-all duration-200"
+                className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors duration-200"
               >
                 {l.label}
               </a>
@@ -65,16 +64,16 @@ export function LandingNavbar() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="rounded-xl font-semibold hover:bg-muted/50" asChild>
+            <Button variant="ghost" size="sm" className="rounded-xl font-semibold hover:bg-muted/60" asChild>
               <Link href="/login">
-                <LogIn size={14} className="mr-2 opacity-50" />
+                <LogIn size={14} className="mr-2 opacity-70" />
                 Sign In
               </Link>
             </Button>
-            <Button size="sm" className="rounded-xl shadow-sm font-semibold gap-1.5 group" asChild>
+            <Button size="sm" className="rounded-xl font-bold gap-1.5 shadow-md group" asChild>
               <Link href="/register">
                 Get Started
-                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </Button>
           </div>
@@ -98,7 +97,7 @@ export function LandingNavbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden absolute top-[calc(100%+0.5rem)] left-4 right-4 bg-card/95 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-xl overflow-hidden"
+            className="md:hidden absolute top-[calc(100%+0.5rem)] left-4 right-4 bg-card/95 backdrop-blur-2xl border border-border/80 rounded-2xl shadow-2xl overflow-hidden"
           >
             <div className="p-4 space-y-1">
               {navLinks.map((l) => (
@@ -111,11 +110,11 @@ export function LandingNavbar() {
                   {l.label}
                 </a>
               ))}
-              <div className="pt-4 mt-2 border-t border-border/30 grid grid-cols-2 gap-3">
-                <Button variant="outline" className="w-full rounded-xl h-11 border-border/50 bg-background" asChild>
+              <div className="pt-4 mt-2 border-t border-border/40 grid grid-cols-2 gap-3">
+                <Button variant="outline" className="w-full rounded-xl h-11 border-border/60 bg-background" asChild>
                   <Link href="/login">Sign In</Link>
                 </Button>
-                <Button className="w-full rounded-xl h-11 shadow-sm" asChild>
+                <Button className="w-full rounded-xl h-11 font-bold shadow-md" asChild>
                   <Link href="/register">Get Started</Link>
                 </Button>
               </div>

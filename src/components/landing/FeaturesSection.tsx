@@ -2,115 +2,96 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Bell, Users, History, Shield, Navigation, Heart, Smartphone } from 'lucide-react';
+import { MapPin, Bell, Users, History, Shield, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const features = [
   {
     icon: MapPin,
-    title: 'Live Location Tracking',
-    description: 'See everyone on an interactive map updated every 15 seconds with pinpoint GPS precision.',
-    gradient: 'from-indigo-500 to-indigo-400',
+    title: 'Live 15s Location Sync',
+    description: 'Track movements smoothly on an interactive map with 15-second refresh intervals and high-accuracy GPS coordinates.',
     colSpan: 'md:col-span-2 lg:col-span-8',
-    image: 'bg-indigo-50 dark:bg-indigo-950/20', // Placeholder for visual element
+    gradient: 'from-indigo-600 to-purple-600',
   },
   {
     icon: Bell,
-    title: 'Smart Place Alerts',
-    description: 'Get instant push notifications when loved ones arrive at or leave saved locations.',
-    gradient: 'from-orange-500 to-amber-400',
+    title: 'Smart Place Geofencing',
+    description: 'Receive automated notifications when family members safely arrive at or leave home, school, or work.',
     colSpan: 'md:col-span-1 lg:col-span-4',
-    image: 'bg-orange-50 dark:bg-orange-950/20',
+    gradient: 'from-purple-600 to-fuchsia-600',
   },
   {
     icon: Users,
-    title: 'Family & Friend Groups',
-    description: 'Organize friends and family into private circles. Each circle has its own shared map view and settings.',
-    gradient: 'from-emerald-500 to-teal-400',
+    title: 'Private Family Circles',
+    description: 'Organize loved ones into private, invite-only circles with custom map views and individual permissions.',
     colSpan: 'md:col-span-1 lg:col-span-4',
-    image: 'bg-emerald-50 dark:bg-emerald-950/20',
+    gradient: 'from-fuchsia-600 to-pink-600',
   },
   {
     icon: History,
-    title: '30-Day Location History',
-    description: 'Review past movements, routes taken, and places visited with interactive timeline playback.',
-    gradient: 'from-blue-500 to-cyan-400',
+    title: '30-Day Route History',
+    description: 'Replay past trips, review travel routes, and inspect timestamped location logs with interactive playback.',
     colSpan: 'md:col-span-2 lg:col-span-4',
-    image: 'bg-blue-50 dark:bg-blue-950/20',
+    gradient: 'from-indigo-600 to-blue-600',
   },
   {
     icon: Shield,
-    title: 'Private & Secure',
-    description: 'Your location data is strictly encrypted. Ghost mode lets you control exactly who sees what, and when.',
-    gradient: 'from-rose-500 to-pink-400',
+    title: 'Ghost Mode & Privacy',
+    description: 'Control your visibility anytime. Enable Ghost Mode to pause sharing or freeze location on demand.',
     colSpan: 'md:col-span-1 lg:col-span-4',
-    image: 'bg-rose-50 dark:bg-rose-950/20',
+    gradient: 'from-emerald-600 to-teal-600',
   },
 ];
 
 export function FeaturesSection() {
   return (
     <section id="features" className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -z-10" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[100px] -z-10" />
-
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: 'easeOut' as const }}
-          className="text-center mb-16 sm:mb-24"
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="text-center mb-16 sm:mb-20"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-6 shadow-sm border border-primary/20">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider mb-6">
             <Heart size={14} className="fill-primary/20" />
-            Everything your family needs
+            Built for Family Safety
           </div>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-foreground mb-6 tracking-tight">
-            Features built for <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">peace of mind</span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground mb-6 tracking-tight">
+            Features engineered for <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">complete peace of mind</span>
           </h2>
           <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-            More than just a location app. LocaLink is your family&apos;s digital safety net, providing real-time awareness without compromising privacy.
+            LocaLink provides effortless real-time awareness without intruding on privacy.
           </p>
         </motion.div>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 auto-rows-[minmax(300px,auto)]">
-          {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 24, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: i * 0.1, ease: 'easeOut' as const }}
-              className={cn(
-                "group relative bg-card rounded-[2rem] border border-border/50 hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col",
-                f.colSpan
-              )}
-            >
-              {/* Decorative top gradient line */}
-              <div 
-                className="absolute top-0 left-0 right-0 h-1.5 opacity-80" 
-                style={{ backgroundImage: `linear-gradient(to right, var(--tw-gradient-stops))` }} 
-              />
-              
-              {/* Inner content */}
-              <div className="p-8 sm:p-10 flex-1 flex flex-col relative z-10">
-                <div className={cn("inline-flex h-14 w-14 rounded-2xl bg-gradient-to-br items-center justify-center mb-6 shadow-lg shadow-black/5 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500", f.gradient)}>
-                  <f.icon size={26} className="text-white" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 auto-rows-[minmax(280px,auto)]">
+          {features.map((f, i) => {
+            const Icon = f.icon;
+            return (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 24, scale: 0.97 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
+                className={cn(
+                  "group relative bg-card rounded-3xl border border-border/70 hover:border-primary/40 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col p-8 sm:p-10",
+                  f.colSpan
+                )}
+              >
+                <div className={cn("h-13 w-13 rounded-2xl bg-gradient-to-br text-white flex items-center justify-center mb-6 shadow-md group-hover:scale-105 transition-transform", f.gradient)}>
+                  <Icon size={24} />
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-3 tracking-tight">{f.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                   {f.description}
                 </p>
-              </div>
-
-              {/* Abstract decorative background per card */}
-              <div className={cn("absolute bottom-0 right-0 w-64 h-64 rounded-tl-full opacity-10 transition-transform duration-700 group-hover:scale-110", f.gradient)} />
-              
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>
