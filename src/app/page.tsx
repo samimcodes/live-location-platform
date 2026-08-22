@@ -10,7 +10,7 @@ import { LandingFooter } from '@/components/landing/LandingFooter';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-background overflow-x-hidden">
+    <main className="min-h-screen bg-[#F6F8FD] dark:bg-background text-slate-900 dark:text-foreground overflow-x-hidden relative selection:bg-purple-500 selection:text-white">
       <LandingNavbar />
       <HeroSection />
       <LocationMapSection />
