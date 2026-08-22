@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppDispatch } from '@/store/store';
 import { setCredentials, clearAuth, setLoading } from '@/store/slices/authSlice';
 import api from '@/lib/axios';
@@ -21,33 +21,55 @@ import api from '@/lib/axios';
  *  2. If absent, still call /auth/me — the httpOnly cookie is sent
  *     automatically by the browser via `withCredentials: true` on the
  *     Axios instance, so the request will succeed if the cookie is valid.
+ *
+ * React 18 StrictMode guard:
+ *  In development, React intentionally mounts → unmounts → remounts every
+ *  component to surface side-effect bugs. Without a guard this would fire
+ *  two concurrent GET /auth/me requests, burning 2 slots from the
+ *  authReadLimiter bucket on every dev-mode page load.
+ *  The `inflightRef` ensures only one request runs at a time; the cleanup
+ *  function cancels the in-flight call if the component unmounts before it
+ *  resolves (the second StrictMode mount then starts a fresh request).
  */
 export function AuthInitializer() {
-  const dispatch = useAppDispatch();
+  const dispatch    = useAppDispatch();
+  const inflightRef = useRef(false);
 
   useEffect(() => {
+    // Prevent duplicate concurrent calls (React 18 StrictMode double-invoke)
+    if (inflightRef.current) return;
+    inflightRef.current = true;
+
+    let cancelled = false;
+
     const init = async () => {
       dispatch(setLoading(true));
       try {
-        // /auth/me succeeds if either:
-        //   a) Authorization header (from localStorage via Axios interceptor), OR
-        //   b) accessToken cookie (sent automatically with withCredentials:true)
         const { data } = await api.get('/auth/me');
 
+        if (cancelled) return;
+
         if (data.success && data.data) {
-          // Sync localStorage with whatever token Axios used
           const token = localStorage.getItem('token') ?? '';
           dispatch(setCredentials({ user: data.data, token }));
         } else {
           dispatch(clearAuth());
         }
       } catch {
-        // 401 means no valid session — clear auth cleanly
-        dispatch(clearAuth());
+        if (!cancelled) dispatch(clearAuth());
+      } finally {
+        inflightRef.current = false;
       }
     };
 
     init();
+
+    return () => {
+      // Signal the async callback to discard its result if the component
+      // unmounts mid-flight (StrictMode cleanup between mount cycles).
+      cancelled = true;
+      inflightRef.current = false;
+    };
   }, [dispatch]);
 
   return null;

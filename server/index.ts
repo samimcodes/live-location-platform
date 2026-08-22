@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
-import rateLimit from 'express-rate-limit';
+import { apiLimiter } from './middlewares/rateLimiters';
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import 'dotenv/config';
@@ -69,21 +69,9 @@ app.prepare().then(async () => {
   server.use(cookieParser());
 
   // ── Rate Limiting ──────────────────────────────────────────
-  const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 200,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: 'Too many requests. Please try again later.' },
-  });
-
-  const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: 'Too many auth attempts. Please try again in 15 minutes.' },
-  });
+  // apiLimiter is imported from ./middlewares/rateLimiters.
+  // Auth-specific limiters (authWriteLimiter / authReadLimiter) are applied
+  // per-route inside server/routes/authRoutes.ts for finer granularity.
 
   // ── Database ───────────────────────────────────────────────
   try {
@@ -105,7 +93,9 @@ app.prepare().then(async () => {
   });
 
   // ── API Routes v1 ──────────────────────────────────────────
-  server.use('/api/v1/auth',          authLimiter, authRoutes);
+  // Auth routes: per-route limiters are applied inside authRoutes.ts
+  // so that /me (read) gets a higher limit than /login (write).
+  server.use('/api/v1/auth',          authRoutes);
   server.use('/api/v1/users',         apiLimiter,  userRoutes);
   server.use('/api/v1/friends',       apiLimiter,  friendRoutes);
   server.use('/api/v1/location',      apiLimiter,  locationRoutes);
@@ -115,9 +105,9 @@ app.prepare().then(async () => {
   server.use('/api/v1/upload',        apiLimiter,  uploadRoutes);
 
   // Legacy routes kept for backward compat
-  server.use('/api/users', apiLimiter, userRoutes);
-  server.use('/api/auth',  authLimiter, authRoutes);
-  server.use('/api/upload', apiLimiter, uploadRoutes);
+  server.use('/api/users',  apiLimiter,  userRoutes);
+  server.use('/api/auth',   authRoutes);        // per-route limiters inside
+  server.use('/api/upload', apiLimiter,  uploadRoutes);
 
   // ── Static Files ───────────────────────────────────────────
   server.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));

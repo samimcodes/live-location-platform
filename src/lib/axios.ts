@@ -42,8 +42,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as typeof error.config & { _retry?: boolean };
 
-    // Trigger refresh on both 401 (Unauthorized / expired) and 403 (Forbidden)
-    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
+    // Only trigger a token refresh on 401 (Unauthorized / expired token).
+    // 403 (Forbidden) means the token is structurally invalid or the user
+    // lacks permission — retrying with a refreshed token won't help, and
+    // attempting it wastes 2 extra slots from the authReadLimiter bucket
+    // (refresh-token call + /me retry) on every page load with a bad token.
+    if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
