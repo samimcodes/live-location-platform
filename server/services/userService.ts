@@ -5,9 +5,9 @@ const prisma = new PrismaClient();
 
 interface UpdateProfileInput {
   name?: string;
-  phone?: string;
-  avatar?: string;
-  bio?: string;
+  phone?: string | null;
+  avatar?: string | null;
+  bio?: string | null;
 }
 
 export class UserService {

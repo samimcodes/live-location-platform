@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, TrendingUp, TrendingDown } from "lucide-react";
@@ -47,17 +47,17 @@ function useCountUp(target: number, duration = 700) {
   return count;
 }
 
-/** Resolve a CSS custom property to its computed string value. */
+/** Resolve a CSS custom property to its computed string value.
+ *  Uses useEffect so the initial render matches SSR (fallback) — no hydration mismatch. */
 function useCssVar(varName: string, fallback = "oklch(0.55 0.2 280)"): string {
-  return useMemo(() => {
-    if (typeof window === "undefined") return fallback;
-    return (
-      getComputedStyle(document.documentElement)
-        .getPropertyValue(varName)
-        .trim() || fallback
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const [value, setValue] = useState(fallback);
+  useEffect(() => {
+    const resolved = getComputedStyle(document.documentElement)
+      .getPropertyValue(varName)
+      .trim();
+    if (resolved) setValue(resolved);
   }, [varName]);
+  return value;
 }
 
 export default function KpiCard({

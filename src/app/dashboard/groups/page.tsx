@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -15,14 +15,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Users2, Plus, Trash2, LogOut, Users, X, Loader2,
-  Shield, MapPin, Activity, ArrowRight,
+  Shield, MapPin, ArrowRight, AlertTriangle, Search,
+  Crown, Globe,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSelector } from '@/store/store';
 import { cn } from '@/lib/utils';
 import AvatarStack from '@/components/dashboard/AvatarStack';
 
-// ── Small avatar stack ─────────────────────────────────────────────────────
+// ── Per-group gradient palette (cycled by name hash) ──────────────────────
+const GROUP_GRADIENTS = [
+  { from: 'from-violet-500',  to: 'to-indigo-600',  glow: 'shadow-violet-500/25',  bar: 'from-violet-500 via-fuchsia-500 to-indigo-500'  },
+  { from: 'from-rose-500',    to: 'to-pink-600',    glow: 'shadow-rose-500/25',    bar: 'from-rose-500 via-pink-500 to-fuchsia-500'       },
+  { from: 'from-emerald-500', to: 'to-teal-600',    glow: 'shadow-emerald-500/25', bar: 'from-emerald-500 via-teal-500 to-cyan-500'        },
+  { from: 'from-amber-500',   to: 'to-orange-600',  glow: 'shadow-amber-500/25',   bar: 'from-amber-500 via-orange-500 to-red-500'         },
+  { from: 'from-sky-500',     to: 'to-blue-600',    glow: 'shadow-sky-500/25',     bar: 'from-sky-500 via-blue-500 to-indigo-500'          },
+  { from: 'from-fuchsia-500', to: 'to-purple-600',  glow: 'shadow-fuchsia-500/25', bar: 'from-fuchsia-500 via-purple-500 to-violet-500'    },
+];
+
+function groupGradient(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return GROUP_GRADIENTS[h % GROUP_GRADIENTS.length];
+}
+
+// ── Member avatar ──────────────────────────────────────────────────────────
 function MemberAvatar({ name, avatar, size = 32 }: { name: string; avatar?: string | null; size?: number }) {
   return (
     <div
@@ -33,8 +50,10 @@ function MemberAvatar({ name, avatar, size = 32 }: { name: string; avatar?: stri
       {avatar ? (
         <Image src={avatar} alt={name} fill sizes={`${size}px`} className="rounded-full object-cover" />
       ) : (
-        <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold"
-          style={{ fontSize: size * 0.4 }}>
+        <div
+          className="w-full h-full rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold"
+          style={{ fontSize: size * 0.4 }}
+        >
           {name.charAt(0).toUpperCase()}
         </div>
       )}
@@ -42,113 +61,217 @@ function MemberAvatar({ name, avatar, size = 32 }: { name: string; avatar?: stri
   );
 }
 
-// ── Animation helpers ─────────────────────────────────────────────────────
-const fadeUp = (delay = 0) => ({
-  initial:    { opacity: 0, y: 16 },
-  animate:    { opacity: 1, y: 0 },
-  transition: { duration: 0.35, delay, ease: 'easeOut' as const },
-});
+// ── Confirm dialog ─────────────────────────────────────────────────────────
+function ConfirmDialog({
+  open, title, description, confirmLabel = 'Confirm', destructive = false,
+  onConfirm, onCancel,
+}: {
+  open: boolean; title: string; description: string;
+  confirmLabel?: string; destructive?: boolean;
+  onConfirm: () => void; onCancel: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
+          <motion.div
+            initial={{ y: 24, opacity: 0, scale: 0.96 }}
+            animate={{ y: 0,  opacity: 1, scale: 1    }}
+            exit={{   y: 24, opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+            className="relative z-10 w-full max-w-sm bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+          >
+            {/* Accent top bar */}
+            <div className={cn('h-1 w-full', destructive ? 'bg-destructive' : 'bg-amber-500')} />
+            <div className="p-6">
+              <div className="flex items-start gap-3.5">
+                <div className={cn(
+                  'h-10 w-10 rounded-xl flex items-center justify-center shrink-0',
+                  destructive ? 'bg-destructive/10' : 'bg-amber-500/10',
+                )}>
+                  <AlertTriangle size={18} className={destructive ? 'text-destructive' : 'text-amber-500'} />
+                </div>
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <p className="font-bold text-sm leading-snug">{title}</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{description}</p>
+                </div>
+                <button
+                  onClick={onCancel}
+                  aria-label="Cancel"
+                  className="p-1 -mt-0.5 -mr-0.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="flex gap-2.5 mt-5">
+                <Button variant="outline" size="sm" className="flex-1 h-9 rounded-xl" onClick={onCancel}>
+                  Cancel
+                </Button>
+                <Button
+                  variant={destructive ? 'destructive' : 'default'}
+                  size="sm"
+                  className="flex-1 h-9 rounded-xl"
+                  onClick={onConfirm}
+                >
+                  {confirmLabel}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
+// ── Skeleton card ──────────────────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+      <div className="h-1.5 w-full bg-muted animate-pulse" />
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-muted animate-pulse shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-3/4 rounded-lg bg-muted animate-pulse" />
+            <div className="h-3 w-1/3 rounded-lg bg-muted animate-pulse" />
+          </div>
+        </div>
+        <div className="h-3 w-full rounded-lg bg-muted animate-pulse" />
+        <div className="h-3 w-4/5 rounded-lg bg-muted animate-pulse" />
+        <div className="h-11 w-full rounded-xl bg-muted/60 animate-pulse" />
+        <div className="h-10 w-full rounded-xl bg-muted animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 export default function GroupsPage() {
-  const { data: groups = [], isLoading }       = useGroups();
-  const { data: friends = [] }                 = useFriends();
+  const { data: groups = [], isLoading }             = useGroups();
+  const { data: friends = [] }                       = useFriends();
   const { mutate: createGroup, isPending: creating } = useCreateGroup();
   const { mutate: deleteGroup, isPending: deleting } = useDeleteGroup();
   const { mutate: leaveGroup,  isPending: leaving  } = useLeaveGroup();
   const currentUser = useAppSelector((s) => s.auth.user);
 
-  const [showCreate,       setShowCreate]       = useState(false);
-  const [groupName,        setGroupName]        = useState('');
-  const [groupDesc,        setGroupDesc]        = useState('');
-  const [selectedMembers,  setSelectedMembers]  = useState<number[]>([]);
-  // Track which group's action button is in-flight
-  const [actionGroupId,    setActionGroupId]    = useState<number | null>(null);
+  const [showCreate,      setShowCreate]      = useState(false);
+  const [groupName,       setGroupName]       = useState('');
+  const [groupDesc,       setGroupDesc]       = useState('');
+  const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
+  const [memberSearch,    setMemberSearch]    = useState('');
+  const [actionGroupId,   setActionGroupId]   = useState<number | null>(null);
+
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean; title: string; description: string;
+    confirmLabel: string; destructive: boolean; onConfirm: () => void;
+  }>({ open: false, title: '', description: '', confirmLabel: '', destructive: false, onConfirm: () => {} });
+
+  const closeConfirm = useCallback(() =>
+    setConfirmState((s) => ({ ...s, open: false })), []);
+  const openConfirm = useCallback((opts: Omit<typeof confirmState, 'open'>) =>
+    setConfirmState({ ...opts, open: true }), []);
+
+  const filteredFriends = useMemo(() => {
+    const q = memberSearch.trim().toLowerCase();
+    return q ? friends.filter((f) => f.name.toLowerCase().includes(q)) : friends;
+  }, [friends, memberSearch]);
+
+  const closeModal = useCallback(() => {
+    setShowCreate(false); setMemberSearch(''); setSelectedMembers([]);
+    setGroupName(''); setGroupDesc('');
+  }, []);
 
   const toggleMember = (id: number) =>
-    setSelectedMembers((prev) =>
-      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
-    );
+    setSelectedMembers((prev) => prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]);
 
   const handleCreate = () => {
     if (!groupName.trim()) return;
     createGroup(
       { name: groupName.trim(), description: groupDesc.trim() || undefined, memberIds: selectedMembers },
-      {
-        onSuccess: () => {
-          setShowCreate(false);
-          setGroupName('');
-          setGroupDesc('');
-          setSelectedMembers([]);
-        },
-      }
+      { onSuccess: closeModal }
     );
   };
 
-  const handleDelete = (groupId: number, groupName: string) => {
-    if (!confirm(`Delete "${groupName}"? This cannot be undone.`)) return;
-    setActionGroupId(groupId);
-    deleteGroup(groupId, { onSettled: () => setActionGroupId(null) });
-  };
+  const handleDelete = useCallback((groupId: number, name: string) => {
+    openConfirm({
+      title: `Delete "${name}"?`,
+      description: 'This group and all its data will be permanently removed. This cannot be undone.',
+      confirmLabel: 'Delete', destructive: true,
+      onConfirm: () => {
+        closeConfirm();
+        setActionGroupId(groupId);
+        deleteGroup(groupId, { onSettled: () => setActionGroupId(null) });
+      },
+    });
+  }, [openConfirm, closeConfirm, deleteGroup]);
 
-  const handleLeave = (groupId: number, groupName: string) => {
-    if (!confirm(`Leave "${groupName}"?`)) return;
-    setActionGroupId(groupId);
-    leaveGroup(groupId, { onSettled: () => setActionGroupId(null) });
-  };
+  const handleLeave = useCallback((groupId: number, name: string) => {
+    openConfirm({
+      title: `Leave "${name}"?`,
+      description: 'You will be removed from this group and will no longer see group members on the map.',
+      confirmLabel: 'Leave', destructive: false,
+      onConfirm: () => {
+        closeConfirm();
+        setActionGroupId(groupId);
+        leaveGroup(groupId, { onSettled: () => setActionGroupId(null) });
+      },
+    });
+  }, [openConfirm, closeConfirm, leaveGroup]);
 
-  // Pre-calculate some stats
-  const totalMembers = groups.reduce((acc, g) => acc + (g._count?.members ?? g.members.length), 0);
-  const myCreatedGroups = groups.filter(g => g.createdById === currentUser?.id).length;
+  const totalMembers    = groups.reduce((acc, g) => acc + (g._count?.members ?? g.members.length), 0);
+  const myCreatedGroups = groups.filter((g) => g.createdById === currentUser?.id).length;
+  const onlineTotal     = groups.reduce((acc, g) => acc + g.members.filter((m) => m.user.isOnline).length, 0);
 
   return (
     <div className="space-y-6 max-w-5xl">
 
-      {/* ═══════════════════════════════════════════════════════════════
-          HEADER — rich banner style
-         ═══════════════════════════════════════════════════════════════ */}
-      <motion.div {...fadeUp(0)}>
+      <ConfirmDialog {...confirmState} onCancel={closeConfirm} />
+
+      {/* ── HEADER ─────────────────────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         <div className="relative rounded-2xl overflow-hidden welcome-gradient border border-border/40">
-          <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" />
-          <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
-          
-          <div className="relative px-6 py-5 sm:px-8 sm:py-6">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3.5">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                  <Users2 size={22} className="text-white" />
+          {/* Decorative blobs */}
+          <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-fuchsia-500/10 blur-3xl pointer-events-none" />
+
+          <div className="relative px-6 py-6 sm:px-8 sm:py-7">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-4">
+                {/* Icon */}
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
+                  <Users2 size={24} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Groups</h1>
+                  <h1 className="text-2xl font-bold tracking-tight">My Groups</h1>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    {groups.length} group{groups.length !== 1 ? 's' : ''} · {totalMembers} total members
+                    Coordinate with your circles in real-time
                   </p>
                 </div>
               </div>
 
-              <Button onClick={() => setShowCreate(true)} className="gap-2 shadow-sm">
+              <Button onClick={() => setShowCreate(true)} className="gap-2 shadow-md shadow-primary/20 shrink-0">
                 <Plus size={15} />
                 New Group
               </Button>
             </div>
 
-            {/* Stats pills */}
-            <div className="flex items-center gap-3 mt-5 flex-wrap">
+            {/* Stat pills row */}
+            <div className="flex items-center gap-2.5 mt-5 flex-wrap">
               {[
-                { icon: Shield, label: `${myCreatedGroups} created by me`, active: myCreatedGroups > 0 },
-                { icon: Users, label: `${groups.length - myCreatedGroups} joined`, active: (groups.length - myCreatedGroups) > 0 },
-                { icon: MapPin, label: 'Live location sharing', active: true },
-              ].map(({ icon: PillIcon, label, active }) => (
-                <div
-                  key={label}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border transition-colors',
-                    active
-                      ? 'bg-card/80 border-border/50 text-foreground'
-                      : 'bg-muted/40 border-transparent text-muted-foreground',
-                  )}
-                >
-                  <PillIcon size={12} className={active ? 'text-violet-500' : 'text-muted-foreground/50'} />
-                  {label}
+                { icon: Users2,  label: `${groups.length} Groups`,   color: 'text-violet-500',  bg: 'bg-violet-500/10 border-violet-500/20'   },
+                { icon: Users,   label: `${totalMembers} Members`,   color: 'text-blue-500',    bg: 'bg-blue-500/10 border-blue-500/20'       },
+                { icon: Globe,   label: `${onlineTotal} Online now`, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                { icon: Shield,  label: `${myCreatedGroups} Admin`,  color: 'text-amber-500',   bg: 'bg-amber-500/10 border-amber-500/20'     },
+                { icon: MapPin,  label: 'Live location',             color: 'text-pink-500',    bg: 'bg-pink-500/10 border-pink-500/20'       },
+              ].map(({ icon: Icon, label, color, bg }) => (
+                <div key={label} className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border', bg)}>
+                  <Icon size={11} className={color} />
+                  <span className={color}>{label}</span>
                 </div>
               ))}
             </div>
@@ -156,111 +279,147 @@ export default function GroupsPage() {
         </div>
       </motion.div>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          CREATE MODAL
-         ═══════════════════════════════════════════════════════════════ */}
+      {/* ── CREATE MODAL ───────────────────────────────────────────────── */}
       <AnimatePresence>
         {showCreate && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
           >
             <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="bg-card rounded-2xl border border-border/60 shadow-2xl w-full max-w-md p-6 relative overflow-hidden"
+              initial={{ scale: 0.93, y: 24 }} animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.93, y: 24 }} transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+              className="bg-card rounded-2xl border border-border/60 shadow-2xl w-full max-w-md relative overflow-hidden"
             >
-              {/* Decorative background glow */}
-              <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Plus size={16} className="text-primary" />
-                    </div>
-                    <h2 className="text-xl font-bold tracking-tight">Create Group</h2>
+              {/* Modal header with gradient banner */}
+              <div className="relative h-24 bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-indigo-500/10 border-b border-border/40 overflow-hidden">
+                <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-primary/15 blur-2xl" />
+                <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-violet-500/10 blur-xl" />
+                <div className="relative h-full flex items-end px-6 pb-4 gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                    <Users2 size={18} className="text-white" />
                   </div>
-                  <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-xl hover:bg-muted/60 transition-colors text-muted-foreground">
-                    <X size={18} />
-                  </button>
+                  <div>
+                    <h2 className="text-lg font-bold">Create a Group</h2>
+                    <p className="text-xs text-muted-foreground">Add friends and share your location together</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closeModal}
+                  aria-label="Close"
+                  className="absolute top-3 right-3 p-1.5 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 text-foreground/60 hover:text-foreground transition-colors"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* Group name */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Group Name *</Label>
+                  <Input
+                    placeholder="e.g. Family, Work Team, Trip to Cox's Bazar"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && groupName.trim()) handleCreate(); }}
+                    className="h-11 rounded-xl bg-muted/40 border-border/60 focus:bg-card focus:border-primary/50"
+                  />
                 </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Group Name</Label>
-                    <Input
-                      placeholder="e.g. Family, Work Team, Trip to Cox's Bazar"
-                      value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                      className="h-11 rounded-xl bg-muted/30 focus:bg-card"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description <span className="normal-case font-normal">(Optional)</span></Label>
-                    <Input
-                      placeholder="What is this group for?"
-                      value={groupDesc}
-                      onChange={(e) => setGroupDesc(e.target.value)}
-                      className="h-11 rounded-xl bg-muted/30 focus:bg-card"
-                    />
-                  </div>
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Description <span className="normal-case font-normal opacity-60">(Optional)</span>
+                  </Label>
+                  <Input
+                    placeholder="What is this group for?"
+                    value={groupDesc}
+                    onChange={(e) => setGroupDesc(e.target.value)}
+                    className="h-11 rounded-xl bg-muted/40 border-border/60 focus:bg-card focus:border-primary/50"
+                  />
+                </div>
 
-                  <div className="space-y-2 pt-2">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Add Members <span className="normal-case font-normal text-muted-foreground/60">({selectedMembers.length} selected)</span>
-                    </Label>
-                    
-                    {friends.length > 0 ? (
-                      <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl border border-border/50 p-1.5 bg-muted/10 scrollbar-none">
-                        {friends.map((f) => (
-                          <button
-                            key={f.id}
-                            type="button"
-                            onClick={() => toggleMember(f.id)}
-                            className={cn(
-                              'w-full flex items-center gap-3 p-2 rounded-lg text-sm transition-all text-left group',
-                              selectedMembers.includes(f.id)
-                                ? 'bg-primary/10 border border-primary/20 shadow-sm'
-                                : 'hover:bg-muted/50 border border-transparent'
-                            )}
-                          >
-                            <MemberAvatar name={f.name} avatar={f.avatar} size={28} />
-                            <span className={cn(
-                              "flex-1 truncate font-medium transition-colors",
-                              selectedMembers.includes(f.id) ? "text-primary" : ""
-                            )}>
-                              {f.name}
-                            </span>
-                            {selectedMembers.includes(f.id) && (
-                              <span className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground shrink-0 shadow-sm">
-                                <Plus size={12} className="rotate-45 transition-transform" />
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 rounded-xl border border-dashed border-border/60 text-center bg-muted/20">
-                        <p className="text-sm text-muted-foreground">You don't have any friends to add yet.</p>
-                      </div>
+                {/* Members */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Members</Label>
+                    {selectedMembers.length > 0 && (
+                      <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        {selectedMembers.length} selected
+                      </span>
                     )}
                   </div>
+
+                  {friends.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+                        <Input
+                          placeholder="Search friends…"
+                          value={memberSearch}
+                          onChange={(e) => setMemberSearch(e.target.value)}
+                          className="h-9 pl-8 rounded-xl text-sm bg-muted/40 border-border/60 focus:bg-card focus:border-primary/50"
+                        />
+                      </div>
+                      <div className="max-h-44 overflow-y-auto rounded-xl border border-border/50 bg-muted/20 divide-y divide-border/30 scrollbar-none">
+                        {filteredFriends.length > 0 ? filteredFriends.map((f) => {
+                          const selected = selectedMembers.includes(f.id);
+                          return (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => toggleMember(f.id)}
+                              className={cn(
+                                'w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-left',
+                                selected ? 'bg-primary/8' : 'hover:bg-muted/60'
+                              )}
+                            >
+                              <div className="relative shrink-0">
+                                <MemberAvatar name={f.name} avatar={f.avatar} size={30} />
+                                {f.isOnline && (
+                                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-card" />
+                                )}
+                              </div>
+                              <span className={cn('flex-1 font-medium truncate', selected ? 'text-primary' : '')}>{f.name}</span>
+                              <div className={cn(
+                                'h-5 w-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all',
+                                selected
+                                  ? 'bg-primary border-primary'
+                                  : 'border-muted-foreground/30 bg-transparent'
+                              )}>
+                                {selected && <div className="h-2 w-2 rounded-full bg-white" />}
+                              </div>
+                            </button>
+                          );
+                        }) : (
+                          <div className="py-6 text-center">
+                            <Search size={18} className="mx-auto text-muted-foreground/30 mb-1" />
+                            <p className="text-xs text-muted-foreground">No match for &ldquo;{memberSearch}&rdquo;</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-5 rounded-xl border border-dashed border-border/60 text-center bg-muted/20">
+                      <Users size={20} className="mx-auto text-muted-foreground/30 mb-1.5" />
+                      <p className="text-sm text-muted-foreground">Add friends first to invite them to a group.</p>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex gap-3 mt-8 pt-4 border-t border-border/30">
-                  <Button variant="ghost" className="flex-1 rounded-xl hover:bg-muted/50" onClick={() => setShowCreate(false)}>
+                {/* Actions */}
+                <div className="flex gap-3 pt-2 border-t border-border/30 mt-2">
+                  <Button variant="ghost" className="flex-1 rounded-xl hover:bg-muted/60" onClick={closeModal}>
                     Cancel
                   </Button>
                   <Button
-                    className="flex-1 rounded-xl shadow-sm"
+                    className="flex-1 rounded-xl shadow-md shadow-primary/20"
                     onClick={handleCreate}
                     disabled={!groupName.trim() || creating}
                   >
-                    {creating ? <><Loader2 size={13} className="mr-2 animate-spin" />Creating…</> : 'Create Group'}
+                    {creating
+                      ? <><Loader2 size={13} className="mr-2 animate-spin" />Creating…</>
+                      : <><Plus size={13} className="mr-1.5" />Create Group</>}
                   </Button>
                 </div>
               </div>
@@ -269,25 +428,25 @@ export default function GroupsPage() {
         )}
       </AnimatePresence>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          GROUPS GRID
-         ═══════════════════════════════════════════════════════════════ */}
+      {/* ── GROUPS GRID ────────────────────────────────────────────────── */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />
-          ))}
+          {[1, 2, 3, 4, 5, 6].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : groups.length === 0 ? (
-        <motion.div {...fadeUp(0.1)} className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-8 py-20 text-center">
-          <div className="mx-auto h-16 w-16 rounded-3xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 flex items-center justify-center mb-5">
-            <Users2 size={28} className="text-violet-500" />
+        /* ── Empty state ── */
+        <motion.div
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-8 py-24 text-center"
+        >
+          <div className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-br from-violet-500/15 to-fuchsia-500/15 border border-violet-500/20 flex items-center justify-center mb-6">
+            <Users2 size={32} className="text-violet-500" />
           </div>
-          <h3 className="text-lg font-bold">No groups yet</h3>
-          <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-            Create a group to see all your friends on a single map, plan trips, and stay connected.
+          <h3 className="text-xl font-bold">No groups yet</h3>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto leading-relaxed">
+            Create a group to see all your friends on one map, plan trips, and stay connected in real-time.
           </p>
-          <Button className="mt-6 gap-2 shadow-sm" onClick={() => setShowCreate(true)}>
+          <Button className="mt-6 gap-2 shadow-md shadow-primary/20" onClick={() => setShowCreate(true)}>
             <Plus size={15} />
             Create your first group
           </Button>
@@ -299,114 +458,127 @@ export default function GroupsPage() {
             const onlineCount = group.members.filter((m) => m.user.isOnline).length;
             const isActing    = actionGroupId === group.id && (deleting || leaving);
             const memberCount = group._count?.members ?? group.members.length;
+            const grad        = groupGradient(group.name);
 
             return (
               <motion.div
                 key={group.id}
-                initial={{ opacity: 0, scale: 0.96, y: 16 }}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ delay: i * 0.05, duration: 0.3 }}
+                transition={{ delay: i * 0.06, duration: 0.3, ease: 'easeOut' }}
               >
-                <div className="group h-full flex flex-col rounded-2xl border border-border/60 bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden relative">
-                  
-                  {/* Glassmorphic decorative top bar based on name hash (just for visual variety) */}
-                  <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 opacity-80" />
+                <div className={cn(
+                  'group/card card-shine h-full flex flex-col rounded-2xl border border-border/50 bg-card',
+                  'hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden',
+                )}>
 
-                  <div className="p-5 flex-1 flex flex-col">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="h-12 w-12 rounded-[14px] bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                          {group.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-base truncate leading-tight">{group.name}</p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            {isCreator ? (
-                              <span className="text-[9px] uppercase tracking-wider font-bold text-violet-600 bg-violet-100 dark:bg-violet-900/40 dark:text-violet-400 px-1.5 py-0.5 rounded-md">Admin</span>
-                            ) : (
-                              <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">Member</span>
-                            )}
-                          </div>
+                  {/* Gradient accent bar */}
+                  <div className={cn('h-1.5 w-full bg-gradient-to-r', grad.bar)} />
+
+                  <div className="p-5 flex-1 flex flex-col gap-4">
+
+                    {/* ── Card header ── */}
+                    <div className="flex items-start gap-3.5">
+                      <div className={cn(
+                        'rounded-2xl bg-gradient-to-br flex items-center justify-center',
+                        'text-white font-black text-xl shrink-0 shadow-md',
+                        'group-hover/card:scale-110 transition-transform duration-300',
+                        grad.from, grad.to,
+                      )} style={{ width: 52, height: 52 }}>
+                        {group.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <p className="font-bold text-base truncate leading-tight">{group.name}</p>
+                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                          {isCreator ? (
+                            <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded-md">
+                              <Crown size={8} /> Admin
+                            </span>
+                          ) : (
+                            <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">Member</span>
+                          )}
+                          {onlineCount > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              {onlineCount} live
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Description */}
-                    {group.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+                    {/* ── Description ── */}
+                    {group.description ? (
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed -mt-1">
                         {group.description}
                       </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground/40 italic -mt-1">No description</p>
                     )}
 
-                    <div className="mt-auto pt-2 space-y-4">
-                      {/* Stats row */}
-                      <div className="flex items-center justify-between text-xs font-medium">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <Users size={14} />
-                          {memberCount} Members
-                        </div>
-                        {onlineCount > 0 && (
-                          <div className="flex items-center gap-1.5 text-emerald-600">
-                            <span className="relative flex h-1.5 w-1.5">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-50" />
-                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                            </span>
-                            {onlineCount} active
-                          </div>
-                        )}
+                    {/* ── Stats bar ── */}
+                    <div className="flex items-center gap-3 text-xs font-medium">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Users size={12} className="shrink-0" />
+                        <span>{memberCount} member{memberCount !== 1 ? 's' : ''}</span>
                       </div>
+                      <div className="h-3 w-px bg-border shrink-0" />
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <MapPin size={12} className="shrink-0" />
+                        <span>Live map</span>
+                      </div>
+                    </div>
 
-                      {/* Avatars */}
-                      <div className="bg-muted/30 rounded-xl p-3 flex items-center justify-between">
-                        <AvatarStack 
-                          items={group.members.map(m => ({
+                    <div className="mt-auto space-y-3">
+                      {/* ── Avatars + action ── */}
+                      <div className="flex items-center justify-between bg-muted/40 rounded-xl px-3 py-2.5 border border-border/30">
+                        <AvatarStack
+                          items={group.members.map((m) => ({
                             id: m.userId,
                             name: m.user.name,
                             avatar: m.user.avatar,
                           }))}
                           max={5}
-                          size={28}
+                          size={26}
                         />
-                        
-                        {/* Secondary Actions (Delete/Leave) */}
-                        {isCreator ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg shrink-0"
-                            disabled={isActing}
-                            title="Delete group"
-                            onClick={(e) => { e.preventDefault(); handleDelete(group.id, group.name); }}
-                          >
-                            {isActing ? (
-                              <Loader2 size={13} className="animate-spin" />
-                            ) : (
-                              <Trash2 size={13} />
-                            )}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg shrink-0"
-                            disabled={isActing}
-                            title="Leave group"
-                            onClick={(e) => { e.preventDefault(); handleLeave(group.id, group.name); }}
-                          >
-                            {isActing ? (
-                              <Loader2 size={13} className="animate-spin" />
-                            ) : (
-                              <LogOut size={13} />
-                            )}
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {/* Delete / Leave */}
+                          {isCreator ? (
+                            <button
+                              disabled={isActing}
+                              title="Delete group"
+                              aria-label="Delete group"
+                              onClick={(e) => { e.preventDefault(); handleDelete(group.id, group.name); }}
+                              className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                            >
+                              {isActing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                            </button>
+                          ) : (
+                            <button
+                              disabled={isActing}
+                              title="Leave group"
+                              aria-label="Leave group"
+                              onClick={(e) => { e.preventDefault(); handleLeave(group.id, group.name); }}
+                              className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors disabled:opacity-50"
+                            >
+                              {isActing ? <Loader2 size={12} className="animate-spin" /> : <LogOut size={12} />}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      
-                      {/* Main Action */}
-                      <Button className="w-full gap-2 rounded-xl h-10 group-hover:bg-primary/90" asChild>
+
+                      {/* ── View button ── */}
+                      <Button
+                        className={cn(
+                          'w-full h-10 rounded-xl gap-2 font-semibold bg-gradient-to-r',
+                          grad.from, grad.to,
+                          'hover:opacity-90 hover:shadow-md text-white border-0 transition-all shadow-sm'
+                        )}
+                        asChild
+                      >
                         <Link href={`/dashboard/groups/${group.id}`}>
-                          View Group <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                          View Group
+                          <ArrowRight size={14} className="group-hover/card:translate-x-1 transition-transform duration-200" />
                         </Link>
                       </Button>
                     </div>

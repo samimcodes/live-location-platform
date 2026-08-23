@@ -24,7 +24,16 @@ export class UserController {
 
   static deleteUser = catchAsync(async (req: AuthRequest, res: Response) => {
     const { id } = req.params as { id: string };
-    const result = await UserService.deleteUser(Number(id));
+    const targetId = Number(id);
+    const callerId = req.user!.userId;
+    const callerRole = req.user!.role;
+
+    if (callerId !== targetId && callerRole !== 'ADMIN') {
+      sendResponse(res, { statusCode: 403, message: 'You can only delete your own account' });
+      return;
+    }
+
+    const result = await UserService.deleteUser(targetId);
     sendResponse(res, { statusCode: 200, message: result.message });
   });
 }

@@ -1,52 +1,156 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import {
   useNotifications,
   useMarkAllRead,
   useMarkRead,
   useDeleteNotification,
   useDeleteAllRead,
+  type Notification,
 } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import {
   Bell, Check, Trash2, UserPlus,
   MapPin, Users, Info, Loader2, CheckCheck,
+  ArrowRight, Sparkles, AlertTriangle, X,
+  Clock, ShieldAlert,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from '@/lib/dateUtils';
 
 // ── Icons and Colors Config ────────────────────────────────────────────────
-const typeIcon: Record<string, React.ElementType> = {
-  FRIEND_REQUEST:  UserPlus,
-  FRIEND_ACCEPTED: Users,
-  GROUP_INVITE:    Users,
-  GROUP_JOINED:    Users,
-  LOCATION_ALERT:  MapPin,
-  SYSTEM:          Info,
+const TYPE_CONFIG: Record<string, {
+  icon: React.ElementType;
+  gradient: string;
+  badgeBg: string;
+  badgeText: string;
+  actionHref?: string;
+  actionLabel?: string;
+}> = {
+  FRIEND_REQUEST: {
+    icon: UserPlus,
+    gradient: 'from-indigo-500 to-indigo-600',
+    badgeBg: 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/40',
+    badgeText: 'text-indigo-600 dark:text-indigo-400',
+    actionHref: '/dashboard/friends/requests',
+    actionLabel: 'View Request',
+  },
+  FRIEND_ACCEPTED: {
+    icon: Users,
+    gradient: 'from-emerald-500 to-teal-600',
+    badgeBg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/40',
+    badgeText: 'text-emerald-600 dark:text-emerald-400',
+    actionHref: '/dashboard/friends',
+    actionLabel: 'View Friends',
+  },
+  GROUP_INVITE: {
+    icon: Users,
+    gradient: 'from-violet-500 to-purple-600',
+    badgeBg: 'bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-800/40',
+    badgeText: 'text-violet-600 dark:text-violet-400',
+    actionHref: '/dashboard/groups',
+    actionLabel: 'View Groups',
+  },
+  GROUP_JOINED: {
+    icon: Users,
+    gradient: 'from-fuchsia-500 to-pink-600',
+    badgeBg: 'bg-fuchsia-50 dark:bg-fuchsia-950/40 border-fuchsia-200 dark:border-fuchsia-800/40',
+    badgeText: 'text-fuchsia-600 dark:text-fuchsia-400',
+    actionHref: '/dashboard/groups',
+    actionLabel: 'Open Group',
+  },
+  LOCATION_ALERT: {
+    icon: MapPin,
+    gradient: 'from-amber-500 to-orange-600',
+    badgeBg: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40',
+    badgeText: 'text-amber-600 dark:text-amber-400',
+    actionHref: '/dashboard/map',
+    actionLabel: 'Live Map',
+  },
+  SYSTEM: {
+    icon: Info,
+    gradient: 'from-blue-500 to-cyan-600',
+    badgeBg: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/40',
+    badgeText: 'text-blue-600 dark:text-blue-400',
+  },
 };
 
-const typeGradient: Record<string, string> = {
-  FRIEND_REQUEST:  'from-indigo-500 to-indigo-400',
-  FRIEND_ACCEPTED: 'from-emerald-500 to-emerald-400',
-  GROUP_INVITE:    'from-purple-500 to-purple-400',
-  GROUP_JOINED:    'from-fuchsia-500 to-fuchsia-400',
-  LOCATION_ALERT:  'from-orange-500 to-orange-400',
-  SYSTEM:          'from-blue-500 to-blue-400',
-};
+// ── Confirm dialog component ───────────────────────────────────────────────
+function ConfirmDialog({
+  open, title, description, confirmLabel = 'Confirm', destructive = false,
+  onConfirm, onCancel,
+}: {
+  open: boolean; title: string; description: string;
+  confirmLabel?: string; destructive?: boolean;
+  onConfirm: () => void; onCancel: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
+          <motion.div
+            initial={{ y: 24, opacity: 0, scale: 0.96 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 24, opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+            className="relative z-10 w-full max-w-sm bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+          >
+            <div className={cn('h-1 w-full', destructive ? 'bg-destructive' : 'bg-blue-500')} />
+            <div className="p-6">
+              <div className="flex items-start gap-3.5">
+                <div className={cn(
+                  'h-10 w-10 rounded-xl flex items-center justify-center shrink-0',
+                  destructive ? 'bg-destructive/10' : 'bg-blue-500/10',
+                )}>
+                  <AlertTriangle size={18} className={destructive ? 'text-destructive' : 'text-blue-500'} />
+                </div>
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <p className="font-bold text-sm leading-snug">{title}</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{description}</p>
+                </div>
+                <button
+                  onClick={onCancel}
+                  aria-label="Cancel"
+                  className="p-1 -mt-0.5 -mr-0.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="flex gap-2.5 mt-5">
+                <Button variant="outline" size="sm" className="flex-1 h-9 rounded-xl" onClick={onCancel}>
+                  Cancel
+                </Button>
+                <Button
+                  variant={destructive ? 'destructive' : 'default'}
+                  size="sm"
+                  className="flex-1 h-9 rounded-xl"
+                  onClick={onConfirm}
+                >
+                  {confirmLabel}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
-// ── Animation helpers ─────────────────────────────────────────────────────
-const fadeUp = (delay = 0) => ({
-  initial:    { opacity: 0, y: 16 },
-  animate:    { opacity: 1, y: 0 },
-  transition: { duration: 0.35, delay, ease: 'easeOut' as const },
-});
-
+// ─────────────────────────────────────────────────────────────────────────────
 export default function NotificationsPage() {
   const [page, setPage] = useState(1);
+  const [filterType, setFilterType] = useState<'ALL' | 'UNREAD' | 'FRIENDS' | 'GROUPS' | 'ALERTS'>('ALL');
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
-  const { data, isLoading, isFetching }      = useNotifications(page);
+  const { data, isLoading, isFetching }                  = useNotifications(page);
   const { mutate: markAllRead,  isPending: markingAll  } = useMarkAllRead();
   const { mutate: markRead }                              = useMarkRead();
   const { mutate: deleteNotif }                           = useDeleteNotification();
@@ -59,26 +163,53 @@ export default function NotificationsPage() {
   const readCount      = notifications.filter((n) => n.isRead).length;
   const hasMore        = page < totalPages;
 
+  // Filtered notifications
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter((n) => {
+      if (filterType === 'UNREAD') return !n.isRead;
+      if (filterType === 'FRIENDS') return n.type === 'FRIEND_REQUEST' || n.type === 'FRIEND_ACCEPTED';
+      if (filterType === 'GROUPS') return n.type === 'GROUP_INVITE' || n.type === 'GROUP_JOINED';
+      if (filterType === 'ALERTS') return n.type === 'LOCATION_ALERT' || n.type === 'SYSTEM';
+      return true;
+    });
+  }, [notifications, filterType]);
+
+  const handleDeleteAllReadConfirm = useCallback(() => {
+    deleteAllRead(undefined, {
+      onSettled: () => setConfirmDeleteAll(false),
+    });
+  }, [deleteAllRead]);
+
   return (
     <div className="space-y-6 max-w-3xl">
-      {/* ═══════════════════════════════════════════════════════════════
-          HEADER — Premium Banner
-         ═══════════════════════════════════════════════════════════════ */}
-      <motion.div {...fadeUp(0)}>
+
+      {/* ── Confirm Delete Read Dialog ─────────────────────────────────── */}
+      <ConfirmDialog
+        open={confirmDeleteAll}
+        title="Delete All Read Notifications?"
+        description="All previously read notifications will be removed permanently. Unread notifications will remain untouched."
+        confirmLabel="Delete Read"
+        destructive={true}
+        onConfirm={handleDeleteAllReadConfirm}
+        onCancel={() => setConfirmDeleteAll(false)}
+      />
+
+      {/* ── HEADER — Premium Banner ────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         <div className="relative rounded-2xl overflow-hidden welcome-gradient border border-border/40 shadow-sm">
           <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
           
-          <div className="relative px-6 py-5 sm:px-8 sm:py-6">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3.5">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                  <Bell size={22} className="text-white" />
+          <div className="relative px-6 py-6 sm:px-8 sm:py-7">
+            <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 shrink-0">
+                  <Bell size={24} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Notifications</h1>
+                  <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    {total > 0 ? `${total} total` : 'No notifications'}
-                    {unread > 0 && ` · ${unread} unread`}
+                    Stay updated with friend requests, group activity, and alerts
                   </p>
                 </div>
               </div>
@@ -88,63 +219,106 @@ export default function NotificationsPage() {
                 {readCount > 0 && (
                   <Button
                     variant="outline" size="sm"
-                    className="text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl h-9"
-                    onClick={() => deleteAllRead()}
+                    className="text-muted-foreground hover:text-destructive border-border/60 hover:bg-destructive/10 rounded-xl h-10 px-3.5 transition-colors"
+                    onClick={() => setConfirmDeleteAll(true)}
                     disabled={deletingAll}
                   >
                     {deletingAll
-                      ? <Loader2 size={13} className="mr-2 animate-spin" />
-                      : <Trash2 size={13} className="mr-2" />
+                      ? <Loader2 size={13} className="mr-1.5 animate-spin" />
+                      : <Trash2 size={13} className="mr-1.5" />
                     }
-                    Delete read
+                    Clear read
                   </Button>
                 )}
                 {unread > 0 && (
-                  <Button size="sm" className="rounded-xl h-9 shadow-sm" onClick={() => markAllRead()} disabled={markingAll}>
+                  <Button
+                    size="sm"
+                    className="rounded-xl h-10 shadow-md shadow-primary/20 px-4 font-semibold gap-1.5"
+                    onClick={() => markAllRead()}
+                    disabled={markingAll}
+                  >
                     {markingAll
-                      ? <Loader2 size={13} className="mr-2 animate-spin" />
-                      : <CheckCheck size={13} className="mr-2" />
+                      ? <Loader2 size={13} className="mr-1.5 animate-spin" />
+                      : <CheckCheck size={14} className="mr-1.5" />
                     }
                     Mark all read
                   </Button>
                 )}
               </div>
             </div>
+
+            {/* Filter Tabs Chips */}
+            <div className="flex items-center gap-2 mt-5 flex-wrap">
+              {[
+                { key: 'ALL',     label: `All (${total})` },
+                { key: 'UNREAD',  label: `Unread (${unread})` },
+                { key: 'FRIENDS', label: 'Friends' },
+                { key: 'GROUPS',  label: 'Groups' },
+                { key: 'ALERTS',  label: 'Alerts' },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setFilterType(key as typeof filterType)}
+                  className={cn(
+                    'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border',
+                    filterType === key
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20'
+                      : 'bg-card/80 border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </motion.div>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          NOTIFICATIONS LIST
-         ═══════════════════════════════════════════════════════════════ */}
-      <motion.div {...fadeUp(0.08)}>
+      {/* ── NOTIFICATIONS LIST ─────────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
         <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
           {isLoading && notifications.length === 0 ? (
             <div className="space-y-4 p-5 sm:p-6">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex gap-4 items-start">
-                  <div className="h-11 w-11 rounded-2xl bg-muted animate-pulse shrink-0" />
+                  <div className="h-12 w-12 rounded-2xl bg-muted animate-pulse shrink-0" />
                   <div className="flex-1 space-y-2 py-1">
-                    <div className="h-4 w-1/3 bg-muted rounded animate-pulse" />
-                    <div className="h-3 w-3/4 bg-muted rounded animate-pulse" />
+                    <div className="h-4 w-1/3 bg-muted rounded-lg animate-pulse" />
+                    <div className="h-3 w-3/4 bg-muted rounded-lg animate-pulse" />
                   </div>
                 </div>
               ))}
             </div>
-          ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center py-20 text-muted-foreground">
-              <div className="mx-auto h-16 w-16 rounded-3xl bg-muted/60 flex items-center justify-center mb-5">
-                <Bell size={28} className="opacity-30" />
+          ) : filteredNotifications.length === 0 ? (
+            <div className="flex flex-col items-center py-20 px-6 text-center text-muted-foreground">
+              <div className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15 border border-blue-500/20 flex items-center justify-center mb-5">
+                <Bell size={32} className="text-primary opacity-60" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">All caught up!</h3>
-              <p className="text-sm mt-1">You have no new notifications.</p>
+              <h3 className="text-lg font-bold text-foreground">
+                {filterType === 'UNREAD' ? 'No unread notifications' : 'All caught up!'}
+              </h3>
+              <p className="text-sm mt-1 max-w-xs leading-relaxed text-muted-foreground">
+                {filterType === 'UNREAD'
+                  ? 'You have read all your notifications.'
+                  : 'New alerts, friend updates, and group messages will appear here.'}
+              </p>
+              {filterType !== 'ALL' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 rounded-xl shadow-sm"
+                  onClick={() => setFilterType('ALL')}
+                >
+                  View All Notifications
+                </Button>
+              )}
             </div>
           ) : (
             <div className="divide-y divide-border/30">
               <AnimatePresence initial={false}>
-                {notifications.map((n, i) => {
-                  const Icon = typeIcon[n.type] ?? Info;
-                  const gradient = typeGradient[n.type] ?? 'from-slate-500 to-slate-400';
+                {filteredNotifications.map((n, i) => {
+                  const cfg = TYPE_CONFIG[n.type] ?? TYPE_CONFIG.SYSTEM;
+                  const Icon = cfg.icon;
                   
                   return (
                     <motion.div
@@ -153,50 +327,82 @@ export default function NotificationsPage() {
                       initial={{ opacity: 0, x: -12 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, height: 0, paddingBottom: 0 }}
-                      transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                      transition={{ delay: Math.min(i * 0.025, 0.25) }}
                       className={cn(
-                        'relative flex items-start gap-4 px-5 py-4 sm:px-6 sm:py-5 transition-colors group',
-                        !n.isRead ? 'bg-primary/[0.03] hover:bg-primary/[0.06]' : 'hover:bg-muted/30'
+                        'relative flex items-start gap-4 px-5 py-4 sm:px-6 sm:py-5 transition-all group',
+                        !n.isRead
+                          ? 'bg-primary/[0.04] hover:bg-primary/[0.08]'
+                          : 'hover:bg-muted/30'
                       )}
                     >
-                      {/* Unread indicator line */}
+                      {/* Unread vertical indicator line */}
                       {!n.isRead && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />
+                        <div className="absolute left-0 top-2 bottom-2 w-1 bg-primary rounded-r-full" />
                       )}
 
-                      {/* Icon */}
+                      {/* Icon with gradient and shadow */}
                       <div className={cn(
-                        'h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 shadow-sm bg-gradient-to-br',
-                        gradient,
-                        !n.isRead && 'ring-2 ring-primary/20 ring-offset-2 ring-offset-card'
+                        'h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br text-white',
+                        cfg.gradient,
+                        !n.isRead && 'ring-2 ring-primary/25 ring-offset-2 ring-offset-card'
                       )}>
-                        <Icon size={18} className="text-white" />
+                        <Icon size={20} className="text-white" />
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0 pt-0.5">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={cn('text-sm font-bold truncate pr-4', !n.isRead ? 'text-foreground' : 'text-muted-foreground')}>
-                            {n.title}
-                          </p>
-                          <p className="text-[11px] font-medium text-muted-foreground/60 shrink-0 tabular-nums">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className={cn(
+                              'text-sm font-bold truncate leading-snug',
+                              !n.isRead ? 'text-foreground font-extrabold' : 'text-foreground/80'
+                            )}>
+                              {n.title}
+                            </p>
+                            {!n.isRead && (
+                              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                            )}
+                          </div>
+
+                          <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground/60 shrink-0 bg-muted/40 px-2 py-0.5 rounded-md">
+                            <Clock size={10} />
                             {formatDistanceToNow(n.createdAt)}
-                          </p>
+                          </span>
                         </div>
+
                         <p className={cn(
-                          "text-sm mt-1 leading-relaxed", 
-                          !n.isRead ? "text-muted-foreground" : "text-muted-foreground/70"
+                          'text-xs mt-1.5 leading-relaxed', 
+                          !n.isRead ? 'text-foreground/80' : 'text-muted-foreground'
                         )}>
                           {n.body}
                         </p>
                         
+                        {/* Action link if applicable */}
+                        {cfg.actionHref && (
+                          <div className="mt-3 flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={cn(
+                                'h-7 text-xs font-semibold px-2.5 rounded-lg border gap-1 shadow-sm transition-all',
+                                cfg.badgeBg, cfg.badgeText
+                              )}
+                              asChild
+                            >
+                              <Link href={cfg.actionHref}>
+                                {cfg.actionLabel ?? 'View'} <ArrowRight size={11} />
+                              </Link>
+                            </Button>
+                          </div>
+                        )}
+
                         {/* Mobile Actions */}
-                        <div className="flex sm:hidden items-center gap-2 mt-3 pt-3 border-t border-border/40">
+                        <div className="flex sm:hidden items-center gap-2 mt-3 pt-2.5 border-t border-border/30">
                           {!n.isRead && (
                             <Button
                               variant="outline" size="sm"
                               onClick={() => markRead(n.id)}
-                              className="h-7 text-xs px-2 gap-1"
+                              className="h-7 text-xs px-2.5 rounded-lg gap-1"
                             >
                               <Check size={12} /> Mark Read
                             </Button>
@@ -204,7 +410,7 @@ export default function NotificationsPage() {
                           <Button
                             variant="ghost" size="sm"
                             onClick={() => deleteNotif(n.id)}
-                            className="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            className="h-7 text-xs px-2.5 rounded-lg gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 size={12} /> Delete
                           </Button>
@@ -212,11 +418,11 @@ export default function NotificationsPage() {
                       </div>
 
                       {/* Desktop Actions */}
-                      <div className="hidden sm:flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         {!n.isRead && (
                           <button
                             onClick={() => markRead(n.id)}
-                            className="p-1.5 rounded-xl bg-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                            className="p-2 rounded-xl bg-card hover:bg-primary/10 text-muted-foreground hover:text-primary border border-border/50 shadow-sm transition-colors"
                             title="Mark as read"
                           >
                             <Check size={14} />
@@ -224,17 +430,12 @@ export default function NotificationsPage() {
                         )}
                         <button
                           onClick={() => deleteNotif(n.id)}
-                          className="p-1.5 rounded-xl bg-muted/60 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                          title="Delete"
+                          className="p-2 rounded-xl bg-card hover:bg-destructive/10 text-muted-foreground hover:text-destructive border border-border/50 shadow-sm transition-colors"
+                          title="Delete notification"
                         >
                           <Trash2 size={14} />
                         </button>
                       </div>
-
-                      {/* Simple unread dot for desktop */}
-                      {!n.isRead && (
-                        <div className="hidden sm:block h-2 w-2 rounded-full bg-primary shrink-0 mt-2" />
-                      )}
                     </motion.div>
                   );
                 })}
@@ -242,17 +443,17 @@ export default function NotificationsPage() {
 
               {/* Load More */}
               {hasMore && (
-                <div className="flex justify-center p-5 sm:p-6">
+                <div className="flex justify-center p-5 sm:p-6 bg-muted/10">
                   <Button
                     variant="outline"
-                    className="rounded-xl shadow-sm bg-card hover:bg-muted/50"
+                    className="rounded-xl shadow-sm bg-card hover:bg-muted/50 px-6 h-10 font-semibold"
                     onClick={() => setPage((p) => p + 1)}
                     disabled={isFetching}
                   >
                     {isFetching ? (
                       <><Loader2 size={14} className="mr-2 animate-spin" />Loading…</>
                     ) : (
-                      `Load more`
+                      'Load More Notifications'
                     )}
                   </Button>
                 </div>

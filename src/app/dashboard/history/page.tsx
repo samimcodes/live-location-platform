@@ -10,9 +10,9 @@ import { Label } from '@/components/ui/label';
 import {
   History, MapPin, Trash2, Navigation, Map as MapIcon,
   Route, Building2, Gauge, Calendar, Filter, Loader2,
-  ListRestart, Clock,
+  ListRestart, Clock, AlertTriangle, X, Sparkles,
+  ChevronRight, Compass,
 } from 'lucide-react';
-import { formatDateTime } from '@/lib/dateUtils';
 import { toast } from '@/lib/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isValidLatLng } from '@/lib/mapUtils';
@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 
 const MiniMap = dynamic(
   () => import('@/components/map/MiniMap').then((m) => m.MiniMap),
-  { ssr: false, loading: () => <div className="h-64 w-full rounded-2xl bg-muted animate-pulse border border-border" /> }
+  { ssr: false, loading: () => <div className="h-72 w-full rounded-2xl bg-muted animate-pulse border border-border" /> }
 );
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -67,7 +67,6 @@ function groupByDate(entries: HistoryEntry[]): { label: string; entries: History
   const todayStr     = fmt(today);
   const yesterdayStr = fmt(yesterday);
 
-  // Use a plain object + ordered keys array to avoid name clash with lucide Map icon
   const buckets: Record<string, HistoryEntry[]> = {};
   const order: string[] = [];
 
@@ -89,6 +88,72 @@ function groupByDate(entries: HistoryEntry[]): { label: string; entries: History
   return order.map((label) => ({ label, entries: buckets[label] }));
 }
 
+// ── Confirm dialog component ───────────────────────────────────────────────
+function ConfirmDialog({
+  open, title, description, confirmLabel = 'Confirm', destructive = false,
+  onConfirm, onCancel,
+}: {
+  open: boolean; title: string; description: string;
+  confirmLabel?: string; destructive?: boolean;
+  onConfirm: () => void; onCancel: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
+          <motion.div
+            initial={{ y: 24, opacity: 0, scale: 0.96 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 24, opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+            className="relative z-10 w-full max-w-sm bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+          >
+            <div className={cn('h-1 w-full', destructive ? 'bg-destructive' : 'bg-amber-500')} />
+            <div className="p-6">
+              <div className="flex items-start gap-3.5">
+                <div className={cn(
+                  'h-10 w-10 rounded-xl flex items-center justify-center shrink-0',
+                  destructive ? 'bg-destructive/10' : 'bg-amber-500/10',
+                )}>
+                  <AlertTriangle size={18} className={destructive ? 'text-destructive' : 'text-amber-500'} />
+                </div>
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <p className="font-bold text-sm leading-snug">{title}</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{description}</p>
+                </div>
+                <button
+                  onClick={onCancel}
+                  aria-label="Cancel"
+                  className="p-1 -mt-0.5 -mr-0.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="flex gap-2.5 mt-5">
+                <Button variant="outline" size="sm" className="flex-1 h-9 rounded-xl" onClick={onCancel}>
+                  Cancel
+                </Button>
+                <Button
+                  variant={destructive ? 'destructive' : 'default'}
+                  size="sm"
+                  className="flex-1 h-9 rounded-xl"
+                  onClick={onConfirm}
+                >
+                  {confirmLabel}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ── Stat card ──────────────────────────────────────────────────────────────
 function StatCard({
   icon: Icon, label, value, sub, colorGradient,
@@ -100,12 +165,12 @@ function StatCard({
   colorGradient: string;
 }) {
   return (
-    <div className="flex items-center gap-3.5 p-4 rounded-2xl border border-border/60 bg-card shadow-sm hover:shadow-md transition-shadow group">
+    <div className="card-shine flex items-center gap-3.5 p-4 rounded-2xl border border-border/50 bg-card shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 group">
       <div className={cn('h-11 w-11 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br shadow-sm group-hover:scale-105 transition-transform', colorGradient)}>
         <Icon size={18} className="text-white" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
         <p className="text-base font-bold truncate mt-0.5 leading-tight">{value}</p>
         {sub && <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">{sub}</p>}
       </div>
@@ -113,24 +178,22 @@ function StatCard({
   );
 }
 
-// ── Animation helpers ─────────────────────────────────────────────────────
-const fadeUp = (delay = 0) => ({
-  initial:    { opacity: 0, y: 16 },
-  animate:    { opacity: 1, y: 0 },
-  transition: { duration: 0.35, delay, ease: 'easeOut' as const },
-});
-
 // ── Page ───────────────────────────────────────────────────────────────────
 export default function HistoryPage() {
   const qc = useQueryClient();
 
-  const [startDate,    setStartDate]    = useState('');
-  const [endDate,      setEndDate]      = useState('');
-  const [applied,      setApplied]      = useState<{ start?: string; end?: string }>({});
-  const [skip,         setSkip]         = useState(0);
-  const [allRecords, setAllRecords] = useState<HistoryEntry[]>([]);
-  const [showRouteMap, setShowRouteMap] = useState(false);
-  const [showFilters,  setShowFilters]  = useState(false);
+  const [startDate,       setStartDate]       = useState('');
+  const [endDate,         setEndDate]         = useState('');
+  const [applied,         setApplied]         = useState<{ start?: string; end?: string }>({});
+  const [preset,          setPreset]          = useState<'all' | 'today' | '7d' | '30d' | 'custom'>('all');
+  const [skip,            setSkip]            = useState(0);
+  const [allRecords,      setAllRecords]      = useState<HistoryEntry[]>([]);
+  const [showRouteMap,    setShowRouteMap]    = useState(false);
+  const [showFilters,     setShowFilters]     = useState(false);
+  const [selectedPointId, setSelectedPointId] = useState<number | null>(null);
+
+  // Confirm dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // ── Main history query ─────────────────────────────────────────
   const { data: historyData, isLoading, isFetching } = useQuery({
@@ -183,15 +246,53 @@ export default function HistoryPage() {
       setStartDate('');
       setEndDate('');
       setApplied({});
+      setPreset('all');
+      setSelectedPointId(null);
       qc.invalidateQueries({ queryKey: ['location-history'] });
       qc.invalidateQueries({ queryKey: ['location-history-stats'] });
+      setConfirmOpen(false);
     },
-    onError: () => toast.error('Failed to clear history'),
+    onError: () => {
+      toast.error('Failed to clear history');
+      setConfirmOpen(false);
+    },
   });
+
+  // ── Quick presets ──────────────────────────────────────────────
+  const applyPreset = (type: 'all' | 'today' | '7d' | '30d') => {
+    setPreset(type);
+    setSkip(0);
+    setAllRecords([]);
+    setSelectedPointId(null);
+
+    const now = new Date();
+    if (type === 'all') {
+      setStartDate('');
+      setEndDate('');
+      setApplied({});
+    } else if (type === 'today') {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const end = now.toISOString();
+      setStartDate(start.split('T')[0]);
+      setEndDate(end.split('T')[0]);
+      setApplied({ start, end });
+    } else if (type === '7d') {
+      const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      setStartDate(past.toISOString().split('T')[0]);
+      setEndDate(now.toISOString().split('T')[0]);
+      setApplied({ start: past.toISOString(), end: now.toISOString() });
+    } else if (type === '30d') {
+      const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      setStartDate(past.toISOString().split('T')[0]);
+      setEndDate(now.toISOString().split('T')[0]);
+      setApplied({ start: past.toISOString(), end: now.toISOString() });
+    }
+  };
 
   const handleApplyFilter = useCallback(() => {
     setSkip(0);
     setAllRecords([]);
+    setPreset('custom');
     setApplied({ start: startDate || undefined, end: endDate || undefined });
   }, [startDate, endDate]);
 
@@ -201,7 +302,9 @@ export default function HistoryPage() {
     setSkip(0);
     setAllRecords([]);
     setApplied({});
+    setPreset('all');
     setShowFilters(false);
+    setSelectedPointId(null);
   }, []);
 
   const handleLoadMore = useCallback(() => {
@@ -231,23 +334,33 @@ export default function HistoryPage() {
   return (
     <div className="space-y-6 max-w-4xl">
 
-      {/* ═══════════════════════════════════════════════════════════════
-          HEADER — Premium Banner
-         ═══════════════════════════════════════════════════════════════ */}
-      <motion.div {...fadeUp(0)}>
+      {/* ── Confirm clear dialog ───────────────────────────────────────── */}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Clear Location History?"
+        description="This will permanently delete all recorded location points and route history. This action cannot be undone."
+        confirmLabel="Clear All"
+        destructive={true}
+        onConfirm={() => clearHistory()}
+        onCancel={() => setConfirmOpen(false)}
+      />
+
+      {/* ── HEADER — Premium Banner ────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         <div className="relative rounded-2xl overflow-hidden welcome-gradient border border-border/40 shadow-sm">
           <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-orange-500/10 blur-3xl pointer-events-none" />
           
-          <div className="relative px-6 py-5 sm:px-8 sm:py-6">
+          <div className="relative px-6 py-6 sm:px-8 sm:py-7">
             <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3.5">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                  <History size={22} className="text-white" />
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25 shrink-0">
+                  <History size={24} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Location History</h1>
+                  <h1 className="text-2xl font-bold tracking-tight">Location History</h1>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    {total > 0 ? `${total} points recorded` : 'No points recorded yet'}
+                    {total > 0 ? `${total} points recorded along your journeys` : 'Your movement history will appear here'}
                   </p>
                 </div>
               </div>
@@ -256,31 +369,60 @@ export default function HistoryPage() {
                 {routeCoords.length > 1 && (
                   <Button
                     variant={showRouteMap ? "secondary" : "outline"}
-                    className={cn("gap-2 shadow-sm rounded-xl h-9", showRouteMap ? "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800" : "")}
+                    className={cn(
+                      "gap-2 shadow-sm rounded-xl h-10 transition-all",
+                      showRouteMap ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 font-semibold" : ""
+                    )}
                     onClick={() => setShowRouteMap((v) => !v)}
                   >
-                    <MapIcon size={14} />
-                    {showRouteMap ? 'Hide map' : 'View on map'}
+                    <MapIcon size={15} />
+                    {showRouteMap ? 'Hide Route Map' : 'View on Map'}
                   </Button>
                 )}
                 
                 <Button
                   variant="outline"
-                  className={cn("gap-2 shadow-sm rounded-xl h-9", isFiltered ? "border-primary text-primary" : "")}
+                  className={cn("gap-2 shadow-sm rounded-xl h-10", isFiltered ? "border-primary text-primary bg-primary/5" : "")}
                   onClick={() => setShowFilters(!showFilters)}
                 >
-                  <Filter size={14} />
+                  <Filter size={15} />
                   Filter
                 </Button>
               </div>
+            </div>
+
+            {/* Quick preset chips */}
+            <div className="flex items-center gap-2 mt-5 flex-wrap">
+              {[
+                { key: 'all',   label: 'All History' },
+                { key: 'today', label: 'Today' },
+                { key: '7d',    label: 'Last 7 Days' },
+                { key: '30d',   label: 'Last 30 Days' },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => applyPreset(key as 'all' | 'today' | '7d' | '30d')}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border',
+                    preset === key
+                      ? 'bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-500/20'
+                      : 'bg-card/80 border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+              {isFiltered && preset === 'custom' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                  <Sparkles size={11} /> Custom Date Filter
+                </span>
+              )}
             </div>
           </div>
         </div>
       </motion.div>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          DATE FILTERS (Collapsible)
-         ═══════════════════════════════════════════════════════════════ */}
+      {/* ── DATE FILTERS (Collapsible) ─────────────────────────────────── */}
       <AnimatePresence>
         {showFilters && (
           <motion.div
@@ -290,12 +432,20 @@ export default function HistoryPage() {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Calendar size={14} className="text-primary" />
+            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <Calendar size={14} className="text-amber-500" />
+                  </div>
+                  <h3 className="font-semibold text-sm">Custom Date Range</h3>
                 </div>
-                <h3 className="font-semibold text-sm">Filter by Date</h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                >
+                  <X size={15} />
+                </button>
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4 items-end">
@@ -305,7 +455,7 @@ export default function HistoryPage() {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="h-10 rounded-xl bg-muted/30 focus:bg-card"
+                    className="h-10 rounded-xl bg-muted/40 focus:bg-card border-border/60"
                   />
                 </div>
                 <div className="space-y-1.5 w-full sm:w-auto flex-1">
@@ -314,11 +464,11 @@ export default function HistoryPage() {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="h-10 rounded-xl bg-muted/30 focus:bg-card"
+                    className="h-10 rounded-xl bg-muted/40 focus:bg-card border-border/60"
                   />
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <Button className="h-10 rounded-xl flex-1 sm:flex-none px-6 shadow-sm" onClick={handleApplyFilter}>
+                  <Button className="h-10 rounded-xl flex-1 sm:flex-none px-6 shadow-sm shadow-primary/20" onClick={handleApplyFilter}>
                     Apply
                   </Button>
                   <Button variant="outline" className="h-10 rounded-xl flex-1 sm:flex-none px-4" onClick={handleResetFilter}>
@@ -331,49 +481,45 @@ export default function HistoryPage() {
         )}
       </AnimatePresence>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          STATS GRID
-         ═══════════════════════════════════════════════════════════════ */}
+      {/* ── STATS GRID ─────────────────────────────────────────────────── */}
       {stats && stats.totalEntries > 0 && !isFiltered && (
-        <motion.div {...fadeUp(0.08)} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             icon={Route}
             label="Distance"
             value={`${stats.estimatedDistanceKm} km`}
             sub="Estimated total"
-            colorGradient="from-blue-500 to-cyan-400"
+            colorGradient="from-blue-500 to-cyan-500"
           />
           <StatCard
             icon={Building2}
             label="Cities Visited"
             value={String(stats.uniqueCities)}
-            sub={stats.topCities[0]?.city ? `Top: ${stats.topCities[0].city}` : undefined}
-            colorGradient="from-emerald-500 to-teal-400"
+            sub={stats.topCities[0]?.city ? `Top: ${stats.topCities[0].city}` : 'Mapped locations'}
+            colorGradient="from-emerald-500 to-teal-500"
           />
           {stats.averageSpeedKmh != null && (
             <StatCard
               icon={Gauge}
               label="Avg Speed"
               value={`${stats.averageSpeedKmh} km/h`}
-              sub="Across all records"
-              colorGradient="from-amber-500 to-orange-400"
+              sub="Recorded travel"
+              colorGradient="from-amber-500 to-orange-500"
             />
           )}
           <StatCard
             icon={Clock}
-            label="First Log"
+            label="First Recorded"
             value={stats.firstRecordedAt
-              ? new Date(stats.firstRecordedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+              ? new Date(stats.firstRecordedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
               : '—'}
-            sub="Tracking started"
+            sub="Log origin"
             colorGradient="from-purple-500 to-pink-500"
           />
         </motion.div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════
-          ROUTE MAP
-         ═══════════════════════════════════════════════════════════════ */}
+      {/* ── ROUTE MAP ──────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showRouteMap && routeCenter && (
           <motion.div
@@ -389,43 +535,50 @@ export default function HistoryPage() {
                 center={routeCenter}
                 zoom={12}
                 routeCoords={routeCoords}
-                routeColor="#f59e0b" // amber-500
+                routeColor="#f59e0b"
                 controls={true}
-                className="h-[320px] rounded-xl border border-border/40"
+                className="h-[340px] rounded-xl border border-border/40"
               />
-              <div className="p-3 text-center text-xs text-muted-foreground">
-                Showing {routeCoords.length} points on map
+              <div className="px-4 py-3 flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" /> Start Point
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-destructive" /> Latest Point
+                  </span>
+                </div>
+                <span>Showing {routeCoords.length} path coordinates</span>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          TIMELINE
-         ═══════════════════════════════════════════════════════════════ */}
-      <motion.div {...fadeUp(0.12)}>
+      {/* ── TIMELINE ───────────────────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
         <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <div className="px-5 py-4 flex items-center justify-between border-b border-border/30">
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl bg-muted/60 flex items-center justify-center">
-                <ListRestart size={16} className="text-muted-foreground" />
+              <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <ListRestart size={16} className="text-amber-500" />
               </div>
-              <h2 className="text-sm font-bold">Activity Log</h2>
+              <div>
+                <h2 className="text-sm font-bold">Activity Log</h2>
+                <p className="text-[11px] text-muted-foreground">Click a point for details</p>
+              </div>
             </div>
             
             {allRecords.length > 0 && (
               <Button
                 variant="ghost" 
                 size="sm"
-                className="h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg"
                 disabled={clearing}
-                onClick={() => {
-                  if (confirm('Clear all location history? This cannot be undone.')) clearHistory();
-                }}
+                onClick={() => setConfirmOpen(true)}
               >
                 {clearing ? <Loader2 size={12} className="animate-spin mr-1.5" /> : <Trash2 size={12} className="mr-1.5" />}
-                Clear All
+                Clear History
               </Button>
             )}
           </div>
@@ -438,7 +591,7 @@ export default function HistoryPage() {
                     <div className="h-4 w-24 bg-muted rounded animate-pulse" />
                     <div className="pl-4 border-l-2 border-muted space-y-4">
                       {[1, 2, 3].map((item) => (
-                        <div key={item} className="h-14 w-full bg-muted/50 rounded-xl animate-pulse" />
+                        <div key={item} className="h-16 w-full bg-muted/50 rounded-xl animate-pulse" />
                       ))}
                     </div>
                   </div>
@@ -446,18 +599,18 @@ export default function HistoryPage() {
               </div>
             ) : allRecords.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
-                <div className="mx-auto h-16 w-16 rounded-3xl bg-muted/50 flex items-center justify-center mb-4">
-                  <History size={28} className="opacity-30" />
+                <div className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 border border-amber-500/20 flex items-center justify-center mb-4">
+                  <History size={32} className="text-amber-500" />
                 </div>
-                <h3 className="font-semibold text-foreground">No history found</h3>
-                <p className="text-sm mt-1.5 max-w-sm mx-auto">
+                <h3 className="font-bold text-foreground text-base">No history records found</h3>
+                <p className="text-sm mt-1.5 max-w-sm mx-auto leading-relaxed text-muted-foreground">
                   {isFiltered
-                    ? 'No location records found in this date range.'
-                    : 'Location history will appear here as you share your live location with friends.'}
+                    ? 'No location points match the selected filter parameters.'
+                    : 'Location updates will be logged here as you move and share location.'}
                 </p>
                 {isFiltered && (
                   <Button variant="outline" size="sm" className="mt-5 rounded-xl shadow-sm" onClick={handleResetFilter}>
-                    Clear filters
+                    Reset filters
                   </Button>
                 )}
               </div>
@@ -465,85 +618,145 @@ export default function HistoryPage() {
               <div className="space-y-8">
                 {grouped.map(({ label, entries }, groupIdx) => (
                   <div key={label}>
-                    {/* Date group label */}
+                    {/* Date group badge */}
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="px-3 py-1 rounded-full bg-muted/50 border border-border/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <div className="px-3 py-1 rounded-full bg-muted/60 border border-border/50 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         {label}
                       </div>
                       <div className="flex-1 h-px bg-border/40" />
-                      <span className="text-[10px] font-medium text-muted-foreground/50">
+                      <span className="text-[10px] font-semibold text-muted-foreground/60">
                         {entries.length} RECORD{entries.length !== 1 ? 'S' : ''}
                       </span>
                     </div>
 
                     <div className="relative pl-3 sm:pl-4">
-                      {/* Timeline spine */}
+                      {/* Timeline spine line */}
                       <div className="absolute left-[15px] sm:left-[19px] top-3 bottom-3 w-px bg-border/60" />
 
                       <div className="space-y-3">
-                        {entries.map((entry, i) => (
-                          <motion.div
-                            key={entry.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: Math.min(i * 0.015, 0.3) + (groupIdx * 0.1) }}
-                            className="relative flex items-center gap-3 sm:gap-4 group"
-                          >
-                            {/* Timeline dot */}
-                            <div className="relative z-10 flex h-6 w-6 items-center justify-center bg-card rounded-full border-2 border-muted-foreground/20 group-hover:border-primary transition-colors shrink-0">
-                              <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 group-hover:bg-primary transition-colors" />
-                            </div>
+                        {entries.map((entry, i) => {
+                          const isSelected = selectedPointId === entry.id;
+                          const isFirstOverall = groupIdx === 0 && i === 0;
 
-                            {/* Content Card */}
-                            <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-3.5 rounded-xl border border-border/50 bg-card hover:bg-muted/30 hover:border-border transition-all">
-                              
-                              <div className="min-w-0">
-                                {(entry.city || entry.address) ? (
-                                  <p className="text-sm font-semibold flex items-center gap-1.5 truncate text-foreground">
-                                    <MapPin size={13} className="text-primary shrink-0" />
-                                    <span className="truncate">
-                                      {entry.city ?? entry.address}
-                                      {entry.country && <span className="text-muted-foreground font-normal">, {entry.country}</span>}
-                                    </span>
-                                  </p>
+                          return (
+                            <motion.div
+                              key={entry.id}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: Math.min(i * 0.015, 0.25) + (groupIdx * 0.08) }}
+                              className="relative flex items-start gap-3 sm:gap-4 group cursor-pointer"
+                              onClick={() => setSelectedPointId(isSelected ? null : entry.id)}
+                            >
+                              {/* Timeline pin node */}
+                              <div className={cn(
+                                'relative z-10 flex h-6 w-6 mt-1.5 items-center justify-center rounded-full border-2 transition-all shrink-0',
+                                isSelected
+                                  ? 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/30'
+                                  : isFirstOverall
+                                    ? 'bg-card border-amber-500 text-amber-500'
+                                    : 'bg-card border-muted-foreground/30 group-hover:border-amber-500/60 text-muted-foreground'
+                              )}>
+                                {isFirstOverall ? (
+                                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
                                 ) : (
-                                  <p className="text-sm font-mono text-muted-foreground">
-                                    {entry.latitude.toFixed(5)}, {entry.longitude.toFixed(5)}
-                                  </p>
+                                  <div className={cn(
+                                    'h-1.5 w-1.5 rounded-full transition-colors',
+                                    isSelected ? 'bg-white' : 'bg-muted-foreground/40 group-hover:bg-amber-500'
+                                  )} />
                                 )}
+                              </div>
 
-                                {/* Secondary info row */}
-                                <div className="flex items-center gap-3 mt-1.5 text-[11px] font-medium text-muted-foreground/70 flex-wrap">
-                                  {entry.city && (
-                                    <span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded">
-                                      {entry.latitude.toFixed(4)}, {entry.longitude.toFixed(4)}
-                                    </span>
-                                  )}
-                                  {entry.accuracy != null && (
-                                    <span className="flex items-center gap-1" title="Accuracy">
-                                      <div className="h-1 w-1 rounded-full bg-muted-foreground/40" />
-                                      ±{Math.round(entry.accuracy)}m
-                                    </span>
-                                  )}
-                                  {entry.speed != null && entry.speed > 0 && (
-                                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded">
-                                      <Navigation size={9} />
-                                      {(entry.speed * 3.6).toFixed(0)} km/h
-                                    </span>
-                                  )}
+                              {/* Content Card */}
+                              <div className={cn(
+                                'flex-1 rounded-2xl border transition-all p-3.5 sm:p-4',
+                                isSelected
+                                  ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800 shadow-md'
+                                  : 'bg-card hover:bg-muted/30 border-border/60 hover:border-border'
+                              )}>
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="min-w-0">
+                                    {(entry.city || entry.address) ? (
+                                      <p className="text-sm font-bold flex items-center gap-1.5 truncate text-foreground">
+                                        <MapPin size={14} className="text-amber-500 shrink-0" />
+                                        <span className="truncate">
+                                          {entry.city ?? entry.address}
+                                          {entry.country && <span className="text-muted-foreground font-normal">, {entry.country}</span>}
+                                        </span>
+                                      </p>
+                                    ) : (
+                                      <p className="text-sm font-mono font-semibold text-foreground flex items-center gap-1.5">
+                                        <Compass size={14} className="text-amber-500 shrink-0" />
+                                        {entry.latitude.toFixed(5)}, {entry.longitude.toFixed(5)}
+                                      </p>
+                                    )}
+
+                                    {/* Secondary details */}
+                                    <div className="flex items-center gap-2.5 mt-1.5 text-[11px] font-medium text-muted-foreground flex-wrap">
+                                      {entry.city && (
+                                        <span className="font-mono bg-muted/60 px-2 py-0.5 rounded-md text-[10px]">
+                                          {entry.latitude.toFixed(4)}, {entry.longitude.toFixed(4)}
+                                        </span>
+                                      )}
+                                      {entry.accuracy != null && (
+                                        <span className="flex items-center gap-1" title="GPS accuracy radius">
+                                          <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                                          ±{Math.round(entry.accuracy)}m
+                                        </span>
+                                      )}
+                                      {entry.speed != null && entry.speed > 0 && (
+                                        <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded-md font-semibold">
+                                          <Navigation size={9} />
+                                          {(entry.speed * 3.6).toFixed(0)} km/h
+                                        </span>
+                                      )}
+                                      {isFirstOverall && (
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-md">
+                                          Latest Location
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0 bg-muted/40 px-3 py-1.5 rounded-xl self-start sm:self-center">
+                                    <Clock size={11} />
+                                    {new Date(entry.recordedAt).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                    <ChevronRight size={13} className={cn('ml-1 transition-transform', isSelected ? 'rotate-90 text-amber-500' : 'text-muted-foreground/40')} />
+                                  </div>
                                 </div>
-                              </div>
 
-                              <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground/60 shrink-0 bg-muted/40 px-2.5 py-1 rounded-lg">
-                                <Clock size={10} />
-                                {new Date(entry.recordedAt).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
+                                {/* Expanded detail view */}
+                                <AnimatePresence>
+                                  {isSelected && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: 'auto' }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      className="mt-3 pt-3 border-t border-border/40 text-xs text-muted-foreground space-y-1.5"
+                                    >
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 py-1">
+                                        <div className="bg-card/70 p-2 rounded-lg border border-border/40">
+                                          <p className="text-[10px] uppercase font-bold text-muted-foreground/60">Latitude</p>
+                                          <p className="font-mono text-foreground font-semibold mt-0.5">{entry.latitude.toFixed(6)}</p>
+                                        </div>
+                                        <div className="bg-card/70 p-2 rounded-lg border border-border/40">
+                                          <p className="text-[10px] uppercase font-bold text-muted-foreground/60">Longitude</p>
+                                          <p className="font-mono text-foreground font-semibold mt-0.5">{entry.longitude.toFixed(6)}</p>
+                                        </div>
+                                        <div className="bg-card/70 p-2 rounded-lg border border-border/40 col-span-2 sm:col-span-1">
+                                          <p className="text-[10px] uppercase font-bold text-muted-foreground/60">Recorded Time</p>
+                                          <p className="text-foreground font-semibold mt-0.5">{new Date(entry.recordedAt).toLocaleString()}</p>
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
                               </div>
-                            </div>
-                          </motion.div>
-                        ))}
+                            </motion.div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -554,14 +767,14 @@ export default function HistoryPage() {
                   <div className="flex justify-center pt-4">
                     <Button
                       variant="outline"
-                      className="rounded-xl shadow-sm bg-card hover:bg-muted/50"
+                      className="rounded-xl shadow-sm bg-card hover:bg-muted/50 px-6 h-10 font-semibold"
                       onClick={handleLoadMore}
                       disabled={isFetching}
                     >
                       {isFetching ? (
                         <><Loader2 size={14} className="mr-2 animate-spin" />Loading…</>
                       ) : (
-                        `Load more (${total - allRecords.length} remaining)`
+                        `Load more points (${total - allRecords.length} remaining)`
                       )}
                     </Button>
                   </div>
