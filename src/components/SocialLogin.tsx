@@ -7,6 +7,7 @@ import { setCredentials } from '@/store/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast';
 import api from '@/lib/axios';
+import { useLocationStore } from '@/store/useLocationStore';
 
 interface SocialAuthResponse {
   user: {
@@ -42,6 +43,7 @@ export default function SocialLogin() {
       if (data.success && data.data) {
         localStorage.setItem('token', data.data.token);
         dispatch(setCredentials({ user: data.data.user, token: data.data.token }));
+        useLocationStore.getState().setSharing(Boolean(data.data.user.sharingLocation));
         toast.success('Signed in with Google!');
         router.push('/dashboard');
       }

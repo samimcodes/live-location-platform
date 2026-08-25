@@ -1,24 +1,15 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import { readCookie } from '../utils/authCookies';
+import {
+  LOCATION_HISTORY_RETENTION_MS,
+  pickLocationFields,
+  shouldRecordHistory,
+  type LocationFields,
+} from '../utils/locationPayload';
 
-// Use a separate prisma instance to avoid circular imports with server/index.ts
-const prisma = new PrismaClient();
-
-// ── Shared payload types ───────────────────────────────────────────────────
-// These types are documented here so React Native clients can mirror them.
-
-export interface LocationPayload {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-  altitude?: number;
-  speed?: number;
-  heading?: number;
-  address?: string;
-  city?: string;
-  country?: string;
-}
+export type LocationPayload = LocationFields;
 
 /** Outbound location event broadcast to friends / group members. */
 export interface LocationBroadcast extends LocationPayload {
@@ -30,27 +21,15 @@ interface AuthSocket extends Socket {
   userId?: number;
 }
 
-// ── Validation ─────────────────────────────────────────────────────────────
-function isValidLocationPayload(p: unknown): p is LocationPayload {
-  if (!p || typeof p !== 'object') return false;
-  const obj = p as Record<string, unknown>;
-  const lat = obj.latitude;
-  const lng = obj.longitude;
-  return (
-    typeof lat === 'number' &&
-    typeof lng === 'number' &&
-    isFinite(lat) && isFinite(lng) &&
-    lat >= -90 && lat <= 90 &&
-    lng >= -180 && lng <= 180
-  );
-}
-
-// ── JWT authentication middleware ─────────────────────────────────────────
 const authenticateSocket = (socket: AuthSocket, next: (err?: Error) => void): void => {
   const authData = socket.handshake.auth as Record<string, unknown>;
   const authHeader = socket.handshake.headers?.authorization as string | undefined;
+  const cookieToken = readCookie(socket.handshake.headers?.cookie, 'accessToken');
 
-  const token = (authData?.token as string | undefined) ?? authHeader?.split(' ')[1];
+  const token =
+    (authData?.token as string | undefined) ||
+    authHeader?.split(' ')[1] ||
+    cookieToken;
 
   if (!token) {
     return next(new Error('Authentication error: No token provided'));
@@ -102,8 +81,25 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
     });
 
     // ── join / leave arbitrary rooms (group map views) ────────────────────
-    socket.on('join', (roomId: string) => {
-      if (typeof roomId === 'string' && roomId.length < 128) socket.join(roomId);
+    socket.on('join', async (roomId: string) => {
+      if (typeof roomId !== 'string' || roomId.length >= 128) return;
+
+      const groupMatch = /^group:(\d+)$/.exec(roomId);
+      if (groupMatch) {
+        const groupId = Number(groupMatch[1]);
+        const member = await prisma.groupMember.findUnique({
+          where: { groupId_userId: { groupId, userId } },
+          select: { id: true },
+        });
+        if (!member) {
+          socket.emit('error', { message: 'Not a member of this group' });
+          return;
+        }
+        socket.join(roomId);
+        return;
+      }
+
+      if (roomId === `user:${userId}`) socket.join(roomId);
     });
 
     socket.on('leave', (roomId: string) => {
@@ -112,15 +108,13 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
 
     // ── location:update (from client GPS) ─────────────────────────────────
     socket.on('location:update', async (payload: unknown) => {
-      if (!isValidLocationPayload(payload)) {
+      const fields = pickLocationFields(payload);
+      if (!fields) {
         socket.emit('error', { message: 'Invalid location payload' });
         return;
       }
 
       try {
-        // Guard: verify the user actually exists in the DB before any write.
-        // This prevents FK violations if a JWT is valid but the account was
-        // deleted (e.g. during dev/test resets).
         const userExists = await prisma.user.findUnique({
           where: { id: userId },
           select: { id: true, sharingLocation: true },
@@ -132,38 +126,39 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
           return;
         }
 
-        // Respect the user's own sharing preference
         if (!userExists.sharingLocation) return;
 
-        // Upsert current location
         await prisma.location.upsert({
           where: { userId },
-          create: { userId, ...payload },
-          update: { ...payload, updatedAt: new Date() },
+          create: { userId, ...fields },
+          update: { ...fields, updatedAt: new Date() },
         });
 
-        // Append to history
-        await prisma.locationHistory.create({
-          data: { userId, ...payload, recordedAt: new Date() },
-        });
+        if (shouldRecordHistory(userId, fields.latitude, fields.longitude)) {
+          await prisma.locationHistory.create({
+            data: { userId, ...fields, recordedAt: new Date() },
+          });
+          await prisma.locationHistory.deleteMany({
+            where: {
+              userId,
+              recordedAt: { lt: new Date(Date.now() - LOCATION_HISTORY_RETENTION_MS) },
+            },
+          });
+        }
 
         const broadcast: LocationBroadcast = {
           userId,
-          ...payload,
+          ...fields,
           timestamp: new Date().toISOString(),
         };
 
-        // Broadcast to friends
         const latestFriendIds = await getFriendIds(userId);
         latestFriendIds.forEach((fid) => {
           io.to(`user:${fid}`).emit('location:receive', broadcast);
         });
 
-        // Broadcast to any group rooms this user is in
-        // Group rooms are identified as `group:{groupId}` — clients join via `join` event
         const groupIds = await getGroupIds(userId);
         groupIds.forEach((gid) => {
-          // Emit to the group room but NOT back to the sender
           socket.to(`group:${gid}`).emit('group:location:receive', broadcast);
         });
       } catch (err) {

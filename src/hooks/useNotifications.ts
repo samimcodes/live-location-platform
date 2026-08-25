@@ -32,7 +32,6 @@ const QK = 'notifications' as const;
 // queryFn must be a pure data-fetching function with no side effects.
 export function useNotifications(page = 1) {
   const setNotifications = useNotificationStore((s) => s.setNotifications);
-  const setUnreadCount   = useNotificationStore((s) => s.setUnreadCount);
 
   const query = useQuery({
     queryKey: [QK, page],
@@ -47,10 +46,7 @@ export function useNotifications(page = 1) {
   useEffect(() => {
     if (!query.data) return;
     setNotifications(query.data.notifications);
-    // Derive unread count from the current page snapshot
-    const unread = query.data.notifications.filter((n) => !n.isRead).length;
-    setUnreadCount(unread);
-  }, [query.data, setNotifications, setUnreadCount]);
+  }, [query.data, setNotifications]);
 
   return query;
 }

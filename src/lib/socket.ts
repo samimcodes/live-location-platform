@@ -15,8 +15,14 @@ export const getSocket = (): Socket => {
 
 export const connectSocket = (token: string): Socket => {
   const s = getSocket();
+  const prev = (s.auth as { token?: string } | undefined)?.token;
   s.auth = { token };
-  if (!s.connected) s.connect();
+  if (s.connected && prev !== token) {
+    s.disconnect();
+    s.connect();
+  } else if (!s.connected) {
+    s.connect();
+  }
   return s;
 };
 

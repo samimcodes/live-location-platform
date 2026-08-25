@@ -1,7 +1,6 @@
-import { PrismaClient, PlaceType } from '@prisma/client';
+import { PlaceType } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { catchServiceAsync } from '../utils/catchServiceAsync';
-
-const prisma = new PrismaClient();
 
 interface SavedPlaceInput {
   name: string;

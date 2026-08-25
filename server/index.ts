@@ -7,9 +7,9 @@ import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { apiLimiter } from './middlewares/rateLimiters';
-import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import 'dotenv/config';
+import { prisma } from './lib/prisma';
 
 // Routes
 import userRoutes from './routes/userRoutes';
@@ -24,7 +24,6 @@ import savedPlaceRoutes from './routes/savedPlaceRoutes';
 // Socket handler
 import { initSocketHandlers } from './socket/socketHandlers';
 
-const prisma = new PrismaClient();
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -112,12 +111,7 @@ app.prepare().then(async () => {
   // ── Static Files ───────────────────────────────────────────
   server.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
-  // ── Next.js Handler ────────────────────────────────────────
-  server.use((req: Request, res: Response) => {
-    return handle(req, res);
-  });
-
-  // ── Global Error Handler ───────────────────────────────────
+  // ── Global Error Handler (before Next.js catch-all) ────────
   server.use((
     err: Error & { statusCode?: number },
     _req: Request,
@@ -142,6 +136,11 @@ app.prepare().then(async () => {
       message: err.message || 'Internal Server Error',
       data: null,
     });
+  });
+
+  // ── Next.js Handler ────────────────────────────────────────
+  server.use((req: Request, res: Response) => {
+    return handle(req, res);
   });
 
   // ── Start ──────────────────────────────────────────────────

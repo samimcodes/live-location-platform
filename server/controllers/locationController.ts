@@ -4,6 +4,7 @@ import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { AuthRequest } from '../middlewares/authMiddleware';
 import type { LocationBroadcast } from '../socket/socketHandlers';
+import { pickLocationFields } from '../utils/locationPayload';
 
 /**
  * LocationController
@@ -28,22 +29,14 @@ export class LocationController {
   static updateLocation = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.userId;
 
-    // Basic server-side payload validation (defense-in-depth; socket layer also validates)
-    const { latitude, longitude } = req.body as { latitude?: unknown; longitude?: unknown };
-    if (
-      typeof latitude !== 'number' || typeof longitude !== 'number' ||
-      !isFinite(latitude) || !isFinite(longitude) ||
-      latitude < -90 || latitude > 90 ||
-      longitude < -180 || longitude > 180
-    ) {
+    const fields = pickLocationFields(req.body);
+    if (!fields) {
       sendResponse(res, { statusCode: 400, message: 'Invalid latitude or longitude' });
       return;
     }
 
-    const location = await LocationService.updateLocation(userId, req.body);
+    const location = await LocationService.updateLocation(userId, fields);
 
-    // Broadcast the updated position to the user's own personal room so that
-    // other devices / tabs of the same user can see it.
     if (req.io) {
       const broadcast: LocationBroadcast = {
         userId,
@@ -59,6 +52,10 @@ export class LocationController {
         timestamp: new Date().toISOString(),
       };
       req.io.to(`user:${userId}`).emit('location:broadcast', broadcast);
+      const friendIds = await LocationService.getFriendIds(userId);
+      friendIds.forEach((fid) => {
+        req.io!.to(`user:${fid}`).emit('location:receive', broadcast);
+      });
     }
 
     sendResponse(res, {
@@ -194,9 +191,7 @@ export class LocationController {
     // We broadcast to each friend's personal room so their maps update live.
     if (req.io) {
       try {
-        // Reuse the friends list from LocationService (already has Prisma client)
-        const rawLocations = await LocationService.getFriendsLocations(req.user!.userId);
-        const friendIds = (rawLocations as Array<{ userId: number }>).map((l) => l.userId);
+        const friendIds = await LocationService.getFriendIds(req.user!.userId);
         const event = { userId: req.user!.userId, sharing };
         friendIds.forEach((fid) => {
           req.io!.to(`user:${fid}`).emit('sharing:changed', event);

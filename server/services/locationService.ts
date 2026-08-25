@@ -1,33 +1,39 @@
-import { PrismaClient } from '@prisma/client';
 import { catchServiceAsync } from '../utils/catchServiceAsync';
-
-const prisma = new PrismaClient();
-
-interface LocationInput {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-  altitude?: number;
-  speed?: number;
-  heading?: number;
-  address?: string;
-  city?: string;
-  country?: string;
-}
+import { prisma } from '../lib/prisma';
+import {
+  LOCATION_HISTORY_RETENTION_MS,
+  shouldRecordHistory,
+  type LocationFields,
+} from '../utils/locationPayload';
 
 export class LocationService {
+  static getFriendIds = catchServiceAsync(async (userId: number) => {
+    const friendships = await prisma.friendship.findMany({
+      where: { OR: [{ user1Id: userId }, { user2Id: userId }] },
+      select: { user1Id: true, user2Id: true },
+    });
+    return friendships.map((f) => (f.user1Id === userId ? f.user2Id : f.user1Id));
+  });
+
   // ── Upsert current location ──────────────────────────────────
-  static updateLocation = catchServiceAsync(async (userId: number, data: LocationInput) => {
+  static updateLocation = catchServiceAsync(async (userId: number, data: LocationFields) => {
     const location = await prisma.location.upsert({
       where: { userId },
       create: { userId, ...data },
       update: { ...data, updatedAt: new Date() },
     });
 
-    // Auto-save to history
-    await prisma.locationHistory.create({
-      data: { userId, ...data, recordedAt: new Date() },
-    });
+    if (shouldRecordHistory(userId, data.latitude, data.longitude)) {
+      await prisma.locationHistory.create({
+        data: { userId, ...data, recordedAt: new Date() },
+      });
+      await prisma.locationHistory.deleteMany({
+        where: {
+          userId,
+          recordedAt: { lt: new Date(Date.now() - LOCATION_HISTORY_RETENTION_MS) },
+        },
+      });
+    }
 
     return location;
   });

@@ -1,7 +1,6 @@
-import { PrismaClient, FriendRequestStatus } from '@prisma/client';
+import { FriendRequestStatus } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { catchServiceAsync } from '../utils/catchServiceAsync';
-
-const prisma = new PrismaClient();
 
 export class FriendService {
   // ── Search users to add as friends ──────────────────────────

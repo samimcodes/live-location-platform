@@ -3,6 +3,7 @@ import { setCredentials, clearAuth } from '@/store/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { toast } from '@/lib/toast';
+import { useLocationStore } from '@/store/useLocationStore';
 
 export function useAuth() {
   const dispatch = useAppDispatch();
@@ -15,6 +16,7 @@ export function useAuth() {
       const { user: u, token: t } = data.data as { user: typeof user; token: string };
       if (t) localStorage.setItem('token', t);
       dispatch(setCredentials({ user: u!, token: t }));
+      useLocationStore.getState().setSharing(Boolean(u?.sharingLocation));
       return data.data;
     }
     throw new Error(data.message || 'Login failed');

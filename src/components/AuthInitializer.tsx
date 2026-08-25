@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useAppDispatch } from '@/store/store';
 import { setCredentials, clearAuth, setLoading } from '@/store/slices/authSlice';
 import api from '@/lib/axios';
+import { useLocationStore } from '@/store/useLocationStore';
 
 /**
  * AuthInitializer
@@ -52,6 +53,7 @@ export function AuthInitializer() {
         if (data.success && data.data) {
           const token = localStorage.getItem('token') ?? '';
           dispatch(setCredentials({ user: data.data, token }));
+          useLocationStore.getState().setSharing(Boolean(data.data.sharingLocation));
         } else {
           dispatch(clearAuth());
         }

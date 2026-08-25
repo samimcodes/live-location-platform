@@ -1,7 +1,6 @@
-import { PrismaClient, NotificationType, Prisma } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { catchServiceAsync } from '../utils/catchServiceAsync';
-
-const prisma = new PrismaClient();
 
 interface CreateNotificationInput {
   userId: number;

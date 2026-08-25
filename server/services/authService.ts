@@ -1,11 +1,11 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { catchServiceAsync } from '../utils/catchServiceAsync';
 import { sendTemplateEmail } from './emailService';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+import { signAccessToken, signRefreshToken } from '../utils/tokens';
 
 const SALT_ROUNDS = 12;
 
@@ -57,21 +57,8 @@ export class AuthService {
     const valid = await bcrypt.compare(passwordInput, user.password);
     if (!valid) throw new Error('Invalid email or password');
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      jwtSecret,
-      { expiresIn: (process.env.JWT_EXPIRES_IN as string | undefined) ?? '30d' } as Parameters<typeof jwt.sign>[2]
-    );
-
-    const refreshSecret = process.env.JWT_REFRESH_SECRET;
-    if (!refreshSecret) throw new Error('JWT_REFRESH_SECRET environment variable is not set');
-    const refreshToken = jwt.sign(
-      { userId: user.id },
-      refreshSecret,
-      { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as string | undefined) ?? '7d' } as Parameters<typeof jwt.sign>[2]
-    );
+    const token = signAccessToken({ id: user.id, email: user.email, role: user.role });
+    const refreshToken = signRefreshToken(user.id);
 
     // Update login log
     const existingLog = Array.isArray(user.loginLog) ? (user.loginLog as string[]) : [];
@@ -88,7 +75,9 @@ export class AuthService {
 
   static forgotPassword = catchServiceAsync(async (email: string) => {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) throw new Error('User not found');
+    if (!user) {
+      return { message: 'If that email is registered, a reset link has been sent' };
+    }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashed = crypto.createHash('sha256').update(resetToken).digest('hex');
@@ -109,7 +98,7 @@ export class AuthService {
       { name: user.name, appName: 'LocaLink', resetLink: resetUrl, year: new Date().getFullYear() }
     );
 
-    return { message: 'Password reset link sent to your email' };
+    return { message: 'If that email is registered, a reset link has been sent' };
   });
 
   static resetPassword = catchServiceAsync(async (token: string, newPassword: string) => {
@@ -139,13 +128,7 @@ export class AuthService {
     });
     if (!user) throw new Error('Invalid refresh token');
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      jwtSecret,
-      { expiresIn: (process.env.JWT_EXPIRES_IN as string | undefined) ?? '30d' } as Parameters<typeof jwt.sign>[2]
-    );
+    const token = signAccessToken({ id: user.id, email: user.email, role: user.role });
 
     return { token };
   });

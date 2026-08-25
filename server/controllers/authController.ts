@@ -3,6 +3,7 @@ import { AuthService } from '../services/authService';
 import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { AuthRequest } from '../middlewares/authMiddleware';
+import { clearAuthCookies, setAuthCookies } from '../utils/authCookies';
 
 export class AuthController {
   static register = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -19,21 +20,7 @@ export class AuthController {
     }
 
     const result = await AuthService.loginUser(email, password);
-
-    // Set HTTP-only cookies
-    res.cookie('accessToken', result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    setAuthCookies(res, result.token, result.refreshToken);
 
     sendResponse(res, {
       statusCode: 200,
@@ -69,14 +56,8 @@ export class AuthController {
       return;
     }
     const result = await AuthService.refreshToken(refreshToken);
-
-    // Refresh the access token cookie
-    res.cookie('accessToken', result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    const existingRefresh = req.cookies?.refreshToken as string;
+    setAuthCookies(res, result.token, existingRefresh);
 
     sendResponse(res, { statusCode: 200, message: 'Token refreshed', data: result });
   });
@@ -86,8 +67,7 @@ export class AuthController {
     if (userId) {
       await AuthService.logoutUser(userId);
     }
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    clearAuthCookies(res);
     sendResponse(res, { statusCode: 200, message: 'Logged out successfully' });
   });
 

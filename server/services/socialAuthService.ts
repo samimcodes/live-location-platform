@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { OAuth2Client } from 'google-auth-library';
 import axios from 'axios';
-import jwt from 'jsonwebtoken';
 import { catchServiceAsync } from '../utils/catchServiceAsync';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+import { signAccessToken, signRefreshToken } from '../utils/tokens';
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 interface FacebookUserData {
@@ -73,16 +71,15 @@ export class SocialAuthService {
       });
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      jwtSecret,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { expiresIn: (process.env.JWT_EXPIRES_IN ?? '30d') as any }
-    );
+    const token = signAccessToken({ id: user.id, email: user.email, role: user.role });
+    const refreshToken = signRefreshToken(user.id);
 
-    const { password, resetPasswordToken, resetPasswordExpires, refreshToken, loginLog, ...safe } = user;
-    return { token, user: safe };
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken, isOnline: true, lastSeen: new Date() },
+    });
+
+    const { password, resetPasswordToken, resetPasswordExpires, refreshToken: _rt, loginLog, ...safe } = user;
+    return { token, refreshToken, user: safe };
   }
 }

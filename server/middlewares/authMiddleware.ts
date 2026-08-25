@@ -42,8 +42,13 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
     const decoded = jwt.verify(token, secret) as JwtPayload;
     req.user = decoded;
     next();
-  } catch {
-    res.status(403).json({ success: false, message: 'Invalid or expired token.' });
+  } catch (err) {
+    // Expired tokens must be 401 so the Axios interceptor can refresh.
+    if (err instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ success: false, message: 'Token expired.' });
+      return;
+    }
+    res.status(403).json({ success: false, message: 'Invalid token.' });
   }
 };
 

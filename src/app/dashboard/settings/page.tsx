@@ -222,7 +222,8 @@ export default function SettingsPage() {
   });
 
   // ── Logout ─────────────────────────────────────────────────────────────
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await api.post('/auth/logout'); } catch { /* ignore */ }
     localStorage.removeItem('token');
     dispatch(clearAuth());
     router.push('/login');

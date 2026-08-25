@@ -32,17 +32,31 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated) {
       disconnectSocket();
       socketRef.current = null;
       return;
     }
 
-    const s = connectSocket(token);
+    const s = connectSocket(token || '');
     socketRef.current = s;
 
     // ── location:receive — real-time friend position update ──────────
     s.on('location:receive', (data: {
+      userId: number;
+      latitude: number;
+      longitude: number;
+      accuracy?: number;
+      speed?: number;
+      heading?: number;
+      address?: string;
+      city?: string;
+      timestamp?: string;
+    }) => {
+      updateFriendLocation(data);
+    });
+
+    s.on('group:location:receive', (data: {
       userId: number;
       latitude: number;
       longitude: number;
@@ -115,6 +129,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       s.off('location:receive');
+      s.off('group:location:receive');
       s.off('friend:online');
       s.off('friend:offline');
       s.off('notification');

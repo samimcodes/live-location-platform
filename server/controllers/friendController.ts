@@ -64,19 +64,19 @@ export class FriendController {
     const result = await FriendService.respondToRequest(Number(id), userId, action);
 
     if (action === 'ACCEPTED' && result.senderId) {
-      // senderId is returned by the service — no extra DB query needed
-      req.io?.to(`user:${result.senderId}`).emit('notification', {
-        type: 'FRIEND_ACCEPTED',
-        message: 'Your friend request was accepted',
-        data: { userId },
-      });
-
-      await NotificationService.create({
+      const notifRecord = await NotificationService.create({
         userId: result.senderId,
         type: 'FRIEND_ACCEPTED',
         title: 'Friend Request Accepted',
         body: 'Your friend request was accepted',
         data: { userId } as Prisma.InputJsonValue,
+      });
+
+      req.io?.to(`user:${result.senderId}`).emit('notification', {
+        id: notifRecord?.id,
+        type: 'FRIEND_ACCEPTED',
+        message: 'Your friend request was accepted',
+        data: { userId },
       });
     }
 
@@ -121,17 +121,7 @@ export class FriendController {
 
     // Notify every sender in parallel — avoid sequential awaits in a loop
     if (result.senderIds?.length) {
-      const event = {
-        type: 'FRIEND_ACCEPTED',
-        message: 'Your friend request was accepted',
-        data: { userId },
-      };
-      // Fire socket emits immediately (non-blocking)
-      result.senderIds.forEach((senderId) => {
-        req.io?.to(`user:${senderId}`).emit('notification', event);
-      });
-      // Persist notifications concurrently
-      await Promise.all(
+      const records = await Promise.all(
         result.senderIds.map((senderId) =>
           NotificationService.create({
             userId: senderId,
@@ -142,6 +132,15 @@ export class FriendController {
           })
         )
       );
+      records.forEach((notif, i) => {
+        const senderId = result.senderIds[i];
+        req.io?.to(`user:${senderId}`).emit('notification', {
+          id: notif?.id,
+          type: 'FRIEND_ACCEPTED',
+          message: 'Your friend request was accepted',
+          data: { userId },
+        });
+      });
     }
 
     sendResponse(res, {

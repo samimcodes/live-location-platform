@@ -29,11 +29,13 @@ export async function proxy(request: NextRequest) {
 
   if (token) {
     try {
-      const secret = new TextEncoder().encode(
-        process.env.JWT_SECRET ?? 'fallback_secret'
-      );
-      await jwtVerify(token, secret);
-      isValidToken = true;
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        isValidToken = false;
+      } else {
+        await jwtVerify(token, new TextEncoder().encode(secret));
+        isValidToken = true;
+      }
     } catch {
       isValidToken = false;
     }

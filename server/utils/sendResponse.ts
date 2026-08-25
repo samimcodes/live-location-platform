@@ -23,6 +23,6 @@ export const sendResponse = <T>(res: Response, data: ApiResponse<T>) => {
   res.status(statusCode).json({
     success: statusCode >= 200 && statusCode < 300,
     message,
-    data: data.data || null,
+    data: data.data === undefined ? null : data.data,
   });
 };
