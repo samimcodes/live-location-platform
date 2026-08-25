@@ -1,58 +1,92 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useFriends,
   useRemoveFriend,
   useSendFriendRequest,
   usePendingRequestCount,
   useSentRequests,
-} from '@/hooks/useFriends';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@/hooks/useFriends";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Users, UserMinus, Search, UserPlus,
-  MapPin, Clock, Loader2, UserCheck,
-  Eye, Radio, Sparkles, AlertTriangle,
+  Users,
+  UserMinus,
+  Search,
+  UserPlus,
+  MapPin,
+  Clock,
+  Loader2,
+  UserCheck,
+  Eye,
+  Radio,
+  Sparkles,
+  AlertTriangle,
   X,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import api from '@/lib/axios';
-import { useQuery } from '@tanstack/react-query';
-import type { Friend } from '@/hooks/useFriends';
-import { formatDistanceToNow } from '@/lib/dateUtils';
-import { useLocationStore } from '@/store/useLocationStore';
-import { useFriendsLocations } from '@/hooks/useFriendsLocations';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import api from "@/lib/axios";
+import { useQuery } from "@tanstack/react-query";
+import type { Friend } from "@/hooks/useFriends";
+import { formatDistanceToNow } from "@/lib/dateUtils";
+import { useLocationStore } from "@/store/useLocationStore";
+import { useFriendsLocations } from "@/hooks/useFriendsLocations";
 
 // ── Avatar color palette (id-based, never changes per user) ──────────────
 const AVATAR_BG = [
-  'bg-chart-1', 'bg-chart-2', 'bg-chart-3',
-  'bg-chart-4', 'bg-chart-5', 'bg-primary', 'bg-ring',
+  "bg-chart-1",
+  "bg-chart-2",
+  "bg-chart-3",
+  "bg-chart-4",
+  "bg-chart-5",
+  "bg-primary",
+  "bg-ring",
 ];
-function avatarBg(id: number) { return AVATAR_BG[id % AVATAR_BG.length]; }
+function avatarBg(id: number) {
+  return AVATAR_BG[id % AVATAR_BG.length];
+}
 
 function FriendAvatar({
-  id, name, avatar, size = 44, isOnline,
+  id,
+  name,
+  avatar,
+  size = 44,
+  isOnline,
 }: {
-  id: number; name: string; avatar?: string | null;
-  size?: number; isOnline?: boolean;
+  id: number;
+  name: string;
+  avatar?: string | null;
+  size?: number;
+  isOnline?: boolean;
 }) {
   const dotSize = Math.max(10, Math.round(size * 0.26));
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <div className="relative h-full w-full overflow-hidden rounded-2xl">
         {avatar ? (
-          <Image src={avatar} alt={name} fill
-            className="object-cover" sizes={`${size}px`} />
+          <Image
+            src={avatar}
+            alt={name}
+            fill
+            className="object-cover"
+            sizes={`${size}px`}
+          />
         ) : (
           <div
             className={cn(
-              'w-full h-full flex items-center justify-center',
-              'text-primary-foreground font-bold select-none',
+              "w-full h-full flex items-center justify-center",
+              "text-primary-foreground font-bold select-none",
               avatarBg(id),
             )}
             style={{ fontSize: Math.round(size * 0.38) }}
@@ -64,8 +98,8 @@ function FriendAvatar({
       {isOnline !== undefined && (
         <span
           className={cn(
-            'absolute -bottom-0.5 -right-0.5 rounded-full border-[2.5px] border-card',
-            isOnline ? 'bg-chart-5' : 'bg-muted-foreground/30',
+            "absolute -bottom-0.5 -right-0.5 rounded-full border-[2.5px] border-card",
+            isOnline ? "bg-chart-5" : "bg-muted-foreground/30",
           )}
           style={{ width: dotSize, height: dotSize }}
         />
@@ -76,25 +110,38 @@ function FriendAvatar({
 
 // ── Confirm dialog ────────────────────────────────────────────────────────
 function ConfirmDialog({
-  open, title, description, confirmLabel = 'Remove',
-  onConfirm, onCancel,
+  open,
+  title,
+  description,
+  confirmLabel = "Remove",
+  onConfirm,
+  onCancel,
 }: {
-  open: boolean; title: string; description: string;
-  confirmLabel?: string; onConfirm: () => void; onCancel: () => void;
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
 }) {
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
         >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={onCancel}
+          />
           <motion.div
             initial={{ y: 24, opacity: 0, scale: 0.97 }}
-            animate={{ y: 0,  opacity: 1, scale: 1    }}
-            exit={{   y: 24, opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 24, opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
             className="relative z-10 w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6"
           >
             <div className="flex items-start gap-3.5">
@@ -103,16 +150,35 @@ function ConfirmDialog({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold leading-snug">{title}</p>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{description}</p>
+                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                  {description}
+                </p>
               </div>
-              <button onClick={onCancel} aria-label="Close"
-                className="text-muted-foreground/50 hover:text-foreground transition-colors -mt-1 -mr-1 p-1">
+              <button
+                onClick={onCancel}
+                aria-label="Close"
+                className="text-muted-foreground/50 hover:text-foreground transition-colors -mt-1 -mr-1 p-1"
+              >
                 <X size={14} />
               </button>
             </div>
             <div className="flex gap-2 mt-5">
-              <Button variant="outline" size="sm" className="flex-1 h-9" onClick={onCancel}>Cancel</Button>
-              <Button variant="destructive" size="sm" className="flex-1 h-9" onClick={onConfirm}>{confirmLabel}</Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 h-9"
+                onClick={onCancel}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex-1 h-9"
+                onClick={onConfirm}
+              >
+                {confirmLabel}
+              </Button>
             </div>
           </motion.div>
         </motion.div>
@@ -123,14 +189,17 @@ function ConfirmDialog({
 
 // ── Types / helpers ───────────────────────────────────────────────────────
 interface SearchUser {
-  id: number; name: string; email: string;
-  avatar?: string | null; isOnline: boolean;
+  id: number;
+  name: string;
+  email: string;
+  avatar?: string | null;
+  isOnline: boolean;
 }
 
 const fadeUp = (delay = 0) => ({
-  initial:    { opacity: 0, y: 14 },
-  animate:    { opacity: 1, y: 0  },
-  transition: { duration: 0.32, delay, ease: 'easeOut' as const },
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.32, delay, ease: "easeOut" as const },
 });
 
 function SkeletonCard() {
@@ -152,36 +221,49 @@ function SkeletonCard() {
 export default function FriendsPage() {
   const router = useRouter();
   const { data: friends = [], isLoading, isError, refetch } = useFriends();
-  const { mutate: removeFriend }                    = useRemoveFriend();
-  const { mutate: sendRequest }                     = useSendFriendRequest();
-  const { data: pendingCount = 0 }                  = usePendingRequestCount();
-  const { data: sentRequests = [] }                 = useSentRequests();
-  const { friendsLocations }                        = useLocationStore();
+  const { mutate: removeFriend } = useRemoveFriend();
+  const { mutate: sendRequest } = useSendFriendRequest();
+  const { data: pendingCount = 0 } = usePendingRequestCount();
+  const { data: sentRequests = [] } = useSentRequests();
+  const { friendsLocations } = useLocationStore();
   useFriendsLocations();
 
-  const [removingId,    setRemovingId]    = useState<number | null>(null);
+  const [removingId, setRemovingId] = useState<number | null>(null);
   const [confirmFriend, setConfirmFriend] = useState<Friend | null>(null);
-  const [sendingId,     setSendingId]     = useState<number | null>(null);
-  const [filter,        setFilter]        = useState<'all' | 'online' | 'offline'>('all');
-  const [listQuery,     setListQuery]     = useState('');
-  const [searchInput,   setSearchInput]   = useState('');
-  const [searchQuery,   setSearchQuery]   = useState('');
+  const [sendingId, setSendingId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<"all" | "online" | "offline">("all");
+  const [listQuery, setListQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
-  const sentIds   = useMemo(() => new Set(sentRequests.map((r) => r.receiverId)), [sentRequests]);
-  const onlineCount = useMemo(() => friends.filter((f) => f.isOnline).length, [friends]);
+  const sentIds = useMemo(
+    () => new Set(sentRequests.map((r) => r.receiverId)),
+    [sentRequests],
+  );
+  const onlineCount = useMemo(
+    () => friends.filter((f) => f.isOnline).length,
+    [friends],
+  );
   const onMapCount = useMemo(
-    () => friends.filter((f) => f.sharingLocation && friendsLocations.has(f.id)).length,
+    () =>
+      friends.filter((f) => f.sharingLocation && friendsLocations.has(f.id))
+        .length,
     [friends, friendsLocations],
   );
 
   const filteredFriends = useMemo(() => {
     const q = listQuery.trim().toLowerCase();
     return friends.filter((f) => {
-      if (filter === 'online' && !f.isOnline) return false;
-      if (filter === 'offline' && f.isOnline) return false;
-      if (q && !f.name.toLowerCase().includes(q) && !f.email.toLowerCase().includes(q)) return false;
+      if (filter === "online" && !f.isOnline) return false;
+      if (filter === "offline" && f.isOnline) return false;
+      if (
+        q &&
+        !f.name.toLowerCase().includes(q) &&
+        !f.email.toLowerCase().includes(q)
+      )
+        return false;
       return true;
     });
   }, [friends, filter, listQuery]);
@@ -192,22 +274,32 @@ export default function FriendsPage() {
     debounceRef.current = setTimeout(() => setSearchQuery(val.trim()), 380);
   }, []);
 
-  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [],
+  );
 
   const { data: searchResults = [], isFetching: searching } = useQuery({
-    queryKey: ['user-search', searchQuery],
+    queryKey: ["user-search", searchQuery],
     queryFn: async () => {
       if (searchQuery.length < 2) return [];
-      const { data } = await api.get(`/friends/search?q=${encodeURIComponent(searchQuery)}`);
+      const { data } = await api.get(
+        `/friends/search?q=${encodeURIComponent(searchQuery)}`,
+      );
       return data.data as SearchUser[];
     },
     enabled: searchQuery.length >= 2,
   });
 
-  const handleSendRequest = useCallback((receiverId: number) => {
-    setSendingId(receiverId);
-    sendRequest({ receiverId }, { onSettled: () => setSendingId(null) });
-  }, [sendRequest]);
+  const handleSendRequest = useCallback(
+    (receiverId: number) => {
+      setSendingId(receiverId);
+      sendRequest({ receiverId }, { onSettled: () => setSendingId(null) });
+    },
+    [sendRequest],
+  );
 
   const handleConfirmRemove = useCallback(() => {
     if (!confirmFriend) return;
@@ -218,10 +310,9 @@ export default function FriendsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-
       <ConfirmDialog
         open={!!confirmFriend}
-        title={`Remove ${confirmFriend?.name ?? 'friend'}?`}
+        title={`Remove ${confirmFriend?.name ?? "friend"}?`}
         description="They'll be removed from your friends list and won't appear on your map."
         onConfirm={handleConfirmRemove}
         onCancel={() => setConfirmFriend(null)}
@@ -238,9 +329,12 @@ export default function FriendsPage() {
                   <Users size={20} className="text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">Friends</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
+                    Friends
+                  </h1>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    {friends.length} friend{friends.length !== 1 ? 's' : ''} · {onlineCount} online
+                    {friends.length} friend{friends.length !== 1 ? "s" : ""} ·{" "}
+                    {onlineCount} online
                   </p>
                 </div>
               </div>
@@ -260,22 +354,46 @@ export default function FriendsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-5">
               {[
-                { icon: Users,  label: 'Total',   value: friends.length, tone: 'primary' as const },
-                { icon: Radio,  label: 'Online',  value: onlineCount,    tone: 'live' as const },
-                { icon: MapPin, label: 'On map',  value: onMapCount,     tone: 'map' as const },
+                {
+                  icon: Users,
+                  label: "Total",
+                  value: friends.length,
+                  tone: "primary" as const,
+                },
+                {
+                  icon: Radio,
+                  label: "Online",
+                  value: onlineCount,
+                  tone: "live" as const,
+                },
+                {
+                  icon: MapPin,
+                  label: "On map",
+                  value: onMapCount,
+                  tone: "map" as const,
+                },
               ].map(({ icon: Icon, label, value, tone }) => (
-                <div key={label} className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/70 backdrop-blur-sm px-4 py-3">
-                  <div className={cn(
-                    'h-9 w-9 rounded-lg flex items-center justify-center shrink-0',
-                    tone === 'primary' && 'bg-primary/10 text-primary',
-                    tone === 'live' && 'bg-chart-5/15 text-chart-5',
-                    tone === 'map' && 'bg-chart-3/15 text-chart-3',
-                  )}>
+                <div
+                  key={label}
+                  className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/70 backdrop-blur-sm px-4 py-3"
+                >
+                  <div
+                    className={cn(
+                      "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
+                      tone === "primary" && "bg-primary/10 text-primary",
+                      tone === "live" && "bg-chart-5/15 text-chart-5",
+                      tone === "map" && "bg-chart-3/15 text-chart-3",
+                    )}
+                  >
                     <Icon size={16} />
                   </div>
                   <div>
-                    <p className="text-lg font-bold tabular-nums leading-none">{value}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+                    <p className="text-lg font-bold tabular-nums leading-none">
+                      {value}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {label}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -285,9 +403,11 @@ export default function FriendsPage() {
       </motion.div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
-
         {/* ── FIND PEOPLE (sidebar on wide screens) ───────────── */}
-        <motion.div {...fadeUp(0.07)} className="xl:col-span-4 xl:sticky xl:top-4">
+        <motion.div
+          {...fadeUp(0.07)}
+          className="xl:col-span-4 xl:sticky xl:top-4"
+        >
           <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
             <div className="flex items-center gap-3 px-5 pt-4 pb-3">
               <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
@@ -295,13 +415,18 @@ export default function FriendsPage() {
               </div>
               <div>
                 <p className="text-sm font-bold leading-none">Find People</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Search by name or email</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Search by name or email
+                </p>
               </div>
             </div>
 
             <div className="px-5 pb-4 space-y-3">
               <div className="relative">
-                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
+                <Search
+                  size={14}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none"
+                />
                 <Input
                   placeholder="Search by name or email…"
                   value={searchInput}
@@ -309,11 +434,17 @@ export default function FriendsPage() {
                   className="pl-9 h-10 rounded-xl bg-muted/40 border-border/40 text-sm focus:bg-card transition-colors"
                 />
                 {searching && (
-                  <Loader2 size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-primary animate-spin" />
+                  <Loader2
+                    size={14}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-primary animate-spin"
+                  />
                 )}
                 {searchInput && !searching && (
                   <button
-                    onClick={() => { setSearchInput(''); setSearchQuery(''); }}
+                    onClick={() => {
+                      setSearchInput("");
+                      setSearchQuery("");
+                    }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-muted-foreground/15 flex items-center justify-center hover:bg-muted-foreground/25 transition-colors"
                   >
                     <X size={10} className="text-muted-foreground" />
@@ -325,21 +456,33 @@ export default function FriendsPage() {
                 {searchResults.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0  }}
-                    exit={{   opacity: 0, y: -6  }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
                     className="rounded-xl border border-border/40 divide-y divide-border/30 max-h-112 overflow-y-auto"
                   >
                     {searchResults.map((u) => {
-                      const isFriend  = friendIds.has(u.id);
-                      const isSent    = sentIds.has(u.id);
+                      const isFriend = friendIds.has(u.id);
+                      const isSent = sentIds.has(u.id);
                       const isSending = sendingId === u.id;
                       return (
-                        <div key={u.id}
-                          className="flex items-center gap-3 px-3.5 py-3 bg-card hover:bg-muted/30 transition-colors">
-                          <FriendAvatar id={u.id} name={u.name} avatar={u.avatar} size={38} isOnline={u.isOnline} />
+                        <div
+                          key={u.id}
+                          className="flex items-center gap-3 px-3.5 py-3 bg-card hover:bg-muted/30 transition-colors"
+                        >
+                          <FriendAvatar
+                            id={u.id}
+                            name={u.name}
+                            avatar={u.avatar}
+                            size={38}
+                            isOnline={u.isOnline}
+                          />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate leading-tight">{u.name}</p>
-                            <p className="text-xs text-muted-foreground/60 truncate">{u.email}</p>
+                            <p className="text-sm font-semibold truncate leading-tight">
+                              {u.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground/60 truncate">
+                              {u.email}
+                            </p>
                           </div>
                           {isFriend ? (
                             <span className="inline-flex items-center gap-1 text-[11px] text-chart-5 font-semibold px-2.5 py-1 bg-chart-5/10 rounded-lg shrink-0">
@@ -350,12 +493,17 @@ export default function FriendsPage() {
                               <Clock size={10} /> Sent
                             </span>
                           ) : (
-                            <Button size="sm" disabled={isSending}
+                            <Button
+                              size="sm"
+                              disabled={isSending}
                               onClick={() => handleSendRequest(u.id)}
-                              className="h-8 gap-1.5 rounded-lg shadow-sm shrink-0 text-xs px-3">
-                              {isSending
-                                ? <Loader2 size={12} className="animate-spin" />
-                                : <UserPlus size={12} />}
+                              className="h-8 gap-1.5 rounded-lg shadow-sm shrink-0 text-xs px-3"
+                            >
+                              {isSending ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                <UserPlus size={12} />
+                              )}
                               Add
                             </Button>
                           )}
@@ -365,19 +513,24 @@ export default function FriendsPage() {
                   </motion.div>
                 )}
 
-                {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="flex flex-col items-center py-8 text-muted-foreground gap-1"
-                  >
-                    <div className="h-10 w-10 rounded-xl bg-muted/60 flex items-center justify-center mb-1">
-                      <Search size={16} className="opacity-30" />
-                    </div>
-                    <p className="text-sm font-medium">No results</p>
-                    <p className="text-xs opacity-50">Try a different name or email</p>
-                  </motion.div>
-                )}
+                {searchQuery.length >= 2 &&
+                  !searching &&
+                  searchResults.length === 0 && (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex flex-col items-center py-8 text-muted-foreground gap-1"
+                    >
+                      <div className="h-10 w-10 rounded-xl bg-muted/60 flex items-center justify-center mb-1">
+                        <Search size={16} className="opacity-30" />
+                      </div>
+                      <p className="text-sm font-medium">No results</p>
+                      <p className="text-xs opacity-50">
+                        Try a different name or email
+                      </p>
+                    </motion.div>
+                  )}
               </AnimatePresence>
 
               {searchQuery.length < 2 && (
@@ -391,7 +544,7 @@ export default function FriendsPage() {
 
         {/* ── YOUR FRIENDS ───────────────────────────────────────── */}
         <motion.div {...fadeUp(0.12)} className="xl:col-span-8 min-w-0">
-          {(isLoading || isError || friends.length > 0) ? (
+          {isLoading || isError || friends.length > 0 ? (
             <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
               <div className="flex items-center justify-between gap-3 px-5 py-3.5 flex-wrap">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -399,10 +552,13 @@ export default function FriendsPage() {
                     <UserCheck size={14} className="text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold leading-none">Your Friends</p>
+                    <p className="text-sm font-bold leading-none">
+                      Your Friends
+                    </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {filteredFriends.length}
-                      {filter !== 'all' ? ` ${filter}` : ''} friend{filteredFriends.length !== 1 ? 's' : ''}
+                      {filter !== "all" ? ` ${filter}` : ""} friend
+                      {filteredFriends.length !== 1 ? "s" : ""}
                     </p>
                   </div>
                 </div>
@@ -410,7 +566,10 @@ export default function FriendsPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   {friends.length > 0 && (
                     <div className="relative">
-                      <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
+                      <Search
+                        size={12}
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none"
+                      />
                       <input
                         value={listQuery}
                         onChange={(e) => setListQuery(e.target.value)}
@@ -420,22 +579,42 @@ export default function FriendsPage() {
                     </div>
                   )}
                   <div className="flex gap-0.5 bg-muted/50 rounded-lg p-0.5">
-                    {([
-                      { key: 'all'     as const, label: 'All',     count: friends.length },
-                      { key: 'online'  as const, label: 'Online',  count: onlineCount },
-                      { key: 'offline' as const, label: 'Offline', count: friends.length - onlineCount },
-                    ]).map((tab) => (
-                      <button key={tab.key} onClick={() => setFilter(tab.key)}
+                    {[
+                      {
+                        key: "all" as const,
+                        label: "All",
+                        count: friends.length,
+                      },
+                      {
+                        key: "online" as const,
+                        label: "Online",
+                        count: onlineCount,
+                      },
+                      {
+                        key: "offline" as const,
+                        label: "Offline",
+                        count: friends.length - onlineCount,
+                      },
+                    ].map((tab) => (
+                      <button
+                        key={tab.key}
+                        onClick={() => setFilter(tab.key)}
                         className={cn(
-                          'flex items-center gap-1.5 py-1 px-2.5 rounded-md text-xs font-medium transition-all',
+                          "flex items-center gap-1.5 py-1 px-2.5 rounded-md text-xs font-medium transition-all",
                           filter === tab.key
-                            ? 'bg-background shadow-sm text-foreground'
-                            : 'text-muted-foreground hover:text-foreground',
+                            ? "bg-background shadow-sm text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
                         )}
                       >
                         {tab.label}
-                        <span className={cn('tabular-nums text-[10px]',
-                          filter === tab.key ? 'text-primary' : 'text-muted-foreground/40')}>
+                        <span
+                          className={cn(
+                            "tabular-nums text-[10px]",
+                            filter === tab.key
+                              ? "text-primary"
+                              : "text-muted-foreground/40",
+                          )}
+                        >
                           {tab.count}
                         </span>
                       </button>
@@ -451,15 +630,26 @@ export default function FriendsPage() {
                   <div className="h-11 w-11 rounded-xl bg-destructive/10 flex items-center justify-center">
                     <AlertTriangle size={18} className="text-destructive/70" />
                   </div>
-                  <p className="text-sm font-semibold mt-1">Failed to load friends</p>
-                  <p className="text-xs opacity-50">Check your connection and try again.</p>
-                  <Button variant="outline" size="sm" className="mt-2 h-8 text-xs" onClick={() => refetch()}>
+                  <p className="text-sm font-semibold mt-1">
+                    Failed to load friends
+                  </p>
+                  <p className="text-xs opacity-50">
+                    Check your connection and try again.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-8 text-xs"
+                    onClick={() => refetch()}
+                  >
                     Retry
                   </Button>
                 </div>
               ) : isLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
-                  {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))}
                 </div>
               ) : filteredFriends.length === 0 ? (
                 <div className="flex flex-col items-center py-14 text-muted-foreground gap-1">
@@ -468,17 +658,28 @@ export default function FriendsPage() {
                   </div>
                   <p className="text-sm font-semibold">
                     {listQuery.trim()
-                      ? 'No matches'
-                      : filter === 'all' ? 'No friends yet' : `No ${filter} friends`}
+                      ? "No matches"
+                      : filter === "all"
+                        ? "No friends yet"
+                        : `No ${filter} friends`}
                   </p>
                   <p className="text-xs opacity-50 text-center max-w-[18rem]">
                     {listQuery.trim()
-                      ? 'Try a different name'
-                      : filter === 'all' ? 'Search on the left to find people' : 'Check back later'}
+                      ? "Try a different name"
+                      : filter === "all"
+                        ? "Search on the left to find people"
+                        : "Check back later"}
                   </p>
-                  {(filter !== 'all' || listQuery.trim()) && (
-                    <Button variant="outline" size="sm" className="mt-3 h-8 text-xs"
-                      onClick={() => { setFilter('all'); setListQuery(''); }}>
+                  {(filter !== "all" || listQuery.trim()) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 h-8 text-xs"
+                      onClick={() => {
+                        setFilter("all");
+                        setListQuery("");
+                      }}
+                    >
                       Show all
                     </Button>
                   )}
@@ -486,26 +687,34 @@ export default function FriendsPage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
                   {filteredFriends.map((friend, i) => {
-                    const liveLoc     = friendsLocations.get(friend.id);
-                    const displayCity = liveLoc?.city ?? friend.locations?.[0]?.city;
-                    const isLive      = !!liveLoc;
+                    const liveLoc = friendsLocations.get(friend.id);
+                    const displayCity =
+                      liveLoc?.city ?? friend.locations?.[0]?.city;
+                    const isLive = !!liveLoc;
 
                     return (
                       <motion.div
                         key={friend.id}
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: Math.min(i * 0.03, 0.24), duration: 0.22 }}
+                        transition={{
+                          delay: Math.min(i * 0.03, 0.24),
+                          duration: 0.22,
+                        }}
                         className="flex flex-col rounded-2xl border border-border/50 bg-background/50 p-4 hover:border-border hover:shadow-sm transition-all"
                       >
                         <div className="flex items-start gap-3">
                           <FriendAvatar
-                            id={friend.id} name={friend.name}
-                            avatar={friend.avatar} size={48}
+                            id={friend.id}
+                            name={friend.name}
+                            avatar={friend.avatar}
+                            size={48}
                             isOnline={friend.isOnline}
                           />
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold truncate">{friend.name}</p>
+                            <p className="text-sm font-semibold truncate">
+                              {friend.name}
+                            </p>
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
                               {friend.isOnline ? (
                                 <span className="inline-flex items-center gap-1 text-[11px] text-chart-5 font-medium">
@@ -523,13 +732,19 @@ export default function FriendsPage() {
                               )}
                             </div>
                             {displayCity && friend.sharingLocation && (
-                              <p className={cn(
-                                'mt-1 inline-flex items-center gap-1 text-[11px]',
-                                isLive ? 'text-primary font-medium' : 'text-muted-foreground/60',
-                              )}>
+                              <p
+                                className={cn(
+                                  "mt-1 inline-flex items-center gap-1 text-[11px]",
+                                  isLive
+                                    ? "text-primary font-medium"
+                                    : "text-muted-foreground/60",
+                                )}
+                              >
                                 <MapPin size={10} className="shrink-0" />
                                 <span className="truncate">{displayCity}</span>
-                                {isLive && <span className="h-1 w-1 rounded-full bg-primary animate-pulse shrink-0" />}
+                                {isLive && (
+                                  <span className="h-1 w-1 rounded-full bg-primary animate-pulse shrink-0" />
+                                )}
                               </p>
                             )}
                           </div>
@@ -537,23 +752,29 @@ export default function FriendsPage() {
 
                         <div className="mt-3 flex items-center gap-1.5">
                           <Button
-                            variant="outline" size="sm"
-                            onClick={() => router.push(`/dashboard/map?focus=${friend.id}`)}
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              router.push(`/dashboard/map?focus=${friend.id}`)
+                            }
                             className="h-8 flex-1 gap-1.5 text-xs rounded-lg"
                           >
                             <Eye size={13} />
                             View on map
                           </Button>
                           <Button
-                            variant="ghost" size="sm"
+                            variant="ghost"
+                            size="sm"
                             title="Remove friend"
                             className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             disabled={removingId === friend.id}
                             onClick={() => setConfirmFriend(friend)}
                           >
-                            {removingId === friend.id
-                              ? <Loader2 size={13} className="animate-spin" />
-                              : <UserMinus size={13} />}
+                            {removingId === friend.id ? (
+                              <Loader2 size={13} className="animate-spin" />
+                            ) : (
+                              <UserMinus size={13} />
+                            )}
                           </Button>
                         </div>
                       </motion.div>
@@ -569,7 +790,8 @@ export default function FriendsPage() {
               </div>
               <h3 className="text-base font-bold">Start connecting</h3>
               <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto leading-relaxed">
-                Search on the left for people you know and send a friend request.
+                Search on the left for people you know and send a friend
+                request.
               </p>
             </div>
           )}

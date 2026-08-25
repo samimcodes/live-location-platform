@@ -63,6 +63,13 @@ export class FriendController {
 
     const result = await FriendService.respondToRequest(Number(id), userId, action);
 
+    if (result.senderId) {
+      req.io?.to(`user:${result.senderId}`).emit('friend:request:updated', {
+        requestId: Number(id),
+        action,
+      });
+    }
+
     if (action === 'ACCEPTED' && result.senderId) {
       const notifRecord = await NotificationService.create({
         userId: result.senderId,
@@ -107,6 +114,12 @@ export class FriendController {
   static cancelRequest = catchAsync(async (req: AuthRequest, res: Response) => {
     const { id } = req.params as { id: string };
     const result = await FriendService.cancelRequest(Number(id), req.user!.userId);
+    if (result.receiverId) {
+      req.io?.to(`user:${result.receiverId}`).emit('friend:request:updated', {
+        requestId: Number(id),
+        action: 'CANCELLED',
+      });
+    }
     sendResponse(res, { statusCode: 200, message: result.message });
   });
 

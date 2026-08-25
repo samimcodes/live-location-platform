@@ -89,13 +89,25 @@ export function useRespondToRequest() {
       const { data } = await api.patch(`/friends/requests/${id}`, { action });
       return data;
     },
+    onMutate: async ({ id }) => {
+      await qc.cancelQueries({ queryKey: ['friend-requests', 'pending'] });
+      const prev = qc.getQueryData<FriendRequest[]>(['friend-requests', 'pending']);
+      qc.setQueryData<FriendRequest[]>(['friend-requests', 'pending'], (old) =>
+        (old ?? []).filter((r) => r.id !== id),
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['friend-requests', 'pending'], ctx.prev);
+      toast.error('Failed to respond to request');
+    },
     onSuccess: (_, { action }) => {
       toast.success(action === 'ACCEPTED' ? 'Friend request accepted!' : 'Request rejected');
-      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
-      qc.invalidateQueries({ queryKey: ['friend-requests', 'history'] });
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['friend-requests'] });
       qc.invalidateQueries({ queryKey: ['friends'] });
     },
-    onError: () => toast.error('Failed to respond to request'),
   });
 }
 
@@ -106,12 +118,24 @@ export function useCancelRequest() {
       const { data } = await api.delete(`/friends/requests/${requestId}`);
       return data;
     },
+    onMutate: async (requestId) => {
+      await qc.cancelQueries({ queryKey: ['friend-requests', 'sent'] });
+      const prev = qc.getQueryData<FriendRequest[]>(['friend-requests', 'sent']);
+      qc.setQueryData<FriendRequest[]>(['friend-requests', 'sent'], (old) =>
+        (old ?? []).filter((r) => r.id !== requestId),
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['friend-requests', 'sent'], ctx.prev);
+      toast.error('Failed to cancel request');
+    },
     onSuccess: () => {
       toast.success('Request cancelled');
-      qc.invalidateQueries({ queryKey: ['friend-requests', 'sent'] });
-      qc.invalidateQueries({ queryKey: ['friend-requests', 'pending'] });
     },
-    onError: () => toast.error('Failed to cancel request'),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['friend-requests'] });
+    },
   });
 }
 

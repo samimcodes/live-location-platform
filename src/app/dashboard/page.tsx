@@ -18,11 +18,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "@/lib/dateUtils";
 import {
-  UserCheck, Users2, Navigation, Bell,
-  MapPin, Users, ArrowRight, Radio,
-  Clock, ChevronRight, Bookmark,
-  Eye, Map, Settings, Plus,
-  Zap, Globe, Sparkles,
+  UserCheck,
+  Users2,
+  Navigation,
+  Bell,
+  MapPin,
+  Users,
+  ArrowRight,
+  Radio,
+  Clock,
+  ChevronRight,
+  Bookmark,
+  Eye,
+  Map,
+  Settings,
+  Plus,
+  Zap,
+  Globe,
+  Sparkles,
 } from "lucide-react";
 
 const MiniMap = dynamic(
@@ -30,7 +43,7 @@ const MiniMap = dynamic(
   {
     ssr: false,
     loading: () => <div className="h-52 w-full bg-muted animate-pulse" />,
-  }
+  },
 );
 
 const fadeUp = (delay = 0) => ({
@@ -46,12 +59,42 @@ const scaleIn = (delay = 0) => ({
 });
 
 const quickActions = [
-  { label: "Open Map",     icon: Map,      href: "/dashboard/map",         tint: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" },
-  { label: "Find Friends", icon: Users,    href: "/dashboard/friends",      tint: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400" },
-  { label: "Saved Places", icon: Bookmark, href: "/dashboard/saved-places", tint: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400" },
-  { label: "History",      icon: Clock,    href: "/dashboard/history",      tint: "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400" },
-  { label: "New Group",    icon: Plus,     href: "/dashboard/groups",       tint: "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400" },
-  { label: "Settings",     icon: Settings, href: "/dashboard/settings",     tint: "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300" },
+  {
+    label: "Open Map",
+    icon: Map,
+    href: "/dashboard/map",
+    tint: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+  },
+  {
+    label: "Find Friends",
+    icon: Users,
+    href: "/dashboard/friends",
+    tint: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+  },
+  {
+    label: "Saved Places",
+    icon: Bookmark,
+    href: "/dashboard/saved-places",
+    tint: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",
+  },
+  {
+    label: "History",
+    icon: Clock,
+    href: "/dashboard/history",
+    tint: "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400",
+  },
+  {
+    label: "New Group",
+    icon: Plus,
+    href: "/dashboard/groups",
+    tint: "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400",
+  },
+  {
+    label: "Settings",
+    icon: Settings,
+    href: "/dashboard/settings",
+    tint: "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300",
+  },
 ] as const;
 
 const GROUP_GRADIENTS = [
@@ -78,9 +121,17 @@ function PersonAvatar({
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <div className="relative h-full w-full overflow-hidden rounded-full bg-gradient-to-br from-primary/70 to-ring/80 text-white font-bold flex items-center justify-center">
         {avatar ? (
-          <Image src={avatar} alt={name} fill sizes={`${size}px`} className="object-cover" />
+          <Image
+            src={avatar}
+            alt={name}
+            fill
+            sizes={`${size}px`}
+            className="object-cover"
+          />
         ) : (
-          <span style={{ fontSize: Math.round(size * 0.38) }}>{name.charAt(0).toUpperCase()}</span>
+          <span style={{ fontSize: Math.round(size * 0.38) }}>
+            {name.charAt(0).toUpperCase()}
+          </span>
         )}
       </div>
       {online && (
@@ -124,11 +175,17 @@ export default function DashboardPage() {
 
   const onlineFriends = friends.filter((f) => f.isOnline);
   const onMapFriends = useMemo(() => {
-    return friends.filter((f) => friendsLocations.has(f.id) && f.sharingLocation);
+    return friends.filter(
+      (f) => friendsLocations.has(f.id) && f.sharingLocation,
+    );
   }, [friends, friendsLocations]);
 
   const mapMarkers = useMemo(() => {
-    const markers: Array<{ latitude: number; longitude: number; color?: string }> = [];
+    const markers: Array<{
+      latitude: number;
+      longitude: number;
+      color?: string;
+    }> = [];
     if (myLocation) {
       markers.push({
         latitude: myLocation.latitude,
@@ -157,7 +214,10 @@ export default function DashboardPage() {
       bg: "bg-primary/10",
       accentVar: "--primary",
       href: "/dashboard/friends",
-      sub: onlineFriends.length > 0 ? `${onlineFriends.length} online` : "None online",
+      sub:
+        onlineFriends.length > 0
+          ? `${onlineFriends.length} online`
+          : "None online",
     },
     {
       label: "Groups",
@@ -167,9 +227,10 @@ export default function DashboardPage() {
       bg: "bg-chart-2/10",
       accentVar: "--chart-2",
       href: "/dashboard/groups",
-      sub: groups.length > 0
-        ? `${groups.reduce((a, g) => a + (g._count?.members ?? (g.members ?? []).length), 0)} members`
-        : "Create your first",
+      sub:
+        groups.length > 0
+          ? `${groups.reduce((a, g) => a + (g._count?.members ?? (g.members ?? []).length), 0)} members`
+          : "Create your first",
     },
     {
       label: "On the Map",
@@ -179,11 +240,12 @@ export default function DashboardPage() {
       bg: "bg-chart-5/10",
       accentVar: "--chart-5",
       href: "/dashboard/map",
-      sub: locLoading && friendsLocations.size === 0
-        ? "Loading…"
-        : onMapFriends.length > 0
-          ? `${onMapFriends.length} sharing now`
-          : "No live pins yet",
+      sub:
+        locLoading && friendsLocations.size === 0
+          ? "Loading…"
+          : onMapFriends.length > 0
+            ? `${onMapFriends.length} sharing now`
+            : "No live pins yet",
     },
     {
       label: "Notifications",
@@ -198,15 +260,18 @@ export default function DashboardPage() {
   ];
 
   const formattedDate = now.toLocaleDateString(undefined, {
-    weekday: "long", month: "long", day: "numeric",
+    weekday: "long",
+    month: "long",
+    day: "numeric",
   });
   const formattedTime = now.toLocaleTimeString(undefined, {
-    hour: "2-digit", minute: "2-digit", hour12: true,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
   });
 
   return (
     <div className="space-y-6 pb-8">
-
       {/* Hero */}
       <motion.div {...fadeUp(0)}>
         <div className="relative overflow-hidden rounded-2xl welcome-gradient border shadow-sm">
@@ -218,7 +283,9 @@ export default function DashboardPage() {
                 </p>
                 <h1 className="mt-1.5 text-2xl sm:text-[1.85rem] font-extrabold tracking-tight leading-tight">
                   Good {getGreeting()},{" "}
-                  <span className="text-primary">{user?.name?.split(" ")[0] ?? "there"}</span>
+                  <span className="text-primary">
+                    {user?.name?.split(" ")[0] ?? "there"}
+                  </span>
                 </h1>
                 <p className="mt-1.5 text-sm text-muted-foreground max-w-lg">
                   {isLoading
@@ -226,7 +293,9 @@ export default function DashboardPage() {
                     : onlineFriends.length > 0
                       ? `${onlineFriends.length} friend${onlineFriends.length !== 1 ? "s" : ""} online.`
                       : "No friends online right now."}{" "}
-                  {isSharing ? "Your location is live." : "Location sharing is paused."}
+                  {isSharing
+                    ? "Your location is live."
+                    : "Location sharing is paused."}
                 </p>
               </div>
 
@@ -241,17 +310,24 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              <div className={cn(
-                "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border backdrop-blur-md",
-                isSharing
-                  ? "bg-card/70 text-chart-5 border-chart-5/30"
-                  : "bg-card/50 text-muted-foreground border-border/50",
-              )}>
+              <div
+                className={cn(
+                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border backdrop-blur-md",
+                  isSharing
+                    ? "bg-card/70 text-chart-5 border-chart-5/30"
+                    : "bg-card/50 text-muted-foreground border-border/50",
+                )}
+              >
                 <span className="relative flex h-2 w-2">
                   {isSharing && (
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-chart-5 opacity-60" />
                   )}
-                  <span className={cn("relative h-2 w-2 rounded-full", isSharing ? "bg-chart-5" : "bg-muted-foreground/40")} />
+                  <span
+                    className={cn(
+                      "relative h-2 w-2 rounded-full",
+                      isSharing ? "bg-chart-5" : "bg-muted-foreground/40",
+                    )}
+                  />
                 </span>
                 {isSharing ? "Location live" : "Sharing paused"}
               </div>
@@ -275,7 +351,11 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <Button asChild size="sm" className="ml-auto w-full sm:w-auto gap-2 rounded-xl shadow-md shadow-primary/15 font-semibold">
+              <Button
+                asChild
+                size="sm"
+                className="ml-auto w-full sm:w-auto gap-2 rounded-xl shadow-md shadow-primary/15 font-semibold"
+              >
                 <Link href="/dashboard/map">
                   <Navigation size={13} />
                   Open Map
@@ -289,7 +369,11 @@ export default function DashboardPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((k, i) => (
-          <motion.div key={k.label} {...scaleIn(0.06 + i * 0.05)} className="h-full">
+          <motion.div
+            key={k.label}
+            {...scaleIn(0.06 + i * 0.05)}
+            className="h-full"
+          >
             {isLoading ? (
               <Skeleton className="h-[148px] w-full rounded-2xl" />
             ) : (
@@ -301,8 +385,10 @@ export default function DashboardPage() {
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <motion.div {...fadeUp(0.12)} className="lg:col-span-5 flex flex-col gap-5">
-
+        <motion.div
+          {...fadeUp(0.12)}
+          className="lg:col-span-5 flex flex-col gap-5"
+        >
           <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
             {myLocation ? (
               <div className="relative">
@@ -312,20 +398,28 @@ export default function DashboardPage() {
                   markers={mapMarkers}
                   className="h-52 rounded-none"
                 />
-                <div className={cn(
-                  "absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5",
-                  "rounded-xl text-[11px] font-bold backdrop-blur-md border shadow-sm",
-                  isSharing
-                    ? "bg-chart-5/90 text-white border-chart-5/50"
-                    : "bg-background/80 text-muted-foreground border-border",
-                )}>
-                  <span className={cn("h-1.5 w-1.5 rounded-full", isSharing ? "bg-white animate-pulse" : "bg-muted-foreground")} />
+                <div
+                  className={cn(
+                    "absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5",
+                    "rounded-xl text-[11px] font-bold backdrop-blur-md border shadow-sm",
+                    isSharing
+                      ? "bg-chart-5/90 text-white border-chart-5/50"
+                      : "bg-background/80 text-muted-foreground border-border",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full",
+                      isSharing
+                        ? "bg-white animate-pulse"
+                        : "bg-muted-foreground",
+                    )}
+                  />
                   {isSharing ? "Live" : "Paused"}
                 </div>
                 {myLocation.accuracy != null && (
                   <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold backdrop-blur-md bg-background/70 border border-border/50 text-muted-foreground shadow-sm">
-                    <Globe size={10} />
-                    ±{Math.round(myLocation.accuracy)}m
+                    <Globe size={10} />±{Math.round(myLocation.accuracy)}m
                   </div>
                 )}
               </div>
@@ -335,8 +429,12 @@ export default function DashboardPage() {
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
                     <MapPin size={22} className="text-muted-foreground/40" />
                   </div>
-                  <p className="text-sm font-semibold text-muted-foreground">Waiting for GPS…</p>
-                  <p className="text-xs text-muted-foreground/60 mt-0.5">Allow location access to see yourself on the map</p>
+                  <p className="text-sm font-semibold text-muted-foreground">
+                    Waiting for GPS…
+                  </p>
+                  <p className="text-xs text-muted-foreground/60 mt-0.5">
+                    Allow location access to see yourself on the map
+                  </p>
                 </div>
               </div>
             )}
@@ -347,15 +445,22 @@ export default function DashboardPage() {
                 My Location
               </p>
               <p className="mt-1 text-lg font-bold leading-snug">
-                {myLocation?.city
-                  ?? (myLocation
+                {myLocation?.city ??
+                  (myLocation
                     ? `${myLocation.latitude.toFixed(4)}, ${myLocation.longitude.toFixed(4)}`
                     : "Not available yet")}
               </p>
               {myLocation?.address && (
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">{myLocation.address}</p>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {myLocation.address}
+                </p>
               )}
-              <Button variant="outline" size="sm" className="mt-4 w-full gap-2 rounded-xl" asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4 w-full gap-2 rounded-xl"
+                asChild
+              >
                 <Link href="/dashboard/map">
                   <Navigation size={13} />
                   Open full map
@@ -369,7 +474,9 @@ export default function DashboardPage() {
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
                 <Zap size={13} className="text-primary" />
               </div>
-              <p className="text-xs font-bold uppercase tracking-wider">Quick Actions</p>
+              <p className="text-xs font-bold uppercase tracking-wider">
+                Quick Actions
+              </p>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {quickActions.map(({ label, icon: QIcon, href, tint }) => (
@@ -378,7 +485,12 @@ export default function DashboardPage() {
                   href={href}
                   className="group flex flex-col items-center gap-2 rounded-xl p-3 transition-all hover:bg-muted/50 active:scale-95"
                 >
-                  <div className={cn("flex h-11 w-11 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-105", tint)}>
+                  <div
+                    className={cn(
+                      "flex h-11 w-11 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-105",
+                      tint,
+                    )}
+                  >
                     <QIcon size={18} />
                   </div>
                   <span className="text-center text-[11px] font-medium leading-tight text-muted-foreground group-hover:text-foreground">
@@ -390,8 +502,10 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        <motion.div {...fadeUp(0.18)} className="lg:col-span-7 flex flex-col gap-5">
-
+        <motion.div
+          {...fadeUp(0.18)}
+          className="lg:col-span-7 flex flex-col gap-5"
+        >
           {/* Real people on the map — replaces fake 7-day chart */}
           <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
             <div className="flex items-center justify-between px-5 py-4">
@@ -401,7 +515,9 @@ export default function DashboardPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold">On the map</p>
-                  <p className="text-xs text-muted-foreground">Live positions from friends who are sharing</p>
+                  <p className="text-xs text-muted-foreground">
+                    Live positions from friends who are sharing
+                  </p>
                 </div>
               </div>
               <Link
@@ -417,7 +533,9 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center py-10 text-muted-foreground">
                 <Navigation size={22} className="mb-2 opacity-30" />
                 <p className="text-sm font-semibold">Nobody on the map yet</p>
-                <p className="mt-0.5 text-xs opacity-60">Friends appear here when they share location</p>
+                <p className="mt-0.5 text-xs opacity-60">
+                  Friends appear here when they share location
+                </p>
               </div>
             ) : (
               <div className="divide-y divide-border/20">
@@ -429,15 +547,26 @@ export default function DashboardPage() {
                       href={`/dashboard/map?focus=${friend.id}`}
                       className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/30 transition-colors"
                     >
-                      <PersonAvatar name={friend.name} avatar={friend.avatar} online={friend.isOnline} />
+                      <PersonAvatar
+                        name={friend.name}
+                        avatar={friend.avatar}
+                        online={friend.isOnline}
+                      />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{friend.name}</p>
+                        <p className="truncate text-sm font-semibold">
+                          {friend.name}
+                        </p>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {locationLabel(friend, loc)}
-                          {loc?.timestamp ? ` · ${formatDistanceToNow(loc.timestamp)}` : ""}
+                          {loc?.timestamp
+                            ? ` · ${formatDistanceToNow(loc.timestamp)}`
+                            : ""}
                         </p>
                       </div>
-                      <Eye size={14} className="shrink-0 text-muted-foreground/40" />
+                      <Eye
+                        size={14}
+                        className="shrink-0 text-muted-foreground/40"
+                      />
                     </Link>
                   );
                 })}
@@ -460,7 +589,9 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm font-bold leading-none">Online now</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {onlineFriends.length > 0 ? `${onlineFriends.length} active` : "No one online"}
+                    {onlineFriends.length > 0
+                      ? `${onlineFriends.length} active`
+                      : "No one online"}
                   </p>
                 </div>
               </div>
@@ -484,8 +615,15 @@ export default function DashboardPage() {
                   <Users size={24} className="opacity-30" />
                 </div>
                 <p className="text-sm font-semibold">No friends online</p>
-                <p className="mt-0.5 text-xs opacity-60">Invite people to see them here</p>
-                <Button variant="outline" size="sm" className="mt-4 gap-2 rounded-xl" asChild>
+                <p className="mt-0.5 text-xs opacity-60">
+                  Invite people to see them here
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 gap-2 rounded-xl"
+                  asChild
+                >
                   <Link href="/dashboard/friends">
                     <UserCheck size={13} /> Find friends
                   </Link>
@@ -496,15 +634,29 @@ export default function DashboardPage() {
                 {onlineFriends.slice(0, 5).map((friend) => {
                   const loc = friendsLocations.get(friend.id);
                   return (
-                    <div key={friend.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/30 transition-colors">
-                      <PersonAvatar name={friend.name} avatar={friend.avatar} online />
+                    <div
+                      key={friend.id}
+                      className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/30 transition-colors"
+                    >
+                      <PersonAvatar
+                        name={friend.name}
+                        avatar={friend.avatar}
+                        online
+                      />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{friend.name}</p>
+                        <p className="truncate text-sm font-semibold">
+                          {friend.name}
+                        </p>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {locationLabel(friend, loc)}
                         </p>
                       </div>
-                      <Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 rounded-lg px-3 text-xs" asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 shrink-0 gap-1.5 rounded-lg px-3 text-xs"
+                        asChild
+                      >
                         <Link href={`/dashboard/map?focus=${friend.id}`}>
                           <Eye size={12} /> View
                         </Link>
@@ -517,7 +669,8 @@ export default function DashboardPage() {
                     href="/dashboard/friends"
                     className="flex items-center justify-center gap-1 py-3.5 text-xs font-medium text-primary"
                   >
-                    +{onlineFriends.length - 5} more online <ArrowRight size={12} />
+                    +{onlineFriends.length - 5} more online{" "}
+                    <ArrowRight size={12} />
                   </Link>
                 )}
               </div>
@@ -542,53 +695,83 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <Link href="/dashboard/groups" className="rounded-xl px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5">
+              <Link
+                href="/dashboard/groups"
+                className="rounded-xl px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5"
+              >
                 View all <ArrowRight size={12} className="inline" />
               </Link>
             </div>
             <div className="border-t border-border/30 hidden sm:block divide-y divide-border/20">
               {groups.slice(0, 4).map((g, idx) => {
-                const memberCount = g._count?.members ?? (g.members ?? []).length;
-                const online = (g.members ?? []).filter((m) => m.user.isOnline).length;
+                const memberCount =
+                  g._count?.members ?? (g.members ?? []).length;
+                const online = (g.members ?? []).filter(
+                  (m) => m.user.isOnline,
+                ).length;
                 return (
                   <Link
                     key={g.id}
                     href={`/dashboard/groups/${g.id}`}
                     className="group flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors"
                   >
-                    <div className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-base font-bold text-white shadow-sm",
-                      GROUP_GRADIENTS[idx % GROUP_GRADIENTS.length],
-                    )}>
+                    <div
+                      className={cn(
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-base font-bold text-white shadow-sm",
+                        GROUP_GRADIENTS[idx % GROUP_GRADIENTS.length],
+                      )}
+                    >
                       {g.name.charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{g.name}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {memberCount} members
-                        {online > 0 && <span className="text-chart-5 font-medium"> · {online} online</span>}
+                        {online > 0 && (
+                          <span className="text-chart-5 font-medium">
+                            {" "}
+                            · {online} online
+                          </span>
+                        )}
                       </p>
                     </div>
                     <AvatarStack
-                      items={(g.members ?? []).slice(0, 4).map((m) => ({ id: m.userId, name: m.user.name, avatar: m.user.avatar }))}
+                      items={(g.members ?? [])
+                        .slice(0, 4)
+                        .map((m) => ({
+                          id: m.userId,
+                          name: m.user.name,
+                          avatar: m.user.avatar,
+                        }))}
                       max={4}
                       size={24}
                     />
-                    <ChevronRight size={14} className="ml-1 shrink-0 text-muted-foreground/25 group-hover:text-muted-foreground/60" />
+                    <ChevronRight
+                      size={14}
+                      className="ml-1 shrink-0 text-muted-foreground/25 group-hover:text-muted-foreground/60"
+                    />
                   </Link>
                 );
               })}
             </div>
             <div className="flex sm:hidden overflow-x-auto scrollbar-none gap-3 px-4 py-4">
               {groups.slice(0, 8).map((g, idx) => (
-                <Link key={g.id} href={`/dashboard/groups/${g.id}`} className="flex w-20 shrink-0 flex-col items-center gap-2">
-                  <div className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-lg font-bold text-white",
-                    GROUP_GRADIENTS[idx % GROUP_GRADIENTS.length],
-                  )}>
+                <Link
+                  key={g.id}
+                  href={`/dashboard/groups/${g.id}`}
+                  className="flex w-20 shrink-0 flex-col items-center gap-2"
+                >
+                  <div
+                    className={cn(
+                      "flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-lg font-bold text-white",
+                      GROUP_GRADIENTS[idx % GROUP_GRADIENTS.length],
+                    )}
+                  >
                     {g.name.charAt(0)}
                   </div>
-                  <p className="line-clamp-1 w-full px-1 text-center text-xs font-medium">{g.name}</p>
+                  <p className="line-clamp-1 w-full px-1 text-center text-xs font-medium">
+                    {g.name}
+                  </p>
                 </Link>
               ))}
             </div>
@@ -608,10 +791,14 @@ export default function DashboardPage() {
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Button asChild className="gap-2 rounded-xl shadow-md">
-                <Link href="/dashboard/friends"><UserCheck size={14} /> Find Friends</Link>
+                <Link href="/dashboard/friends">
+                  <UserCheck size={14} /> Find Friends
+                </Link>
               </Button>
               <Button variant="outline" asChild className="gap-2 rounded-xl">
-                <Link href="/dashboard/groups"><Users2 size={14} /> Create Group</Link>
+                <Link href="/dashboard/groups">
+                  <Users2 size={14} /> Create Group
+                </Link>
               </Button>
             </div>
           </div>

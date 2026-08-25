@@ -70,11 +70,16 @@ function SkeletonRow({ wide = false }: { wide?: boolean }) {
   );
 }
 
-function ErrorRow() {
+function ErrorRow({ onRetry }: { onRetry?: () => void }) {
   return (
     <div className="flex items-center gap-2.5 px-5 py-4 text-sm text-destructive/80">
       <AlertTriangle size={15} className="shrink-0" />
-      <span>Failed to load. Refresh the page.</span>
+      <span className="flex-1">Failed to load.</span>
+      {onRetry && (
+        <Button variant="outline" size="sm" className="h-8 rounded-lg" onClick={onRetry}>
+          Retry
+        </Button>
+      )}
     </div>
   );
 }
@@ -98,9 +103,9 @@ export default function RequestsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('received');
   const meId = useAppSelector((s) => s.auth.user?.id);
 
-  const { data: pending = [], isLoading: lPending, isError: ePending } = usePendingRequests();
-  const { data: sent    = [], isLoading: lSent,    isError: eSent    } = useSentRequests();
-  const { data: history = [], isLoading: lHistory, isError: eHistory } = useRequestHistory();
+  const { data: pending = [], isLoading: lPending, isError: ePending, refetch: refetchPending } = usePendingRequests();
+  const { data: sent    = [], isLoading: lSent,    isError: eSent,    refetch: refetchSent    } = useSentRequests();
+  const { data: history = [], isLoading: lHistory, isError: eHistory, refetch: refetchHistory } = useRequestHistory();
 
   const { mutate: respond   } = useRespondToRequest();
   const { mutate: cancel    } = useCancelRequest();
@@ -135,23 +140,25 @@ export default function RequestsPage() {
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <motion.div {...fadeUp(0)}>
         <div className="relative rounded-2xl overflow-hidden welcome-gradient border">
-          <div className="relative z-10 px-6 py-6 sm:px-8">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl shrink-0" asChild>
-                <Link href="/dashboard/friends"><ArrowLeft size={16} /></Link>
-              </Button>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
-                  Friend Requests
-                </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {pending.length} pending · {sent.length} sent
-                </p>
+          <div className="relative z-10 px-5 py-5 sm:px-7 sm:py-6">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl shrink-0" asChild>
+                  <Link href="/dashboard/friends"><ArrowLeft size={16} /></Link>
+                </Button>
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
+                    Friend Requests
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {pending.length} pending · {sent.length} sent
+                  </p>
+                </div>
               </div>
               {pending.length > 0 && (
                 <Button size="sm" disabled={acceptingAll}
                   onClick={() => acceptAll()}
-                  className="shrink-0 gap-2 shadow-sm">
+                  className="shrink-0 gap-2">
                   {acceptingAll
                     ? <Loader2 size={13} className="animate-spin" />
                     : <CheckCheck size={13} />}
@@ -214,7 +221,7 @@ export default function RequestsPage() {
               </div>
               <div className="border-t border-border/30" />
 
-              {ePending     ? <ErrorRow />
+              {ePending     ? <ErrorRow onRetry={() => refetchPending()} />
               : lPending    ? <div className="divide-y divide-border/20">{[1,2].map(i => <SkeletonRow key={i} wide />)}</div>
               : pending.length === 0
                 ? <EmptyRow icon={Inbox} title="No pending requests" subtitle="When someone sends you a request it'll appear here" />
@@ -302,8 +309,8 @@ export default function RequestsPage() {
               </div>
               <div className="border-t border-border/30" />
 
-              {eSent     ? <ErrorRow />
-              : lSent    ? <SkeletonRow wide />
+              {eSent     ? <ErrorRow onRetry={() => refetchSent()} />
+              : lSent    ? <div className="divide-y divide-border/20">{[1,2].map(i => <SkeletonRow key={i} wide />)}</div>
               : sent.length === 0
                 ? <EmptyRow icon={Send} title="No sent requests" subtitle="Requests you send will appear here" />
               : (
@@ -331,10 +338,10 @@ export default function RequestsPage() {
                             <Clock size={10} /> Pending
                           </span>
                           <Button variant="ghost" size="sm"
-                            title="Cancel"
+                            title="Cancel request"
                             disabled={cancellingId === req.id}
                             onClick={() => handleCancel(req.id)}
-                            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                             {cancellingId === req.id
                               ? <Loader2 size={13} className="animate-spin" />
                               : <X size={13} />}
@@ -366,7 +373,7 @@ export default function RequestsPage() {
               </div>
               <div className="border-t border-border/30" />
 
-              {eHistory     ? <ErrorRow />
+              {eHistory     ? <ErrorRow onRetry={() => refetchHistory()} />
               : lHistory    ? <div className="divide-y divide-border/20">{[1,2,3].map(i => <SkeletonRow key={i} />)}</div>
               : history.length === 0
                 ? <EmptyRow icon={History} title="No history yet" subtitle="Accepted and rejected requests appear here" />
@@ -374,8 +381,8 @@ export default function RequestsPage() {
                 <div className="divide-y divide-border/20">
                   {history.map((req, i) => {
                     const isAccepted = req.status === 'ACCEPTED';
-                    const person = meId != null && req.senderId === meId ? req.receiver : req.sender;
-                    const youSent = meId != null && req.senderId === meId;
+                    const youSent = meId != null && Number(req.senderId) === Number(meId);
+                    const person = youSent ? req.receiver : req.sender;
                     return (
                       <motion.div key={req.id}
                         initial={{ opacity: 0, y: 4 }}

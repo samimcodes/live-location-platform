@@ -19,7 +19,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  
+
   /* Rich aesthetic colors */
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
@@ -30,12 +30,12 @@
   --color-destructive: var(--destructive);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -76,34 +76,34 @@
   /* Beautiful Light Theme - Soft and Premium */
   --background: oklch(0.985 0.002 247.8);
   --foreground: oklch(0.145 0 0);
-  
+
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  
+
   /* Vibrant Violet/Indigo Primary */
   --primary: oklch(0.55 0.2 280);
   --primary-foreground: oklch(0.985 0 0);
-  
+
   --secondary: oklch(0.95 0.02 280);
   --secondary-foreground: oklch(0.3 0.1 280);
-  
+
   --muted: oklch(0.96 0.01 250);
   --muted-foreground: oklch(0.55 0.02 250);
-  
+
   --accent: oklch(0.95 0.02 280);
   --accent-foreground: oklch(0.3 0.1 280);
-  
+
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  
+
   --border: oklch(0.92 0.01 250);
   --input: oklch(0.92 0.01 250);
   --ring: oklch(0.55 0.2 280);
-  
+
   --radius: 0.75rem; /* Modern rounded corners */
-  
+
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.55 0.2 280);
@@ -125,31 +125,31 @@
   /* Sleek Dark Theme */
   --background: oklch(0.13 0.02 260);
   --foreground: oklch(0.985 0 0);
-  
+
   --card: oklch(0.18 0.02 260);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.18 0.02 260);
   --popover-foreground: oklch(0.985 0 0);
-  
+
   --primary: oklch(0.65 0.2 280);
   --primary-foreground: oklch(0.985 0 0);
-  
+
   --secondary: oklch(0.25 0.05 260);
   --secondary-foreground: oklch(0.985 0 0);
-  
+
   --muted: oklch(0.2 0.03 260);
   --muted-foreground: oklch(0.7 0.02 260);
-  
+
   --accent: oklch(0.25 0.05 260);
   --accent-foreground: oklch(0.985 0 0);
-  
+
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
-  
+
   --border: oklch(0.25 0.03 260);
   --input: oklch(0.25 0.03 260);
   --ring: oklch(0.65 0.2 280);
-  
+
   --sidebar: oklch(0.15 0.02 260);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.65 0.2 280);
@@ -212,17 +212,23 @@
 
 /* Glow shadow on hover — set --glow-color via inline style or class */
 .glow-shadow {
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition:
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
 }
 .glow-shadow:hover {
   box-shadow:
-    0 0 20px rgba(var(--glow-r, 99), var(--glow-g, 102), var(--glow-b, 241), 0.15),
-    0 8px 30px rgba(var(--glow-r, 99), var(--glow-g, 102), var(--glow-b, 241), 0.1);
+    0 0 20px
+      rgba(var(--glow-r, 99), var(--glow-g, 102), var(--glow-b, 241), 0.15),
+    0 8px 30px
+      rgba(var(--glow-r, 99), var(--glow-g, 102), var(--glow-b, 241), 0.1);
 }
 .dark .glow-shadow:hover {
   box-shadow:
-    0 0 24px rgba(var(--glow-r, 99), var(--glow-g, 102), var(--glow-b, 241), 0.25),
-    0 8px 30px rgba(var(--glow-r, 99), var(--glow-g, 102), var(--glow-b, 241), 0.15);
+    0 0 24px
+      rgba(var(--glow-r, 99), var(--glow-g, 102), var(--glow-b, 241), 0.25),
+    0 8px 30px
+      rgba(var(--glow-r, 99), var(--glow-g, 102), var(--glow-b, 241), 0.15);
 }
 
 /* Card shine sweep — a diagonal light sweep on hover */
@@ -231,7 +237,7 @@
   overflow: hidden;
 }
 .card-shine::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
@@ -253,7 +259,7 @@
 
 /* Gradient animated border (wrapper) */
 @property --gradient-angle {
-  syntax: '<angle>';
+  syntax: "<angle>";
   initial-value: 0deg;
   inherits: false;
 }
@@ -277,7 +283,9 @@
 }
 
 @keyframes gradient-spin {
-  to { --gradient-angle: 360deg; }
+  to {
+    --gradient-angle: 360deg;
+  }
 }
 
 /* Subtle shimmer on text */
@@ -296,14 +304,25 @@
 }
 
 @keyframes shimmer-sweep {
-  0%, 100% { background-position: 200% center; }
-  50%      { background-position: -200% center; }
+  0%,
+  100% {
+    background-position: 200% center;
+  }
+  50% {
+    background-position: -200% center;
+  }
 }
 
 /* Count-up animation for KPI numbers */
 @keyframes count-up-fade {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .animate-count-up {
   animation: count-up-fade 0.5s ease-out both;
@@ -340,8 +359,15 @@
   inset: 0;
   z-index: 0;
   background-image:
-    linear-gradient(color-mix(in oklch, var(--primary) 7%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklch, var(--primary) 7%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      color-mix(in oklch, var(--primary) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--primary) 7%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 28px 28px;
   mask-image: linear-gradient(180deg, black 0%, transparent 88%);
   pointer-events: none;
@@ -380,8 +406,15 @@
 }
 .dark .welcome-gradient::before {
   background-image:
-    linear-gradient(color-mix(in oklch, white 5%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklch, white 5%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      color-mix(in oklch, white 5%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklch, white 5%, transparent) 1px,
+      transparent 1px
+    );
 }
 
 /* Scrollbar-none */
@@ -423,7 +456,9 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
   pointer-events: all;
   will-change: transform;
 }
@@ -455,9 +490,18 @@
 }
 
 @keyframes localink-pulse {
-  0%   { transform: scale(1);   opacity: 0.7; }
-  70%  { transform: scale(1.8); opacity: 0;   }
-  100% { transform: scale(1);   opacity: 0;   }
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
 }
 
 /* Name label below the pin */
@@ -476,8 +520,14 @@
 }
 
 @keyframes localink-label-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0);   }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dark .localink-marker .marker-label {
@@ -506,8 +556,12 @@
   border: 2px solid white;
 }
 
-.localink-marker .marker-online-dot.is-online  { background: #10b981; }
-.localink-marker .marker-online-dot.is-offline { background: #94a3b8; }
+.localink-marker .marker-online-dot.is-online {
+  background: #10b981;
+}
+.localink-marker .marker-online-dot.is-offline {
+  background: #94a3b8;
+}
 
 /* ── GPS accuracy circle ─────────────────────────────────────── */
 .localink-accuracy-circle {
@@ -516,7 +570,9 @@
   border: 1.5px solid rgba(99, 102, 241, 0.3);
   /* Size is set inline via JS (width/height in px) */
   pointer-events: none;
-  transition: width 0.4s ease, height 0.4s ease;
+  transition:
+    width 0.4s ease,
+    height 0.4s ease;
   will-change: width, height;
 }
 
@@ -628,10 +684,18 @@
 
 /* ── Blob animation (Landing Page) ───────────────────────────── */
 @keyframes blob {
-  0%   { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(30px, -50px) scale(1.1); }
-  66%  { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
 }
 
 .animate-blob {

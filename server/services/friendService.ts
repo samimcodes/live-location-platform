@@ -33,18 +33,6 @@ export class FriendService {
   static sendFriendRequest = catchServiceAsync(async (senderId: number, receiverId: number, message?: string) => {
     if (senderId === receiverId) throw new Error('You cannot send a friend request to yourself');
 
-    // Check existing request
-    const existing = await prisma.friendRequest.findFirst({
-      where: {
-        OR: [
-          { senderId, receiverId },
-          { senderId: receiverId, receiverId: senderId },
-        ],
-      },
-    });
-    if (existing) throw new Error('Friend request already exists');
-
-    // Check existing friendship
     const existingFriendship = await prisma.friendship.findFirst({
       where: {
         OR: [
@@ -55,12 +43,32 @@ export class FriendService {
     });
     if (existingFriendship) throw new Error('Already friends');
 
+    const include = {
+      sender: { select: { id: true, name: true, avatar: true } },
+      receiver: { select: { id: true, name: true, avatar: true } },
+    };
+
+    const sameDirection = await prisma.friendRequest.findFirst({
+      where: { senderId, receiverId },
+    });
+    if (sameDirection) {
+      if (sameDirection.status === 'PENDING') throw new Error('Friend request already exists');
+      if (sameDirection.status === 'ACCEPTED') throw new Error('Already friends');
+      return prisma.friendRequest.update({
+        where: { id: sameDirection.id },
+        data: { status: 'PENDING', message: message ?? null },
+        include,
+      });
+    }
+
+    const oppositePending = await prisma.friendRequest.findFirst({
+      where: { senderId: receiverId, receiverId: senderId, status: 'PENDING' },
+    });
+    if (oppositePending) throw new Error('They already sent you a friend request');
+
     return prisma.friendRequest.create({
       data: { senderId, receiverId, message },
-      include: {
-        sender: { select: { id: true, name: true, avatar: true } },
-        receiver: { select: { id: true, name: true, avatar: true } },
-      },
+      include,
     });
   });
 
@@ -88,8 +96,7 @@ export class FriendService {
 
     return {
       message: action === 'ACCEPTED' ? 'Friend request accepted' : 'Friend request rejected',
-      // Surface senderId so the controller can notify them without a second DB round-trip
-      senderId: action === 'ACCEPTED' ? request.senderId : null,
+      senderId: request.senderId,
     };
   });
 
@@ -158,8 +165,9 @@ export class FriendService {
     const request = await prisma.friendRequest.findUnique({ where: { id: requestId } });
     if (!request) throw new Error('Request not found');
     if (request.senderId !== senderId) throw new Error('Unauthorized');
+    if (request.status !== 'PENDING') throw new Error('Only pending requests can be cancelled');
     await prisma.friendRequest.delete({ where: { id: requestId } });
-    return { message: 'Request cancelled' };
+    return { message: 'Request cancelled', receiverId: request.receiverId };
   });
 
   // ── Get request history (ACCEPTED + REJECTED, last 30 days) ──
