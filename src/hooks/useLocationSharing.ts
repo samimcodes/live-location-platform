@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSocketContext } from '@/components/SocketProvider';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useAppSelector } from '@/store/store';
@@ -19,9 +19,8 @@ export interface LocationSharingResult {
 
 export function useLocationSharing(): LocationSharingResult {
   const { emit } = useSocketContext();
-  const { isSharing, setMyLocation, setWatchId, watchId } = useLocationStore();
+  const { isSharing, setMyLocation, setWatchId, watchId, geoError, setGeoError } = useLocationStore();
   const { isAuthenticated, user } = useAppSelector((s) => s.auth);
-  const [geoError, setGeoError] = useState<GeolocationPositionError | null>(null);
 
   // Keep refs so callbacks never go stale without causing re-renders
   const watchIdRef   = useRef<number | null>(watchId);

@@ -534,6 +534,17 @@
   display: none !important;
 }
 
+/* Navigation sits below the in-map overlay bar so zoom/compass aren't covered */
+.maplibregl-ctrl-top-right {
+  top: 4.25rem !important;
+  right: 0.75rem !important;
+}
+
+.maplibregl-ctrl-bottom-left {
+  bottom: 0.5rem !important;
+  left: 0.5rem !important;
+}
+
 /* MapLibre attribution — keep visible but compact */
 .maplibregl-ctrl-attrib {
   font-size: 10px !important;

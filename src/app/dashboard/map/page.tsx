@@ -10,7 +10,7 @@ import { useLocationStore } from '@/store/useLocationStore';
 import { useMapLibre } from '@/hooks/useMapLibre';
 import { isValidLatLng, type LatLng } from '@/lib/mapUtils';
 import { cn } from '@/lib/utils';
-import { Users, ChevronDown } from 'lucide-react';
+import { Users, ChevronUp, MapPin, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // LiveMap is WebGL — client only
@@ -21,7 +21,11 @@ const LiveMap = dynamic(
 
 export default function MapPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={
+      <div className="h-full flex items-center justify-center bg-muted/30">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    }>
       <MapPageInner />
     </Suspense>
   );
@@ -31,8 +35,8 @@ function MapPageInner() {
   useFriendsLocations();
 
   const searchParams                      = useSearchParams();
-  const { data: friends = [] }            = useFriends();
-  const { myLocation, friendsLocations }  = useLocationStore();
+  const { data: friends = [], isLoading: friendsLoading } = useFriends();
+  const { myLocation, friendsLocations, geoError } = useLocationStore();
   const [focusedUserId, setFocusedUserId] = useState<number | undefined>();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const allPointsRef = useRef<LatLng[]>([]);
@@ -75,6 +79,12 @@ function MapPageInner() {
     fitToPoints(allPointsRef.current, 80);
   }, [fitToPoints]);
 
+  const handleRecenter = useCallback(() => {
+    if (myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude)) {
+      flyTo(myLocation.latitude, myLocation.longitude, 15);
+    }
+  }, [myLocation, flyTo]);
+
   const handleFocusFriend = useCallback(
     (userId: number | undefined) => {
       setFocusedUserId(userId);
@@ -111,10 +121,25 @@ function MapPageInner() {
             activeFriendCount,
             allPoints,
             onFitAll:     handleFitAll,
+            onRecenter:   handleRecenter,
+            canRecenter:  !!(myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude)),
             onFullscreen: toggleFullscreen,
             isFullscreen,
           }}
         />
+
+        {geoError && (
+          <div className="absolute top-17 left-3 right-3 lg:right-22 z-20">
+            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-background/95 px-3 py-2.5 shadow-lg backdrop-blur-md">
+              <MapPin size={14} className="mt-0.5 shrink-0 text-amber-500" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {geoError.code === 1
+                  ? 'Location permission denied. Enable it in the browser to show your pin.'
+                  : 'Couldn’t read GPS. Check that location services are on.'}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── Mobile FAB: open friends drawer ─────────────────── */}
         <AnimatePresence>
@@ -125,7 +150,7 @@ function MapPageInner() {
               animate={{ scale: 1,   opacity: 1 }}
               exit={{ scale: 0.8,    opacity: 0 }}
               transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-              className="absolute bottom-6 right-4 z-20 lg:hidden"
+              className="absolute bottom-20 right-4 z-20 lg:hidden"
             >
               <button
                 onClick={() => setMobileDrawerOpen(true)}
@@ -145,7 +170,7 @@ function MapPageInner() {
                   )}
                 </div>
                 <span className="text-xs font-semibold">Friends</span>
-                <ChevronDown size={12} className="text-muted-foreground" />
+                <ChevronUp size={12} className="text-muted-foreground" />
               </button>
             </motion.div>
           )}
@@ -174,7 +199,7 @@ function MapPageInner() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-              className="absolute bottom-0 left-0 right-0 z-30 lg:hidden rounded-t-2xl overflow-hidden"
+              className="absolute bottom-0 left-0 right-0 z-30 lg:hidden rounded-t-2xl overflow-hidden flex flex-col"
               style={{ maxHeight: '60vh' }}
             >
               <div
@@ -185,9 +210,10 @@ function MapPageInner() {
               </div>
               <FriendMarkerPanel
                 friends={friends}
+                isLoading={friendsLoading}
                 focusedUserId={focusedUserId}
                 onFocusFriend={handleFocusFriend}
-                className="rounded-none border-t-0 border-x border-b-0"
+                className="rounded-none border-t-0 border-x border-b-0 min-h-0 flex-1"
                 style={{ maxHeight: 'calc(60vh - 2rem)' }}
               />
             </motion.div>
@@ -201,6 +227,7 @@ function MapPageInner() {
       <div className="hidden lg:flex flex-col w-72 xl:w-80 shrink-0 border-l border-border bg-card">
         <FriendMarkerPanel
           friends={friends}
+          isLoading={friendsLoading}
           focusedUserId={focusedUserId}
           onFocusFriend={handleFocusFriend}
           className="flex-1 rounded-none border-0"

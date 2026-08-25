@@ -89,17 +89,19 @@ export function createMarkerElement(opts: MarkerOptions): HTMLDivElement {
       ? `<span class="marker-online-dot ${isOnline ? 'is-online' : 'is-offline'}"></span>`
       : '';
 
+  const safeLabel = escapeHtml(label);
+  const safeLetter = escapeHtml(letter.slice(0, 2));
   const el = document.createElement('div');
   el.className = 'localink-marker';
   el.setAttribute('aria-label', label);
   el.innerHTML = /* html */ `
     <div class="marker-wrapper">
       <div class="marker-pin" style="background:${bg};">
-        <span class="marker-letter">${letter}</span>
+        <span class="marker-letter">${safeLetter}</span>
         ${isMe ? '<span class="marker-pulse"></span>' : ''}
         ${onlineDot}
       </div>
-      <div class="marker-label">${label}</div>
+      <div class="marker-label">${safeLabel}</div>
       <div class="marker-arrow" style="background:${gradient.to};"></div>
     </div>`;
   return el;

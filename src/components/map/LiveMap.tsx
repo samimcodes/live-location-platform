@@ -212,7 +212,16 @@ export function LiveMap({
         if (!isValidLatLng(latitude, longitude)) return;
 
         const friend   = friends.find((f) => f.id === userId);
-        if (friend && !friend.sharingLocation) return;
+        if (friend && !friend.sharingLocation) {
+          if (friendMarkersRef.current[userId]) {
+            friendMarkersRef.current[userId].remove();
+            friendPopupsRef.current[userId]?.remove();
+            delete friendMarkersRef.current[userId];
+            delete friendPopupsRef.current[userId];
+            delete friendPopupHtmlRef.current[userId];
+          }
+          return;
+        }
 
         const name     = friend?.name    ?? `User ${userId}`;
         const isOnline = friend?.isOnline ?? false;
@@ -426,10 +435,10 @@ export function LiveMap({
 
       {/* ── No-location hint ─────────────────────────────────────── */}
       {mapLoaded && !myLocation && showFriends && (
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+        <div className="absolute bottom-20 lg:bottom-10 left-1/2 -translate-x-1/2 z-10 pointer-events-none max-w-[min(90%,20rem)]">
           <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border/60 rounded-full px-4 py-2 shadow-lg">
             <MapPin size={12} className="text-muted-foreground shrink-0" />
-            <p className="text-xs text-muted-foreground whitespace-nowrap">
+            <p className="text-xs text-muted-foreground">
               Enable location sharing to see your position
             </p>
           </div>

@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { Radio, Maximize2, Minimize2, LocateFixed, Users, Loader2 } from 'lucide-react';
+import { Radio, Maximize2, Minimize2, LocateFixed, Users, Loader2, Scan } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import api from '@/lib/axios';
 import { useLocationStore } from '@/store/useLocationStore';
@@ -21,6 +21,8 @@ export interface MapControlsProps {
   onFullscreen:      () => void;
   isFullscreen:      boolean;
   allPoints:         LatLng[];
+  onRecenter?:       () => void;
+  canRecenter?:      boolean;
   className?:        string;
 }
 
@@ -56,6 +58,8 @@ export function MapControls({
   onFullscreen,
   isFullscreen,
   allPoints,
+  onRecenter,
+  canRecenter = false,
   className,
 }: MapControlsProps) {
   const { isSharing, setSharing } = useLocationStore();
@@ -132,9 +136,14 @@ export function MapControls({
 
       {/* ── Right: action buttons ────────────────────────────────── */}
       <div className="flex items-center gap-1">
+        {canRecenter && onRecenter && (
+          <MapBtn onClick={onRecenter} title="Recenter on me">
+            <LocateFixed size={13} />
+          </MapBtn>
+        )}
         {allPoints.length > 1 && (
           <MapBtn onClick={onFitAll} title="Fit all markers in view">
-            <LocateFixed size={13} />
+            <Scan size={13} />
           </MapBtn>
         )}
         <MapBtn

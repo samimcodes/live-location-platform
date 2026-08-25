@@ -93,13 +93,14 @@ export function useMapLibre({
             style: OSM_STYLE,
             center,
             zoom,
-            attributionControl: { compact: false },
+            attributionControl: false,
           });
 
           mapRef.current = map;
 
           if (controls) {
-            map.addControl(new mgl.NavigationControl({ showCompass: true }), 'top-right');
+            map.addControl(new mgl.NavigationControl({ showCompass: true, visualizePitch: true }), 'top-right');
+            map.addControl(new mgl.AttributionControl({ compact: true }), 'bottom-left');
           }
 
           map.on('load',  () => { if (mounted) setMapLoaded(true);  });
@@ -160,7 +161,8 @@ export function useMapLibre({
 
   // ── toggleFullscreen ─────────────────────────────────────────────────
   const toggleFullscreen = useCallback(() => {
-    const el = containerRef.current;
+    // Fullscreen the wrapper around canvas + overlays, not just the GL canvas.
+    const el = containerRef.current?.parentElement ?? containerRef.current;
     if (!el) return;
     if (!document.fullscreenElement) {
       el.requestFullscreen().catch(console.warn);

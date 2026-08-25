@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Navigation, Clock, Search, X,
@@ -18,6 +19,7 @@ export interface FriendMarkerPanelProps {
   onFocusFriend:  (userId: number | undefined) => void;
   className?:     string;
   style?:         React.CSSProperties;
+  isLoading?:     boolean;
 }
 
 // ── Avatar color palette — cycles through chart tokens ────────────────────
@@ -42,6 +44,7 @@ export function FriendMarkerPanel({
   onFocusFriend,
   className,
   style,
+  isLoading = false,
 }: FriendMarkerPanelProps) {
   const { friendsLocations } = useLocationStore();
   const [query, setQuery]    = useState('');
@@ -134,11 +137,25 @@ export function FriendMarkerPanel({
 
       {/* ── List ────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {friends.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-2 p-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-2.5 px-1 py-2">
+                <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-24 rounded bg-muted animate-pulse" />
+                  <div className="h-2 w-16 rounded bg-muted/70 animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : friends.length === 0 ? (
           <EmptyState
             icon={<Users size={26} className="text-muted-foreground/20" />}
             title="No friends yet"
             subtitle="Add friends to track their location"
+            actionHref="/dashboard/friends"
+            actionLabel="Find friends"
           />
         ) : filtered.length === 0 ? (
           <EmptyState
@@ -200,10 +217,12 @@ export function FriendMarkerPanel({
 }
 
 // ── Empty state ────────────────────────────────────────────────────────────
-function EmptyState({ icon, title, subtitle }: {
+function EmptyState({ icon, title, subtitle, actionHref, actionLabel }: {
   icon:     React.ReactNode;
   title:    string;
   subtitle: string;
+  actionHref?: string;
+  actionLabel?: string;
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-14 px-4 text-center">
@@ -212,6 +231,14 @@ function EmptyState({ icon, title, subtitle }: {
       </div>
       <p className="text-xs font-semibold text-muted-foreground">{title}</p>
       <p className="text-[11px] text-muted-foreground/45 mt-1 leading-relaxed">{subtitle}</p>
+      {actionHref && actionLabel && (
+        <Link
+          href={actionHref}
+          className="mt-4 inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/15"
+        >
+          {actionLabel}
+        </Link>
+      )}
     </div>
   );
 }
@@ -291,9 +318,8 @@ function FriendRow({ friend, isFocused, onFocus, loc }: RowProps) {
     >
       {/* Avatar */}
       <div className="relative shrink-0">
-        {/* Avatar circle */}
         <div className={cn(
-          'h-8 w-8 rounded-full overflow-hidden flex items-center justify-center font-semibold text-xs',
+          'relative h-8 w-8 rounded-full overflow-hidden flex items-center justify-center font-semibold text-xs',
           bg, text,
           isFocused && 'ring-2 ring-primary/40 ring-offset-1 ring-offset-card',
         )}>

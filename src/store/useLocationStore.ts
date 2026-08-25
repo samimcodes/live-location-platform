@@ -17,12 +17,14 @@ interface LocationState {
   friendsLocations: Map<number, LocationData>;
   isSharing: boolean;
   watchId: number | null;
+  geoError: GeolocationPositionError | null;
 
   setMyLocation: (loc: LocationData) => void;
   updateFriendLocation: (loc: LocationData) => void;
   removeFriendLocation: (userId: number) => void;
   setSharing: (sharing: boolean) => void;
   setWatchId: (id: number | null) => void;
+  setGeoError: (err: GeolocationPositionError | null) => void;
 }
 
 export const useLocationStore = create<LocationState>((set) => ({
@@ -30,6 +32,7 @@ export const useLocationStore = create<LocationState>((set) => ({
   friendsLocations: new Map(),
   isSharing: false,
   watchId: null,
+  geoError: null,
 
   setMyLocation: (loc) => set({ myLocation: loc }),
 
@@ -49,4 +52,5 @@ export const useLocationStore = create<LocationState>((set) => ({
 
   setSharing: (sharing) => set({ isSharing: sharing }),
   setWatchId: (id) => set({ watchId: id }),
+  setGeoError: (err) => set({ geoError: err }),
 }));

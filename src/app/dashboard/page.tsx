@@ -1,79 +1,59 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAppSelector } from "@/store/store";
-import { useFriends } from "@/hooks/useFriends";
+import { useFriends, type Friend } from "@/hooks/useFriends";
 import { useGroups } from "@/hooks/useGroups";
 import { useUnreadCount } from "@/hooks/useNotifications";
-import { useLocationStore } from "@/store/useLocationStore";
+import { useFriendsLocations } from "@/hooks/useFriendsLocations";
+import { useLocationStore, type LocationData } from "@/store/useLocationStore";
 import KpiCard from "@/components/dashboard/KpiCard";
-import StatsChart from "@/components/dashboard/StatsChart";
 import AvatarStack from "@/components/dashboard/AvatarStack";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "@/lib/dateUtils";
 import {
   UserCheck, Users2, Navigation, Bell,
   MapPin, Users, ArrowRight, Radio,
   Clock, ChevronRight, Bookmark,
-  Activity, Eye,
-  Map, Settings, Plus,
-  Shield, Zap, Globe, Sparkles,
+  Eye, Map, Settings, Plus,
+  Zap, Globe, Sparkles,
 } from "lucide-react";
 
-// ── WebGL component — client only ────────────────────────────────────────
 const MiniMap = dynamic(
   () => import("@/components/map/MiniMap").then((m) => m.MiniMap),
   {
-    ssr:     false,
-    loading: () => <div className="h-52 w-full rounded-xl bg-muted animate-pulse" />,
+    ssr: false,
+    loading: () => <div className="h-52 w-full bg-muted animate-pulse" />,
   }
 );
 
-// ── Framer Motion helpers ─────────────────────────────────────────────────
 const fadeUp = (delay = 0) => ({
-  initial:    { opacity: 0, y: 18 },
-  animate:    { opacity: 1, y: 0  },
-  transition: { duration: 0.38, delay, ease: "easeOut" as const },
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.35, delay, ease: "easeOut" as const },
 });
 
 const scaleIn = (delay = 0) => ({
-  initial:    { opacity: 0, scale: 0.96 },
-  animate:    { opacity: 1, scale: 1    },
-  transition: { duration: 0.32, delay, ease: "easeOut" as const },
+  initial: { opacity: 0, scale: 0.97 },
+  animate: { opacity: 1, scale: 1 },
+  transition: { duration: 0.3, delay, ease: "easeOut" as const },
 });
 
-// ── Deterministic sparkline data (no Math.random) ─────────────────────────
-function makeSparkData(base: number, phase = 0): number[] {
-  return Array.from({ length: 7 }, (_, i) =>
-    Math.max(0, base + Math.round(Math.sin(i * 1.3 + phase) * 2))
-  );
-}
-
-// ── Quick Actions config ──────────────────────────────────────────────────
 const quickActions = [
-  { label: "Open Map",     icon: Map,      href: "/dashboard/map",          gradient: "from-emerald-500 to-teal-600",   bgLight: "bg-emerald-50 dark:bg-emerald-950/30" },
-  { label: "Find Friends", icon: Users,    href: "/dashboard/friends",       gradient: "from-blue-500 to-indigo-600",    bgLight: "bg-blue-50 dark:bg-blue-950/30" },
-  { label: "Saved Places", icon: Bookmark, href: "/dashboard/saved-places",  gradient: "from-amber-500 to-orange-600",   bgLight: "bg-amber-50 dark:bg-amber-950/30" },
-  { label: "History",      icon: Clock,    href: "/dashboard/history",        gradient: "from-violet-500 to-purple-600",  bgLight: "bg-violet-50 dark:bg-violet-950/30" },
-  { label: "Settings",     icon: Settings, href: "/dashboard/settings",       gradient: "from-slate-500 to-slate-700",    bgLight: "bg-slate-50 dark:bg-slate-950/30" },
-  { label: "New Group",    icon: Plus,     href: "/dashboard/groups",         gradient: "from-rose-500 to-pink-600",      bgLight: "bg-rose-50 dark:bg-rose-950/30" },
+  { label: "Open Map",     icon: Map,      href: "/dashboard/map",         tint: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400" },
+  { label: "Find Friends", icon: Users,    href: "/dashboard/friends",      tint: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400" },
+  { label: "Saved Places", icon: Bookmark, href: "/dashboard/saved-places", tint: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400" },
+  { label: "History",      icon: Clock,    href: "/dashboard/history",      tint: "bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400" },
+  { label: "New Group",    icon: Plus,     href: "/dashboard/groups",       tint: "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400" },
+  { label: "Settings",     icon: Settings, href: "/dashboard/settings",     tint: "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300" },
 ] as const;
 
-// ── Live clock hook ───────────────────────────────────────────────────────
-function useLiveClock() {
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
-
-// ── Group gradient colors ─────────────────────────────────────────────────
 const GROUP_GRADIENTS = [
   "from-violet-500 to-purple-600",
   "from-rose-500 to-pink-600",
@@ -83,91 +63,140 @@ const GROUP_GRADIENTS = [
   "from-fuchsia-500 to-purple-600",
 ];
 
+function PersonAvatar({
+  name,
+  avatar,
+  size = 40,
+  online,
+}: {
+  name: string;
+  avatar?: string | null;
+  size?: number;
+  online?: boolean;
+}) {
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <div className="relative h-full w-full overflow-hidden rounded-full bg-gradient-to-br from-primary/70 to-ring/80 text-white font-bold flex items-center justify-center">
+        {avatar ? (
+          <Image src={avatar} alt={name} fill sizes={`${size}px`} className="object-cover" />
+        ) : (
+          <span style={{ fontSize: Math.round(size * 0.38) }}>{name.charAt(0).toUpperCase()}</span>
+        )}
+      </div>
+      {online && (
+        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-chart-5 border-2 border-card" />
+      )}
+    </div>
+  );
+}
+
+function useLiveClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
+function locationLabel(friend: Friend, loc?: LocationData): string {
+  if (loc?.city) return loc.city;
+  if (loc) return `${loc.latitude.toFixed(3)}, ${loc.longitude.toFixed(3)}`;
+  if (friend.sharingLocation) return "Sharing · waiting for ping";
+  return "Location hidden";
+}
+
 export default function DashboardPage() {
-  const user                      = useAppSelector((s) => s.auth.user);
-  const { data: friends = [] }    = useFriends();
-  const { data: groups  = [] }    = useGroups();
+  const user = useAppSelector((s) => s.auth.user);
+  const { data: friends = [], isLoading: friendsLoading } = useFriends();
+  const { data: groups = [], isLoading: groupsLoading } = useGroups();
   const { data: unreadCount = 0 } = useUnreadCount();
+  const { isLoading: locLoading } = useFriendsLocations();
   const { myLocation, isSharing, friendsLocations } = useLocationStore();
   const now = useLiveClock();
 
-  const onlineFriends  = friends.filter((f) => f.isOnline);
-  const sharingFriends = onlineFriends.filter((f) => f.sharingLocation && friendsLocations.has(f.id));
-  const base           = Math.max(1, friends.length);
+  const onlineFriends = friends.filter((f) => f.isOnline);
+  const onMapFriends = useMemo(() => {
+    return friends.filter((f) => friendsLocations.has(f.id) && f.sharingLocation);
+  }, [friends, friendsLocations]);
 
-  // ── Resolve CSS token colors for WebGL/SVG contexts ───────────────────
-  const markerActiveColor  = React.useMemo(() =>
-    typeof window !== "undefined"
-      ? getComputedStyle(document.documentElement).getPropertyValue("--chart-5").trim() || "oklch(0.8 0.15 150)"
-      : "oklch(0.8 0.15 150)"
-  , []);
-  const markerPausedColor  = React.useMemo(() =>
-    typeof window !== "undefined"
-      ? getComputedStyle(document.documentElement).getPropertyValue("--muted-foreground").trim() || "oklch(0.55 0.02 250)"
-      : "oklch(0.55 0.02 250)"
-  , []);
+  const mapMarkers = useMemo(() => {
+    const markers: Array<{ latitude: number; longitude: number; color?: string }> = [];
+    if (myLocation) {
+      markers.push({
+        latitude: myLocation.latitude,
+        longitude: myLocation.longitude,
+        color: isSharing ? "#10b981" : "#94a3b8",
+      });
+    }
+    for (const loc of friendsLocations.values()) {
+      markers.push({
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        color: "#6366f1",
+      });
+    }
+    return markers;
+  }, [myLocation, isSharing, friendsLocations]);
 
-  // ── KPI data ──────────────────────────────────────────────────────────
+  const isLoading = friendsLoading || groupsLoading;
+
   const kpis = [
     {
-      label:     "Friends",
-      value:     friends.length,
-      icon:      UserCheck,
-      color:     "text-primary",
-      bg:        "bg-primary/10",
+      label: "Friends",
+      value: friends.length,
+      icon: UserCheck,
+      color: "text-primary",
+      bg: "bg-primary/10",
       accentVar: "--primary",
-      href:      "/dashboard/friends",
-      sub:       onlineFriends.length > 0 ? `${onlineFriends.length} online` : "None online",
-      sparkData: makeSparkData(base, 0),
+      href: "/dashboard/friends",
+      sub: onlineFriends.length > 0 ? `${onlineFriends.length} online` : "None online",
     },
     {
-      label:     "Groups",
-      value:     groups.length,
-      icon:      Users2,
-      color:     "text-chart-2",
-      bg:        "bg-chart-2/10",
+      label: "Groups",
+      value: groups.length,
+      icon: Users2,
+      color: "text-chart-2",
+      bg: "bg-chart-2/10",
       accentVar: "--chart-2",
-      href:      "/dashboard/groups",
-      sub:       groups.length > 0
+      href: "/dashboard/groups",
+      sub: groups.length > 0
         ? `${groups.reduce((a, g) => a + (g._count?.members ?? (g.members ?? []).length), 0)} members`
         : "Create your first",
-      sparkData: makeSparkData(Math.max(1, groups.length), 1.2),
     },
     {
-      label:     "On the Map",
-      value:     friendsLocations.size,
-      icon:      Navigation,
-      color:     "text-chart-5",
-      bg:        "bg-chart-5/10",
+      label: "On the Map",
+      value: friendsLocations.size,
+      icon: Navigation,
+      color: "text-chart-5",
+      bg: "bg-chart-5/10",
       accentVar: "--chart-5",
-      href:      "/dashboard/map",
-      sub:       sharingFriends.length > 0 ? `${sharingFriends.length} sharing now` : "Open map",
-      sparkData: makeSparkData(Math.max(1, friendsLocations.size), 2.4),
+      href: "/dashboard/map",
+      sub: locLoading && friendsLocations.size === 0
+        ? "Loading…"
+        : onMapFriends.length > 0
+          ? `${onMapFriends.length} sharing now`
+          : "No live pins yet",
     },
     {
-      label:     "Notifications",
-      value:     unreadCount,
-      icon:      Bell,
-      color:     "text-chart-4",
-      bg:        "bg-chart-4/10",
+      label: "Notifications",
+      value: unreadCount,
+      icon: Bell,
+      color: "text-chart-4",
+      bg: "bg-chart-4/10",
       accentVar: "--chart-4",
-      href:      "/dashboard/notifications",
-      sub:       unreadCount > 0 ? "Needs attention" : "All caught up",
-      sparkData: makeSparkData(Math.max(0, unreadCount), 3.6),
+      href: "/dashboard/notifications",
+      sub: unreadCount > 0 ? "Needs attention" : "All caught up",
     },
   ];
 
-  // ── Chart data ────────────────────────────────────────────────────────
-  const chartData = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return {
-      date:  d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-      value: Math.max(0, base + Math.round(Math.sin(i * 1.3 + 0.5) * 2)),
-    };
-  });
-
-  // ── Formatted date/time ───────────────────────────────────────────────
   const formattedDate = now.toLocaleDateString(undefined, {
     weekday: "long", month: "long", day: "numeric",
   });
@@ -178,208 +207,124 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 pb-8">
 
-      {/* ══════════════════════════════════════════════════════════════════
-          HERO BANNER
-         ══════════════════════════════════════════════════════════════════ */}
+      {/* Hero */}
       <motion.div {...fadeUp(0)}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border border-border/40 shadow-sm">
-
-          {/* Gradient mesh orbs */}
+        <div className="relative overflow-hidden rounded-2xl welcome-gradient border border-border/40 shadow-sm">
           <div className="absolute -top-10 -left-10 h-52 w-52 rounded-full blur-3xl opacity-25 dark:opacity-20 pointer-events-none bg-primary" />
-          <div className="absolute -top-8 right-16 h-40 w-40 rounded-full blur-3xl opacity-15 dark:opacity-10 pointer-events-none bg-chart-3" />
           <div className="absolute -bottom-12 right-8 h-48 w-48 rounded-full blur-3xl opacity-20 dark:opacity-15 pointer-events-none bg-chart-4" />
-          <div className="absolute bottom-0 left-1/3 h-32 w-32 rounded-full blur-2xl opacity-10 dark:opacity-10 pointer-events-none bg-chart-5" />
 
-          <div className="relative z-10 px-7 py-8 sm:px-10 sm:py-10">
-
-            {/* Top: greeting left, avatar stack + time right */}
+          <div className="relative z-10 px-5 py-6 sm:px-8 sm:py-8">
             <div className="flex items-start justify-between gap-4">
-
-              {/* LEFT — greeting */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[11px] font-bold tracking-widest uppercase text-primary/70">
-                    Dashboard
-                  </span>
-                  <span className="text-muted-foreground/30">·</span>
-                  <span className="text-[11px] font-medium text-muted-foreground/60">
-                    {formattedDate}
-                  </span>
-                </div>
-                <h1 className="text-2xl sm:text-[2rem] font-extrabold tracking-tight leading-tight text-foreground">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {formattedDate}
+                </p>
+                <h1 className="mt-1.5 text-2xl sm:text-[1.85rem] font-extrabold tracking-tight leading-tight">
                   Good {getGreeting()},{" "}
-                  <span className="text-primary">
-                    {user?.name?.split(" ")[0] ?? "there"}
-                  </span>{" "}
-                  <span>👋</span>
+                  <span className="text-primary">{user?.name?.split(" ")[0] ?? "there"}</span>
                 </h1>
-                <p className="text-sm text-muted-foreground mt-1.5 max-w-md">
-                  {onlineFriends.length > 0
-                    ? `${onlineFriends.length} friend${onlineFriends.length !== 1 ? "s" : ""} online right now.`
-                    : "No friends online right now."}{" "}
+                <p className="mt-1.5 text-sm text-muted-foreground max-w-lg">
+                  {isLoading
+                    ? "Loading your circle…"
+                    : onlineFriends.length > 0
+                      ? `${onlineFriends.length} friend${onlineFriends.length !== 1 ? "s" : ""} online.`
+                      : "No friends online right now."}{" "}
                   {isSharing ? "Your location is live." : "Location sharing is paused."}
                 </p>
               </div>
 
-              {/* RIGHT — time + online stack */}
               <div className="hidden sm:flex flex-col items-end gap-3 shrink-0">
-                <div className="text-right">
-                  <p className="text-2xl font-bold tabular-nums tracking-tight text-foreground/80">
-                    {formattedTime}
-                  </p>
-                </div>
-
+                <p className="text-2xl font-bold tabular-nums tracking-tight text-foreground/80">
+                  {formattedTime}
+                </p>
                 {onlineFriends.length > 0 && (
-                  <div className="flex items-center gap-2.5">
-                    <p className="text-[11px] text-muted-foreground font-medium">
-                      {onlineFriends.length} online
-                    </p>
-                    <div className="flex items-center -space-x-2.5">
-                      {onlineFriends.slice(0, 5).map((f, idx) => (
-                        <div
-                          key={f.id}
-                          className={cn(
-                            "h-8 w-8 rounded-full border-2 border-card",
-                            "flex items-center justify-center text-white text-[10px] font-bold shadow-md shrink-0",
-                            [
-                              "bg-chart-1",
-                              "bg-chart-3",
-                              "bg-chart-5",
-                              "bg-chart-2",
-                              "bg-chart-4",
-                            ][idx % 5],
-                          )}
-                          style={{ zIndex: 10 - idx }}
-                        >
-                          {f.avatar ? (
-                            <Image src={f.avatar} alt={f.name} fill sizes="32px" className="object-cover rounded-full" />
-                          ) : (
-                            f.name?.charAt(0)?.toUpperCase()
-                          )}
-                        </div>
-                      ))}
-                      {onlineFriends.length > 5 && (
-                        <div className="h-8 w-8 rounded-full border-2 border-card bg-muted flex items-center justify-center text-[9px] font-bold text-muted-foreground shadow-md shrink-0">
-                          +{onlineFriends.length - 5}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <AvatarStack items={onlineFriends} max={5} size={32} />
                 )}
               </div>
             </div>
 
-            {/* Bottom row: stat badges + CTA */}
-            <div className="mt-6 flex flex-wrap items-center gap-2.5">
-
-              {/* Location sharing badge */}
+            <div className="mt-5 flex flex-wrap items-center gap-2">
               <div className={cn(
-                "inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold",
-                "border backdrop-blur-md shadow-sm transition-colors duration-300",
+                "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border backdrop-blur-md",
                 isSharing
-                  ? "bg-card/60 text-chart-5 border-chart-5/30"
-                  : "bg-card/40 text-muted-foreground border-border/50",
+                  ? "bg-card/70 text-chart-5 border-chart-5/30"
+                  : "bg-card/50 text-muted-foreground border-border/50",
               )}>
-                <span className="relative flex h-2 w-2 shrink-0">
+                <span className="relative flex h-2 w-2">
                   {isSharing && (
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-chart-5 opacity-60" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-chart-5 opacity-60" />
                   )}
-                  <span className={cn(
-                    "relative inline-flex h-2 w-2 rounded-full",
-                    isSharing ? "bg-chart-5" : "bg-muted-foreground/40",
-                  )} />
+                  <span className={cn("relative h-2 w-2 rounded-full", isSharing ? "bg-chart-5" : "bg-muted-foreground/40")} />
                 </span>
                 {isSharing ? "Location live" : "Sharing paused"}
               </div>
 
-              {/* Friends badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card/60 border border-border/50 backdrop-blur-md shadow-sm text-foreground">
-                <UserCheck size={12} className="text-primary shrink-0" />
-                <span>{friends.length} friend{friends.length !== 1 ? "s" : ""}</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-card/70 border border-border/50 backdrop-blur-md">
+                <UserCheck size={12} className="text-primary" />
+                {friends.length} friend{friends.length !== 1 ? "s" : ""}
               </div>
 
-              {/* On map badge */}
               {friendsLocations.size > 0 && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card/60 border border-border/50 backdrop-blur-md shadow-sm text-foreground">
-                  <Navigation size={12} className="text-chart-5 shrink-0" />
-                  <span>{friendsLocations.size} on map</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-card/70 border border-border/50 backdrop-blur-md">
+                  <Navigation size={12} className="text-chart-5" />
+                  {friendsLocations.size} on map
                 </div>
               )}
 
-              {/* Notifications badge */}
               {unreadCount > 0 && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-card/60 border border-chart-4/30 backdrop-blur-md shadow-sm text-chart-4">
-                  <Bell size={12} className="shrink-0" />
-                  <span>{unreadCount} unread</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-card/70 border border-chart-4/30 text-chart-4 backdrop-blur-md">
+                  <Bell size={12} />
+                  {unreadCount} unread
                 </div>
               )}
 
-              {/* Spacer + CTA */}
-              <div className="ml-auto hidden sm:block">
-                <Button asChild size="sm" className="gap-2 shadow-md shadow-primary/20 font-semibold rounded-xl">
-                  <Link href="/dashboard/map">
-                    <Navigation size={13} />
-                    Open Map
-                  </Link>
-                </Button>
-              </div>
+              <Button asChild size="sm" className="ml-auto w-full sm:w-auto gap-2 rounded-xl shadow-md shadow-primary/15 font-semibold">
+                <Link href="/dashboard/map">
+                  <Navigation size={13} />
+                  Open Map
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
       </motion.div>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          KPI GRID
-         ══════════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((k, i) => (
-          <motion.div key={k.label} {...scaleIn(0.08 + i * 0.06)} className="h-full">
-            <KpiCard {...k} />
+          <motion.div key={k.label} {...scaleIn(0.06 + i * 0.05)} className="h-full">
+            {isLoading ? (
+              <Skeleton className="h-[148px] w-full rounded-2xl" />
+            ) : (
+              <KpiCard {...k} />
+            )}
           </motion.div>
         ))}
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          BENTO GRID — location + quick actions | chart + online now
-         ══════════════════════════════════════════════════════════════════ */}
+      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <motion.div {...fadeUp(0.12)} className="lg:col-span-5 flex flex-col gap-5">
 
-        {/* ── Left column ── */}
-        <motion.div {...fadeUp(0.2)} className="lg:col-span-5 flex flex-col gap-5">
-
-          {/* My Location — MiniMap + text */}
-          <div className={cn(
-            "rounded-2xl bg-card border border-border/60 overflow-hidden",
-            "shadow-sm hover:shadow-md transition-shadow duration-300",
-          )}>
+          <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
             {myLocation ? (
               <div className="relative">
                 <MiniMap
                   center={[myLocation.longitude, myLocation.latitude]}
-                  zoom={13}
-                  markers={[{
-                    latitude:  myLocation.latitude,
-                    longitude: myLocation.longitude,
-                    color:     isSharing ? markerActiveColor : markerPausedColor,
-                  }]}
+                  zoom={12}
+                  markers={mapMarkers}
                   className="h-52 rounded-none"
                 />
-                {/* Status badge */}
                 <div className={cn(
                   "absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5",
                   "rounded-xl text-[11px] font-bold backdrop-blur-md border shadow-sm",
                   isSharing
-                    ? "bg-chart-5/90 text-white border-chart-5/50 dark:bg-chart-5/80"
+                    ? "bg-chart-5/90 text-white border-chart-5/50"
                     : "bg-background/80 text-muted-foreground border-border",
                 )}>
-                  <span className={cn(
-                    "h-1.5 w-1.5 rounded-full shrink-0",
-                    isSharing ? "bg-white animate-pulse" : "bg-muted-foreground",
-                  )} />
+                  <span className={cn("h-1.5 w-1.5 rounded-full", isSharing ? "bg-white animate-pulse" : "bg-muted-foreground")} />
                   {isSharing ? "Live" : "Paused"}
                 </div>
-
-                {/* Accuracy badge */}
                 {myLocation.accuracy != null && (
                   <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold backdrop-blur-md bg-background/70 border border-border/50 text-muted-foreground shadow-sm">
                     <Globe size={10} />
@@ -389,33 +334,31 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="h-52 flex items-center justify-center bg-muted/20">
-                <div className="text-center">
-                  <div className="mx-auto h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-3">
+                <div className="text-center px-4">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
                     <MapPin size={22} className="text-muted-foreground/40" />
                   </div>
                   <p className="text-sm font-semibold text-muted-foreground">Waiting for GPS…</p>
-                  <p className="text-xs text-muted-foreground/60 mt-0.5">Enable location to see your position</p>
+                  <p className="text-xs text-muted-foreground/60 mt-0.5">Allow location access to see yourself on the map</p>
                 </div>
               </div>
             )}
 
             <div className="px-5 pt-4 pb-5">
-              <div className="flex items-center gap-2 mb-1.5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <MapPin size={13} className="text-primary" />
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  My Location
-                </p>
-              </div>
-              <p className="text-lg font-bold leading-snug">
+                My Location
+              </p>
+              <p className="mt-1 text-lg font-bold leading-snug">
                 {myLocation?.city
                   ?? (myLocation
                     ? `${myLocation.latitude.toFixed(4)}, ${myLocation.longitude.toFixed(4)}`
-                    : "Not sharing")}
+                    : "Not available yet")}
               </p>
               {myLocation?.address && (
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">{myLocation.address}</p>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">{myLocation.address}</p>
               )}
-              <Button variant="outline" size="sm" className="w-full mt-4 gap-2 rounded-xl" asChild>
+              <Button variant="outline" size="sm" className="mt-4 w-full gap-2 rounded-xl" asChild>
                 <Link href="/dashboard/map">
                   <Navigation size={13} />
                   Open full map
@@ -424,40 +367,24 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className={cn(
-            "rounded-2xl bg-card border border-border/60 p-5",
-            "shadow-sm hover:shadow-md transition-shadow duration-300",
-          )}>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
                 <Zap size={13} className="text-primary" />
               </div>
-              <p className="text-xs font-bold text-foreground uppercase tracking-wider">
-                Quick Actions
-              </p>
+              <p className="text-xs font-bold uppercase tracking-wider">Quick Actions</p>
             </div>
-            <div className="grid grid-cols-3 gap-2.5">
-              {quickActions.map(({ label, icon: QIcon, href, gradient, bgLight }) => (
+            <div className="grid grid-cols-3 gap-2">
+              {quickActions.map(({ label, icon: QIcon, href, tint }) => (
                 <Link
                   key={label}
                   href={href}
-                  className={cn(
-                    "group flex flex-col items-center gap-2.5 p-3.5 rounded-xl",
-                    "transition-all duration-200 hover:bg-muted/50",
-                    "hover:-translate-y-0.5 active:scale-95",
-                    "border border-transparent hover:border-border/40",
-                  )}
+                  className="group flex flex-col items-center gap-2 rounded-xl p-3 transition-all hover:bg-muted/50 active:scale-95"
                 >
-                  <div className={cn(
-                    "h-11 w-11 rounded-xl flex items-center justify-center",
-                    "shadow-sm transition-all duration-300",
-                    "group-hover:scale-110 group-hover:shadow-md",
-                    bgLight,
-                  )}>
-                    <QIcon size={18} className="text-foreground/70 group-hover:text-foreground transition-colors" />
+                  <div className={cn("flex h-11 w-11 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-105", tint)}>
+                    <QIcon size={18} />
                   </div>
-                  <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center leading-tight">
+                  <span className="text-center text-[11px] font-medium leading-tight text-muted-foreground group-hover:text-foreground">
                     {label}
                   </span>
                 </Link>
@@ -466,79 +393,101 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* ── Right column ── */}
-        <motion.div {...fadeUp(0.27)} className="lg:col-span-7 flex flex-col gap-5">
+        <motion.div {...fadeUp(0.18)} className="lg:col-span-7 flex flex-col gap-5">
 
-          {/* Activity Chart */}
-          <div className={cn(
-            "rounded-2xl bg-card border border-border/60 p-5",
-            "shadow-sm hover:shadow-md transition-shadow duration-300",
-          )}>
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2.5">
-                <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Activity size={16} className="text-primary" />
+          {/* Real people on the map — replaces fake 7-day chart */}
+          <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+            <div className="flex items-center justify-between px-5 py-4">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-chart-5/10">
+                  <Navigation size={16} className="text-chart-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold">On the map</p>
+                  <p className="text-xs text-muted-foreground">Live positions from friends who are sharing</p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/map"
+                className="shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5"
+              >
+                Map <ArrowRight size={12} className="inline" />
+              </Link>
+            </div>
+            <div className="border-t border-border/30" />
+
+            {onMapFriends.length === 0 ? (
+              <div className="flex flex-col items-center py-10 text-muted-foreground">
+                <Navigation size={22} className="mb-2 opacity-30" />
+                <p className="text-sm font-semibold">Nobody on the map yet</p>
+                <p className="mt-0.5 text-xs opacity-60">Friends appear here when they share location</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/20">
+                {onMapFriends.slice(0, 5).map((friend) => {
+                  const loc = friendsLocations.get(friend.id);
+                  return (
+                    <Link
+                      key={friend.id}
+                      href={`/dashboard/map?focus=${friend.id}`}
+                      className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/30 transition-colors"
+                    >
+                      <PersonAvatar name={friend.name} avatar={friend.avatar} online={friend.isOnline} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{friend.name}</p>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {locationLabel(friend, loc)}
+                          {loc?.timestamp ? ` · ${formatDistanceToNow(loc.timestamp)}` : ""}
+                        </p>
+                      </div>
+                      <Eye size={14} className="shrink-0 text-muted-foreground/40" />
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Online now */}
+          <div className="flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+            <div className="flex items-center justify-between px-5 py-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-chart-5/10">
+                    <Radio size={16} className="text-chart-5" />
+                  </div>
+                  {onlineFriends.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-chart-5 border-2 border-card" />
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm font-bold">Friend Activity</p>
-                  <p className="text-xs text-muted-foreground">Online friends · last 7 days</p>
+                  <p className="text-sm font-bold leading-none">Online now</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {onlineFriends.length > 0 ? `${onlineFriends.length} active` : "No one online"}
+                  </p>
                 </div>
               </div>
               <Link
                 href="/dashboard/friends"
-                className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 px-3 py-1.5 rounded-xl hover:bg-primary/5 transition-colors"
+                className="shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5"
               >
-                View all <ArrowRight size={12} />
+                Friends <ArrowRight size={12} className="inline" />
               </Link>
             </div>
-            <StatsChart data={chartData} height={158} />
-          </div>
-
-          {/* Online Now */}
-          <div className={cn(
-            "rounded-2xl bg-card border border-border/60 overflow-hidden flex-1",
-            "shadow-sm hover:shadow-md transition-shadow duration-300",
-          )}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="h-9 w-9 rounded-xl bg-chart-5/10 flex items-center justify-center">
-                    <Radio size={16} className="text-chart-5" />
-                  </div>
-                  {onlineFriends.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-chart-5 border-2 border-card animate-pulse" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-bold leading-none">Online Now</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {onlineFriends.length > 0
-                      ? `${onlineFriends.length} active`
-                      : "No one online"}
-                  </p>
-                </div>
-                {onlineFriends.length > 0 && (
-                  <AvatarStack items={onlineFriends} max={4} size={26} className="-ml-1" />
-                )}
-              </div>
-              <Link
-                href="/dashboard/map"
-                className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 px-3 py-1.5 rounded-xl hover:bg-primary/5 transition-colors shrink-0"
-              >
-                Map <ArrowRight size={12} />
-              </Link>
-            </div>
-
             <div className="border-t border-border/30" />
 
-            {onlineFriends.length === 0 ? (
-              <div className="flex flex-col items-center py-14 text-muted-foreground">
-                <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
+            {isLoading ? (
+              <div className="space-y-3 p-5">
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+              </div>
+            ) : onlineFriends.length === 0 ? (
+              <div className="flex flex-col items-center py-12 text-muted-foreground">
+                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50">
                   <Users size={24} className="opacity-30" />
                 </div>
                 <p className="text-sm font-semibold">No friends online</p>
-                <p className="text-xs mt-0.5 opacity-60">Invite friends to stay connected</p>
+                <p className="mt-0.5 text-xs opacity-60">Invite people to see them here</p>
                 <Button variant="outline" size="sm" className="mt-4 gap-2 rounded-xl" asChild>
                   <Link href="/dashboard/friends">
                     <UserCheck size={13} /> Find friends
@@ -550,34 +499,15 @@ export default function DashboardPage() {
                 {onlineFriends.slice(0, 5).map((friend) => {
                   const loc = friendsLocations.get(friend.id);
                   return (
-                    <div
-                      key={friend.id}
-                      className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/30 transition-colors group"
-                    >
-                      <div className="relative shrink-0">
-                        <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-primary/60 to-ring/80 flex items-center justify-center text-white font-bold text-xs">
-                          {friend.avatar ? (
-                            <Image src={friend.avatar} alt={friend.name} fill sizes="40px" className="object-cover" />
-                          ) : (
-                            friend.name.charAt(0).toUpperCase()
-                          )}
-                        </div>
-                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-chart-5 border-2 border-card" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate leading-none">{friend.name}</p>
-                        <p className="text-xs text-muted-foreground truncate mt-1">
-                          {loc?.city
-                            ? `📍 ${loc.city}`
-                            : friend.sharingLocation ? "Sharing location" : "Location hidden"}
+                    <div key={friend.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/30 transition-colors">
+                      <PersonAvatar name={friend.name} avatar={friend.avatar} online />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">{friend.name}</p>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {locationLabel(friend, loc)}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-3 text-xs opacity-0 group-hover:opacity-100 transition-opacity gap-1.5 shrink-0 rounded-lg"
-                        asChild
-                      >
+                      <Button variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 rounded-lg px-3 text-xs" asChild>
                         <Link href={`/dashboard/map?focus=${friend.id}`}>
                           <Eye size={12} /> View
                         </Link>
@@ -587,8 +517,8 @@ export default function DashboardPage() {
                 })}
                 {onlineFriends.length > 5 && (
                   <Link
-                    href="/dashboard/map"
-                    className="flex items-center justify-center py-3.5 text-xs font-medium text-primary hover:text-primary/80 gap-1 transition-colors"
+                    href="/dashboard/friends"
+                    className="flex items-center justify-center gap-1 py-3.5 text-xs font-medium text-primary"
                   >
                     +{onlineFriends.length - 5} more online <ArrowRight size={12} />
                   </Link>
@@ -599,117 +529,87 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          GROUPS
-         ══════════════════════════════════════════════════════════════════ */}
-      {groups.length > 0 && (
-        <motion.div {...fadeUp(0.34)}>
-          <div className={cn(
-            "rounded-2xl bg-card border border-border/60 overflow-hidden",
-            "shadow-sm hover:shadow-md transition-shadow duration-300",
-          )}>
+      {/* Groups */}
+      {!groupsLoading && groups.length > 0 && (
+        <motion.div {...fadeUp(0.24)}>
+          <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-2.5">
-                <div className="h-9 w-9 rounded-xl bg-chart-2/10 flex items-center justify-center">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-chart-2/10">
                   <Users2 size={16} className="text-chart-2" />
                 </div>
                 <div>
                   <p className="text-sm font-bold">My Groups</p>
                   <p className="text-xs text-muted-foreground">
-                    {groups.length} group{groups.length !== 1 ? "s" : ""} · {groups.reduce((a, g) => a + (g._count?.members ?? (g.members ?? []).length), 0)} total members
+                    {groups.length} group{groups.length !== 1 ? "s" : ""}
                   </p>
                 </div>
               </div>
-              <Link
-                href="/dashboard/groups"
-                className="text-xs text-primary hover:underline font-semibold flex items-center gap-1 px-3 py-1.5 rounded-xl hover:bg-primary/5 transition-colors"
-              >
-                View all <ArrowRight size={12} />
+              <Link href="/dashboard/groups" className="rounded-xl px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5">
+                View all <ArrowRight size={12} className="inline" />
               </Link>
             </div>
-
-            <div className="border-t border-border/30">
-              {/* Mobile scroll */}
-              <div className="flex sm:hidden overflow-x-auto scrollbar-none gap-3 px-4 py-4">
-                {groups.slice(0, 6).map((g, idx) => {
-                  const online = (g.members ?? []).filter((m) => m.user.isOnline).length;
-                  return (
-                    <Link key={g.id} href={`/dashboard/groups/${g.id}`}
-                      className="flex flex-col items-center gap-2 shrink-0 w-20 py-2 rounded-xl hover:bg-muted/50 transition-colors">
-                      <div className={cn(
-                        "h-12 w-12 rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg shadow-sm",
-                        GROUP_GRADIENTS[idx % GROUP_GRADIENTS.length],
-                      )}>
-                        {g.name.charAt(0)}
-                      </div>
-                      <p className="text-xs font-medium text-center leading-tight line-clamp-1 w-full px-1">{g.name}</p>
-                      {online > 0 && <span className="text-[9px] text-chart-5 font-semibold">{online} online</span>}
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {/* Desktop rows */}
-              <div className="hidden sm:block divide-y divide-border/20">
-                {groups.slice(0, 3).map((g, idx) => {
-                  const memberCount = g._count?.members ?? (g.members ?? []).length;
-                  const online      = (g.members ?? []).filter((m) => m.user.isOnline).length;
-                  return (
-                    <Link key={g.id} href={`/dashboard/groups/${g.id}`}
-                      className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors group">
-                      <div className={cn(
-                        "h-11 w-11 rounded-xl bg-gradient-to-br flex items-center justify-center text-white font-bold text-base shrink-0 shadow-sm group-hover:shadow-md transition-shadow",
-                        GROUP_GRADIENTS[idx % GROUP_GRADIENTS.length],
-                      )}>
-                        {g.name.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold truncate">{g.name}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-muted-foreground">{memberCount} members</span>
-                          {online > 0 && (
-                            <>
-                              <span className="text-muted-foreground/30 text-xs">·</span>
-                              <span className="text-xs text-chart-5 font-medium flex items-center gap-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-chart-5 animate-pulse" />
-                                {online} online
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <AvatarStack
-                        items={(g.members ?? []).slice(0, 4).map((m) => ({ id: m.userId, name: m.user.name, avatar: m.user.avatar }))}
-                        max={4}
-                        size={24}
-                      />
-                      <ChevronRight
-                        size={14}
-                        className="text-muted-foreground/20 group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
-                      />
-                    </Link>
-                  );
-                })}
-              </div>
+            <div className="border-t border-border/30 hidden sm:block divide-y divide-border/20">
+              {groups.slice(0, 4).map((g, idx) => {
+                const memberCount = g._count?.members ?? (g.members ?? []).length;
+                const online = (g.members ?? []).filter((m) => m.user.isOnline).length;
+                return (
+                  <Link
+                    key={g.id}
+                    href={`/dashboard/groups/${g.id}`}
+                    className="group flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors"
+                  >
+                    <div className={cn(
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-base font-bold text-white shadow-sm",
+                      GROUP_GRADIENTS[idx % GROUP_GRADIENTS.length],
+                    )}>
+                      {g.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold">{g.name}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {memberCount} members
+                        {online > 0 && <span className="text-chart-5 font-medium"> · {online} online</span>}
+                      </p>
+                    </div>
+                    <AvatarStack
+                      items={(g.members ?? []).slice(0, 4).map((m) => ({ id: m.userId, name: m.user.name, avatar: m.user.avatar }))}
+                      max={4}
+                      size={24}
+                    />
+                    <ChevronRight size={14} className="ml-1 shrink-0 text-muted-foreground/25 group-hover:text-muted-foreground/60" />
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="flex sm:hidden overflow-x-auto scrollbar-none gap-3 px-4 py-4">
+              {groups.slice(0, 8).map((g, idx) => (
+                <Link key={g.id} href={`/dashboard/groups/${g.id}`} className="flex w-20 shrink-0 flex-col items-center gap-2">
+                  <div className={cn(
+                    "flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-lg font-bold text-white",
+                    GROUP_GRADIENTS[idx % GROUP_GRADIENTS.length],
+                  )}>
+                    {g.name.charAt(0)}
+                  </div>
+                  <p className="line-clamp-1 w-full px-1 text-center text-xs font-medium">{g.name}</p>
+                </Link>
+              ))}
             </div>
           </div>
         </motion.div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          EMPTY STATE
-         ══════════════════════════════════════════════════════════════════ */}
-      {friends.length === 0 && groups.length === 0 && (
-        <motion.div {...fadeUp(0.3)}>
-          <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-8 py-16 text-center">
-            <div className="mx-auto h-18 w-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-5">
-              <Sparkles size={32} className="text-primary" />
+      {!isLoading && friends.length === 0 && groups.length === 0 && (
+        <motion.div {...fadeUp(0.2)}>
+          <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-8 py-14 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10">
+              <Sparkles size={28} className="text-primary" />
             </div>
-            <h3 className="text-xl font-bold">Get Started with LocaLink</h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-              Add friends and create groups to share your live location and stay connected in real time.
+            <h3 className="text-xl font-bold">Get started with LocaLink</h3>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+              Add friends and create a group to share live location.
             </p>
-            <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Button asChild className="gap-2 rounded-xl shadow-md">
                 <Link href="/dashboard/friends"><UserCheck size={14} /> Find Friends</Link>
               </Button>
@@ -722,11 +622,4 @@ export default function DashboardPage() {
       )}
     </div>
   );
-}
-
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "morning";
-  if (h < 17) return "afternoon";
-  return "evening";
 }
