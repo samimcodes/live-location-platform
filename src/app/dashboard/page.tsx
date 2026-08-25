@@ -209,14 +209,11 @@ export default function DashboardPage() {
 
       {/* Hero */}
       <motion.div {...fadeUp(0)}>
-        <div className="relative overflow-hidden rounded-2xl welcome-gradient border border-border/40 shadow-sm">
-          <div className="absolute -top-10 -left-10 h-52 w-52 rounded-full blur-3xl opacity-25 dark:opacity-20 pointer-events-none bg-primary" />
-          <div className="absolute -bottom-12 right-8 h-48 w-48 rounded-full blur-3xl opacity-20 dark:opacity-15 pointer-events-none bg-chart-4" />
-
+        <div className="relative overflow-hidden rounded-2xl welcome-gradient border shadow-sm">
           <div className="relative z-10 px-5 py-6 sm:px-8 sm:py-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   {formattedDate}
                 </p>
                 <h1 className="mt-1.5 text-2xl sm:text-[1.85rem] font-extrabold tracking-tight leading-tight">
@@ -266,7 +263,7 @@ export default function DashboardPage() {
 
               {friendsLocations.size > 0 && (
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-card/70 border border-border/50 backdrop-blur-md">
-                  <Navigation size={12} className="text-chart-5" />
+                  <Navigation size={12} className="text-chart-3" />
                   {friendsLocations.size} on map
                 </div>
               )}

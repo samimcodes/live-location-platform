@@ -260,11 +260,8 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-4xl">
       {/* ── HEADER — Premium Banner ────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border border-border/40 shadow-sm">
-          <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-slate-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-          
-          <div className="relative px-6 py-6 sm:px-8 sm:py-7">
+        <div className="relative rounded-2xl overflow-hidden welcome-gradient border shadow-sm">
+          <div className="relative z-10 px-6 py-6 sm:px-8 sm:py-7">
             <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-600 dark:to-slate-800 flex items-center justify-center shadow-lg shadow-slate-900/25 shrink-0 text-white">

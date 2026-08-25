@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
+import { useAppSelector } from '@/store/store';
 
 // ── Avatar (id-based stable color) ───────────────────────────────────────
 const AVATAR_BG = [
@@ -30,17 +31,19 @@ function Avatar({
   const bg     = AVATAR_BG[(id ?? 0) % AVATAR_BG.length];
   return (
     <div className="relative h-11 w-11 shrink-0">
-      {avatar ? (
-        <Image src={avatar} alt={name ?? 'User'} fill sizes="44px"
-          className="rounded-2xl object-cover" />
-      ) : (
-        <div className={cn(
-          'h-11 w-11 rounded-2xl flex items-center justify-center',
-          'text-primary-foreground font-bold text-sm select-none', bg,
-        )}>
-          {letter}
-        </div>
-      )}
+      <div className="relative h-full w-full overflow-hidden rounded-2xl">
+        {avatar ? (
+          <Image src={avatar} alt={name ?? 'User'} fill sizes="44px"
+            className="object-cover" />
+        ) : (
+          <div className={cn(
+            'h-full w-full flex items-center justify-center',
+            'text-primary-foreground font-bold text-sm select-none', bg,
+          )}>
+            {letter}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -93,6 +96,7 @@ function EmptyRow({
 // ─────────────────────────────────────────────────────────────────────────
 export default function RequestsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('received');
+  const meId = useAppSelector((s) => s.auth.user?.id);
 
   const { data: pending = [], isLoading: lPending, isError: ePending } = usePendingRequests();
   const { data: sent    = [], isLoading: lSent,    isError: eSent    } = useSentRequests();
@@ -126,13 +130,12 @@ export default function RequestsPage() {
   ];
 
   return (
-    <div className="space-y-5 max-w-3xl pb-8">
+    <div className="space-y-5 pb-8">
 
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <motion.div {...fadeUp(0)}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border border-border/40">
-          <div className="absolute -top-16 -right-16 h-44 w-44 rounded-full bg-primary/8 blur-3xl pointer-events-none" />
-          <div className="relative px-6 py-6 sm:px-8">
+        <div className="relative rounded-2xl overflow-hidden welcome-gradient border">
+          <div className="relative z-10 px-6 py-6 sm:px-8">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl shrink-0" asChild>
                 <Link href="/dashboard/friends"><ArrowLeft size={16} /></Link>
@@ -331,7 +334,7 @@ export default function RequestsPage() {
                             title="Cancel"
                             disabled={cancellingId === req.id}
                             onClick={() => handleCancel(req.id)}
-                            className="h-8 w-8 p-0 rounded-lg text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             {cancellingId === req.id
                               ? <Loader2 size={13} className="animate-spin" />
                               : <X size={13} />}
@@ -371,7 +374,8 @@ export default function RequestsPage() {
                 <div className="divide-y divide-border/20">
                   {history.map((req, i) => {
                     const isAccepted = req.status === 'ACCEPTED';
-                    const person = req.sender ?? req.receiver;
+                    const person = meId != null && req.senderId === meId ? req.receiver : req.sender;
+                    const youSent = meId != null && req.senderId === meId;
                     return (
                       <motion.div key={req.id}
                         initial={{ opacity: 0, y: 4 }}
@@ -394,7 +398,9 @@ export default function RequestsPage() {
                             ? 'bg-chart-5/10 text-chart-5 border-chart-5/20'
                             : 'bg-destructive/10 text-destructive border-destructive/20',
                         )}>
-                          {isAccepted ? <><Check size={10} /> Accepted</> : <><X size={10} /> Rejected</>}
+                          {isAccepted
+                            ? <><Check size={10} /> {youSent ? 'They accepted' : 'Accepted'}</>
+                            : <><X size={10} /> {youSent ? 'They rejected' : 'Rejected'}</>}
                         </span>
                       </motion.div>
                     );
