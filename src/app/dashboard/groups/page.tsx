@@ -228,36 +228,39 @@ export default function GroupsPage() {
   const onlineTotal     = groups.reduce((acc, g) => acc + g.members.filter((m) => m.user.isOnline).length, 0);
 
   return (
-    <div className="space-y-6 max-w-5xl">
-
+    <div className="space-y-6 pb-8">
       <ConfirmDialog {...confirmState} onCancel={closeConfirm} />
 
       {/* ── HEADER ─────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border">
-          <div className="relative z-10 px-6 py-6 sm:px-8 sm:py-7">
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all hover:shadow-md">
+          {/* Subtle gradient background accent */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
+          
+          <div className="relative z-10 px-6 py-8 sm:px-10">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
                 {/* Icon */}
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
-                  <Users2 size={24} className="text-white" />
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0 border border-violet-400/20">
+                  <Users2 size={28} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">My Groups</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">My Groups</h1>
+                  <p className="text-sm font-medium text-muted-foreground mt-1">
                     Coordinate with your circles in real-time
                   </p>
                 </div>
               </div>
 
-              <Button onClick={() => setShowCreate(true)} className="gap-2 shadow-md shadow-primary/20 shrink-0">
-                <Plus size={15} />
+              <Button onClick={() => setShowCreate(true)} className="gap-2 rounded-xl h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold shrink-0">
+                <Plus size={16} />
                 New Group
               </Button>
             </div>
 
             {/* Stat pills row */}
-            <div className="flex items-center gap-2.5 mt-5 flex-wrap">
+            <div className="flex items-center gap-3 mt-8 flex-wrap">
               {[
                 { icon: Users2,  label: `${groups.length} Groups`,   color: 'text-violet-500',  bg: 'bg-violet-500/10 border-violet-500/20'   },
                 { icon: Users,   label: `${totalMembers} Members`,   color: 'text-blue-500',    bg: 'bg-blue-500/10 border-blue-500/20'       },
@@ -265,8 +268,8 @@ export default function GroupsPage() {
                 { icon: Shield,  label: `${myCreatedGroups} Admin`,  color: 'text-amber-500',   bg: 'bg-amber-500/10 border-amber-500/20'     },
                 { icon: MapPin,  label: 'Live location',             color: 'text-pink-500',    bg: 'bg-pink-500/10 border-pink-500/20'       },
               ].map(({ icon: Icon, label, color, bg }) => (
-                <div key={label} className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border', bg)}>
-                  <Icon size={11} className={color} />
+                <div key={label} className={cn('inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold border shadow-sm backdrop-blur-md', bg)}>
+                  <Icon size={14} className={color} />
                   <span className={color}>{label}</span>
                 </div>
               ))}
@@ -464,117 +467,121 @@ export default function GroupsPage() {
                 transition={{ delay: i * 0.06, duration: 0.3, ease: 'easeOut' }}
               >
                 <div className={cn(
-                  'group/card card-shine h-full flex flex-col rounded-2xl border border-border/50 bg-card',
-                  'hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden',
+                  'group/card h-full flex flex-col rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl',
+                  'hover:shadow-xl hover:border-border transition-all duration-300 overflow-hidden relative',
                 )}>
-
-                  {/* Gradient accent bar */}
-                  <div className={cn('h-1.5 w-full bg-gradient-to-r', grad.bar)} />
-
-                  <div className="p-5 flex-1 flex flex-col gap-4">
+                  {/* Subtle background glow from the group's color */}
+                  <div className={cn('absolute -top-16 -right-16 w-32 h-32 rounded-full blur-[50px] opacity-20 pointer-events-none bg-gradient-to-br', grad.from, grad.to)} />
+                  
+                  <div className="p-6 flex-1 flex flex-col gap-5 z-10">
 
                     {/* ── Card header ── */}
-                    <div className="flex items-start gap-3.5">
-                      <div className={cn(
-                        'rounded-2xl bg-gradient-to-br flex items-center justify-center',
-                        'text-white font-black text-xl shrink-0 shadow-md',
-                        'group-hover/card:scale-110 transition-transform duration-300',
-                        grad.from, grad.to,
-                      )} style={{ width: 52, height: 52 }}>
-                        {group.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1 pt-0.5">
-                        <p className="font-bold text-base truncate leading-tight">{group.name}</p>
-                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                          {isCreator ? (
-                            <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded-md">
-                              <Crown size={8} /> Admin
-                            </span>
-                          ) : (
-                            <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">Member</span>
-                          )}
-                          {onlineCount > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              {onlineCount} live
-                            </span>
-                          )}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className={cn(
+                          'rounded-2xl bg-gradient-to-br flex items-center justify-center',
+                          'text-white font-extrabold text-xl shrink-0 shadow-md border border-white/10',
+                          'group-hover/card:scale-105 group-hover/card:-rotate-3 transition-transform duration-300',
+                          grad.from, grad.to,
+                        )} style={{ width: 52, height: 52 }}>
+                          {group.name.charAt(0).toUpperCase()}
                         </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-extrabold text-lg truncate leading-tight text-foreground/90">{group.name}</p>
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            {isCreator ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-md shadow-sm">
+                                <Crown size={10} /> Admin
+                              </span>
+                            ) : (
+                              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-md shadow-sm">Member</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Delete / Leave */}
+                      <div className="shrink-0 -mr-2 -mt-2">
+                        {isCreator ? (
+                          <button
+                            disabled={isActing}
+                            title="Delete group"
+                            aria-label="Delete group"
+                            onClick={(e) => { e.preventDefault(); handleDelete(group.id, group.name); }}
+                            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                          >
+                            {isActing ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                          </button>
+                        ) : (
+                          <button
+                            disabled={isActing}
+                            title="Leave group"
+                            aria-label="Leave group"
+                            onClick={(e) => { e.preventDefault(); handleLeave(group.id, group.name); }}
+                            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors disabled:opacity-50"
+                          >
+                            {isActing ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} />}
+                          </button>
+                        )}
                       </div>
                     </div>
 
                     {/* ── Description ── */}
                     {group.description ? (
-                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed -mt-1">
+                      <p className="text-[13px] text-muted-foreground/80 line-clamp-2 leading-relaxed">
                         {group.description}
                       </p>
                     ) : (
-                      <p className="text-xs text-muted-foreground/40 italic -mt-1">No description</p>
+                      <p className="text-[13px] text-muted-foreground/40 italic">No description</p>
                     )}
 
-                    {/* ── Stats bar ── */}
-                    <div className="flex items-center gap-3 text-xs font-medium">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Users size={12} className="shrink-0" />
-                        <span>{memberCount} member{memberCount !== 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="h-3 w-px bg-border shrink-0" />
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <MapPin size={12} className="shrink-0" />
-                        <span>Live map</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-auto space-y-3">
-                      {/* ── Avatars + action ── */}
-                      <div className="flex items-center justify-between bg-muted/40 rounded-xl px-3 py-2.5 border border-border/30">
-                        <AvatarStack
-                          items={group.members.map((m) => ({
-                            id: m.userId,
-                            name: m.user.name,
-                            avatar: m.user.avatar,
-                          }))}
-                          max={5}
-                          size={26}
-                        />
-                        <div className="flex items-center gap-1 shrink-0">
-                          {/* Delete / Leave */}
-                          {isCreator ? (
-                            <button
-                              disabled={isActing}
-                              title="Delete group"
-                              aria-label="Delete group"
-                              onClick={(e) => { e.preventDefault(); handleDelete(group.id, group.name); }}
-                              className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
-                            >
-                              {isActing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                            </button>
+                    <div className="mt-auto space-y-5 pt-2">
+                      {/* ── Stats & Avatars ── */}
+                      <div className="flex items-center justify-between bg-muted/30 rounded-2xl p-3 border border-border/40">
+                        <div className="flex flex-col gap-1.5 pl-1">
+                          <span className="text-xs font-bold text-foreground/80 flex items-center gap-1.5">
+                            <Users size={12} className="text-primary/70" />
+                            {memberCount} Member{memberCount !== 1 ? 's' : ''}
+                          </span>
+                          {onlineCount > 0 ? (
+                            <span className="text-[11px] font-bold text-emerald-500 flex items-center gap-1.5">
+                              <span className="relative flex h-1.5 w-1.5">
+                                <span className="animate-ping absolute inset-0 rounded-full bg-emerald-500 opacity-50" />
+                                <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                              </span>
+                              {onlineCount} Live
+                            </span>
                           ) : (
-                            <button
-                              disabled={isActing}
-                              title="Leave group"
-                              aria-label="Leave group"
-                              onClick={(e) => { e.preventDefault(); handleLeave(group.id, group.name); }}
-                              className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors disabled:opacity-50"
-                            >
-                              {isActing ? <Loader2 size={12} className="animate-spin" /> : <LogOut size={12} />}
-                            </button>
+                            <span className="text-[11px] font-semibold text-muted-foreground/60 flex items-center gap-1.5">
+                              <MapPin size={10} /> None live
+                            </span>
                           )}
+                        </div>
+                        <div className="bg-background/80 p-1.5 rounded-full border border-border/50 shadow-sm">
+                          <AvatarStack
+                            items={group.members.map((m) => ({
+                              id: m.userId,
+                              name: m.user.name,
+                              avatar: m.user.avatar,
+                            }))}
+                            max={4}
+                            size={26}
+                          />
                         </div>
                       </div>
 
                       {/* ── View button ── */}
                       <Button
                         className={cn(
-                          'w-full h-10 rounded-xl gap-2 font-semibold bg-gradient-to-r',
-                          grad.from, grad.to,
-                          'hover:opacity-90 hover:shadow-md text-white border-0 transition-all shadow-sm'
+                          'w-full h-11 rounded-xl gap-2 font-bold text-[13px]',
+                          'bg-primary/5 hover:bg-primary/10 text-primary border border-primary/10',
+                          'transition-all duration-300 shadow-sm active:scale-95'
                         )}
                         asChild
                       >
                         <Link href={`/dashboard/groups/${group.id}`}>
-                          View Group
-                          <ArrowRight size={14} className="group-hover/card:translate-x-1 transition-transform duration-200" />
+                          View Group Hub
+                          <ArrowRight size={16} className="group-hover/card:translate-x-1 transition-transform duration-300" />
                         </Link>
                       </Button>
                     </div>

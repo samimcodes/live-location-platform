@@ -320,31 +320,35 @@ export default function FriendsPage() {
 
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <motion.div {...fadeUp(0)}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border">
-          <div className="relative z-10 px-6 py-6 sm:px-8">
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all hover:shadow-md">
+          {/* Subtle gradient background accent */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
+          
+          <div className="relative z-10 px-6 py-8 sm:px-10">
             {/* Top row */}
             <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3.5">
-                <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Users size={20} className="text-primary" />
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 shadow-inner border border-primary/20">
+                  <Users size={28} className="text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
+                  <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
                     Friends
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <p className="text-sm font-medium text-muted-foreground mt-1">
                     {friends.length} friend{friends.length !== 1 ? "s" : ""} ·{" "}
                     {onlineCount} online
                   </p>
                 </div>
               </div>
 
-              <Button asChild className="gap-2 shadow-sm relative">
+              <Button asChild className="gap-2 rounded-xl h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold relative">
                 <Link href="/dashboard/friends/requests">
-                  <UserPlus size={15} />
+                  <UserPlus size={16} />
                   Requests
                   {pendingCount > 0 && (
-                    <span className="absolute -top-2 -right-2 h-5 min-w-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1 animate-pulse">
+                    <span className="absolute -top-2 -right-2 h-5 min-w-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1 animate-pulse shadow-md">
                       {pendingCount}
                     </span>
                   )}
@@ -352,46 +356,46 @@ export default function FriendsPage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
               {[
                 {
                   icon: Users,
-                  label: "Total",
+                  label: "Total Friends",
                   value: friends.length,
                   tone: "primary" as const,
                 },
                 {
                   icon: Radio,
-                  label: "Online",
+                  label: "Online Now",
                   value: onlineCount,
                   tone: "live" as const,
                 },
                 {
                   icon: MapPin,
-                  label: "On map",
+                  label: "On The Map",
                   value: onMapCount,
                   tone: "map" as const,
                 },
               ].map(({ icon: Icon, label, value, tone }) => (
                 <div
                   key={label}
-                  className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/70 backdrop-blur-sm px-4 py-3"
+                  className="flex items-center gap-4 rounded-2xl border border-border/60 bg-background/60 backdrop-blur-md px-5 py-4 shadow-sm hover:shadow transition-shadow"
                 >
                   <div
                     className={cn(
-                      "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
-                      tone === "primary" && "bg-primary/10 text-primary",
-                      tone === "live" && "bg-chart-5/15 text-chart-5",
-                      tone === "map" && "bg-chart-3/15 text-chart-3",
+                      "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+                      tone === "primary" && "bg-primary/10 text-primary border border-primary/20",
+                      tone === "live" && "bg-chart-5/15 text-chart-5 border border-chart-5/20",
+                      tone === "map" && "bg-chart-3/15 text-chart-3 border border-chart-3/20",
                     )}
                   >
-                    <Icon size={16} />
+                    <Icon size={20} />
                   </div>
                   <div>
-                    <p className="text-lg font-bold tabular-nums leading-none">
+                    <p className="text-2xl font-extrabold tabular-nums leading-none text-foreground/90">
                       {value}
                     </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <p className="text-[11px] font-bold text-muted-foreground mt-1.5 tracking-wide uppercase">
                       {label}
                     </p>
                   </div>

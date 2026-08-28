@@ -139,18 +139,22 @@ export default function RequestsPage() {
 
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <motion.div {...fadeUp(0)}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border">
-          <div className="relative z-10 px-5 py-5 sm:px-7 sm:py-6">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-3 min-w-0">
-                <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl shrink-0" asChild>
-                  <Link href="/dashboard/friends"><ArrowLeft size={16} /></Link>
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all hover:shadow-md">
+          {/* Subtle gradient background accent */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
+          
+          <div className="relative z-10 px-6 py-6 sm:px-8 sm:py-8">
+            <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-4 min-w-0">
+                <Button variant="ghost" size="sm" className="h-12 w-12 p-0 rounded-2xl shrink-0 bg-background/50 backdrop-blur-md border border-border/50 hover:bg-background/80 transition-all shadow-sm" asChild>
+                  <Link href="/dashboard/friends"><ArrowLeft size={18} className="text-foreground/70" /></Link>
                 </Button>
                 <div className="min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
                     Friend Requests
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <p className="text-sm font-medium text-muted-foreground mt-1">
                     {pending.length} pending · {sent.length} sent
                   </p>
                 </div>
@@ -158,10 +162,10 @@ export default function RequestsPage() {
               {pending.length > 0 && (
                 <Button size="sm" disabled={acceptingAll}
                   onClick={() => acceptAll()}
-                  className="shrink-0 gap-2">
+                  className="shrink-0 gap-2 rounded-xl h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold relative">
                   {acceptingAll
-                    ? <Loader2 size={13} className="animate-spin" />
-                    : <CheckCheck size={13} />}
+                    ? <Loader2 size={16} className="animate-spin" />
+                    : <CheckCheck size={16} />}
                   Accept all{pending.length > 1 ? ` (${pending.length})` : ''}
                 </Button>
               )}

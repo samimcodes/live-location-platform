@@ -165,14 +165,17 @@ function StatCard({
   colorGradient: string;
 }) {
   return (
-    <div className="card-shine flex items-center gap-3.5 p-4 rounded-2xl border border-border/50 bg-card shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 group">
-      <div className={cn('h-11 w-11 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br shadow-sm group-hover:scale-105 transition-transform', colorGradient)}>
-        <Icon size={18} className="text-white" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
-        <p className="text-base font-bold truncate mt-0.5 leading-tight">{value}</p>
-        {sub && <p className="text-[11px] text-muted-foreground/70 truncate mt-0.5">{sub}</p>}
+    <div className="card-shine relative flex flex-col justify-center p-5 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group overflow-hidden">
+      <div className={cn('absolute -top-10 -right-10 w-24 h-24 rounded-full blur-[40px] opacity-20 pointer-events-none bg-gradient-to-br', colorGradient)} />
+      <div className="flex items-center gap-4 z-10">
+        <div className={cn('h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br shadow-md border border-white/10 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300', colorGradient)}>
+          <Icon size={20} className="text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-widest">{label}</p>
+          <p className="text-xl font-extrabold truncate mt-1 text-foreground leading-tight">{value}</p>
+          {sub && <p className="text-[11px] font-medium text-muted-foreground/60 truncate mt-1">{sub}</p>}
+        </div>
       </div>
     </div>
   );
@@ -332,8 +335,7 @@ export default function HistoryPage() {
   const isFiltered  = !!(applied.start || applied.end);
 
   return (
-    <div className="space-y-6 max-w-4xl">
-
+    <div className="space-y-6 pb-8">
       {/* ── Confirm clear dialog ───────────────────────────────────────── */}
       <ConfirmDialog
         open={confirmOpen}
@@ -347,16 +349,21 @@ export default function HistoryPage() {
 
       {/* ── HEADER — Premium Banner ────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border shadow-sm">
-          <div className="relative z-10 px-6 py-6 sm:px-8 sm:py-7">
-            <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap">
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all hover:shadow-md">
+          {/* Subtle gradient background accent */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
+          
+          <div className="relative z-10 px-6 py-8 sm:px-10">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25 shrink-0">
-                  <History size={24} className="text-white" />
+                {/* Icon */}
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/30 shrink-0 border border-amber-400/20">
+                  <History size={28} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Location History</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">Location History</h1>
+                  <p className="text-sm font-medium text-muted-foreground mt-1">
                     {total > 0 ? `${total} points recorded along your journeys` : 'Your movement history will appear here'}
                   </p>
                 </div>
@@ -367,29 +374,29 @@ export default function HistoryPage() {
                   <Button
                     variant={showRouteMap ? "secondary" : "outline"}
                     className={cn(
-                      "gap-2 shadow-sm rounded-xl h-10 transition-all",
-                      showRouteMap ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 font-semibold" : ""
+                      "gap-2 shadow-sm rounded-xl h-11 px-5 transition-all",
+                      showRouteMap ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 font-bold" : "font-bold text-[13px]"
                     )}
                     onClick={() => setShowRouteMap((v) => !v)}
                   >
-                    <MapIcon size={15} />
+                    <MapIcon size={16} />
                     {showRouteMap ? 'Hide Route Map' : 'View on Map'}
                   </Button>
                 )}
                 
                 <Button
                   variant="outline"
-                  className={cn("gap-2 shadow-sm rounded-xl h-10", isFiltered ? "border-primary text-primary bg-primary/5" : "")}
+                  className={cn("gap-2 shadow-sm rounded-xl h-11 px-5 font-bold text-[13px]", isFiltered ? "border-primary text-primary bg-primary/5" : "")}
                   onClick={() => setShowFilters(!showFilters)}
                 >
-                  <Filter size={15} />
+                  <Filter size={16} />
                   Filter
                 </Button>
               </div>
             </div>
 
             {/* Quick preset chips */}
-            <div className="flex items-center gap-2 mt-5 flex-wrap">
+            <div className="flex items-center gap-3 mt-8 flex-wrap">
               {[
                 { key: 'all',   label: 'All History' },
                 { key: 'today', label: 'Today' },
@@ -400,9 +407,9 @@ export default function HistoryPage() {
                   key={key}
                   onClick={() => applyPreset(key as 'all' | 'today' | '7d' | '30d')}
                   className={cn(
-                    'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border',
+                    'px-4 py-2 rounded-xl text-[12px] font-bold transition-all border shadow-sm backdrop-blur-md',
                     preset === key
-                      ? 'bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-500/20'
+                      ? 'bg-amber-500 text-white border-amber-500 shadow-amber-500/30'
                       : 'bg-card/80 border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   )}
                 >
@@ -410,8 +417,8 @@ export default function HistoryPage() {
                 </button>
               ))}
               {isFiltered && preset === 'custom' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                  <Sparkles size={11} /> Custom Date Filter
+                <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold bg-primary/10 text-primary border border-primary/20 backdrop-blur-md shadow-sm">
+                  <Sparkles size={13} /> Custom Date Filter
                 </span>
               )}
             </div>
