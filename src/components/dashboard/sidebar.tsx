@@ -21,12 +21,12 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'relative flex flex-col h-screen bg-card border-r border-border transition-all duration-300 ease-in-out z-20',
+        'relative flex flex-col h-screen bg-card/80 backdrop-blur-2xl border-r border-border/50 transition-all duration-300 ease-in-out z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.2)]',
         isCollapsed ? 'w-[72px]' : 'w-64'
       )}
     >
       {/* Logo */}
-      <div className={cn('flex items-center h-16 border-b border-border shrink-0', isCollapsed ? 'justify-center px-2' : 'px-4 gap-2')}>
+      <div className={cn('flex items-center h-16 border-b border-border/50 shrink-0', isCollapsed ? 'justify-center px-2' : 'px-4 gap-3')}>
         <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
           <MapPin size={16} className="text-white" />
         </div>
@@ -56,11 +56,11 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
               href={item.href}
               title={isCollapsed ? item.name : undefined}
               className={cn(
-                'flex items-center rounded-xl transition-all duration-150 group',
-                isCollapsed ? 'justify-center h-10 w-10 mx-auto' : 'px-3 py-2.5 gap-3',
+                'flex items-center rounded-2xl transition-all duration-200 group relative',
+                isCollapsed ? 'justify-center h-11 w-11 mx-auto' : 'px-4 py-3 gap-3 mx-3',
                 isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/20'
+                  : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground font-medium'
               )}
             >
               <item.icon
@@ -76,18 +76,18 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
       </nav>
 
       {/* User section */}
-      <div className={cn('border-t border-border p-3 shrink-0', isCollapsed ? 'flex flex-col items-center gap-2' : '')}>
+      <div className={cn('border-t border-border/50 p-4 shrink-0', isCollapsed ? 'flex flex-col items-center gap-2' : '')}>
         {/* Logout button */}
         <button
           onClick={logout}
           title="Logout"
           className={cn(
-            'flex items-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors',
-            isCollapsed ? 'h-10 w-10 justify-center' : 'w-full px-3 py-2 gap-3 mb-2'
+            'flex items-center rounded-2xl text-muted-foreground font-semibold hover:bg-destructive/10 hover:text-destructive transition-colors',
+            isCollapsed ? 'h-11 w-11 justify-center' : 'w-full px-4 py-2.5 gap-3 mb-3'
           )}
         >
-          <LogOut size={16} className="shrink-0" />
-          {!isCollapsed && <span className="text-sm font-medium">Logout</span>}
+          <LogOut size={18} className="shrink-0" />
+          {!isCollapsed && <span className="text-sm">Logout</span>}
         </button>
 
         {/* Avatar + name */}

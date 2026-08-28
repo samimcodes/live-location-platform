@@ -155,22 +155,22 @@ function MapPageInner() {
               <button
                 onClick={() => setMobileDrawerOpen(true)}
                 className={cn(
-                  'flex items-center gap-2.5 pl-3.5 pr-4 py-2.5',
-                  'rounded-full shadow-xl border',
-                  'bg-card/95 backdrop-blur-md border-border/60',
+                  'flex items-center gap-2.5 pl-4 pr-5 py-3',
+                  'rounded-full shadow-2xl border',
+                  'bg-card/90 backdrop-blur-xl border-border/50',
                   'active:scale-95 transition-transform',
                 )}
               >
                 <div className="relative">
-                  <Users size={16} className="text-foreground" />
+                  <Users size={18} className="text-foreground" />
                   {activeFriendCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-chart-5 text-white text-[8px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-chart-5 text-white text-[9px] font-bold flex items-center justify-center">
                       {activeFriendCount > 9 ? '9+' : activeFriendCount}
                     </span>
                   )}
                 </div>
-                <span className="text-xs font-semibold">Friends</span>
-                <ChevronUp size={12} className="text-muted-foreground" />
+                <span className="text-[13px] font-extrabold">Friends</span>
+                <ChevronUp size={14} className="text-muted-foreground" />
               </button>
             </motion.div>
           )}

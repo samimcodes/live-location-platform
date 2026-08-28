@@ -181,7 +181,7 @@ export default function NotificationsPage() {
   }, [deleteAllRead]);
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 pb-8">
 
       {/* ── Confirm Delete Read Dialog ─────────────────────────────────── */}
       <ConfirmDialog
@@ -196,16 +196,20 @@ export default function NotificationsPage() {
 
       {/* ── HEADER — Premium Banner ────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border shadow-sm">
-          <div className="relative z-10 px-6 py-6 sm:px-8 sm:py-7">
-            <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap">
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all hover:shadow-md">
+          {/* Subtle gradient background accent */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
+          
+          <div className="relative z-10 px-6 py-8 sm:px-10">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 shrink-0">
-                  <Bell size={24} className="text-white" />
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0 border border-blue-400/20">
+                  <Bell size={28} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">Notifications</h1>
+                  <p className="text-sm font-medium text-muted-foreground mt-1">
                     Stay updated with friend requests, group activity, and alerts
                   </p>
                 </div>
@@ -216,13 +220,13 @@ export default function NotificationsPage() {
                 {readCount > 0 && (
                   <Button
                     variant="outline" size="sm"
-                    className="text-muted-foreground hover:text-destructive border-border/60 hover:bg-destructive/10 rounded-xl h-10 px-3.5 transition-colors"
+                    className="text-muted-foreground hover:text-destructive border-border/60 hover:bg-destructive/10 rounded-xl h-11 px-5 transition-all text-[13px] font-bold"
                     onClick={() => setConfirmDeleteAll(true)}
                     disabled={deletingAll}
                   >
                     {deletingAll
-                      ? <Loader2 size={13} className="mr-1.5 animate-spin" />
-                      : <Trash2 size={13} className="mr-1.5" />
+                      ? <Loader2 size={16} className="mr-2 animate-spin" />
+                      : <Trash2 size={16} className="mr-2" />
                     }
                     Clear read
                   </Button>
@@ -230,13 +234,13 @@ export default function NotificationsPage() {
                 {unread > 0 && (
                   <Button
                     size="sm"
-                    className="rounded-xl h-10 shadow-md shadow-primary/20 px-4 font-semibold gap-1.5"
+                    className="rounded-xl h-11 shadow-sm shadow-primary/25 px-5 font-bold gap-2 text-[13px] transition-all active:scale-95 bg-primary hover:bg-primary/90 text-primary-foreground"
                     onClick={() => markAllRead()}
                     disabled={markingAll}
                   >
                     {markingAll
-                      ? <Loader2 size={13} className="mr-1.5 animate-spin" />
-                      : <CheckCheck size={14} className="mr-1.5" />
+                      ? <Loader2 size={16} className="mr-2 animate-spin" />
+                      : <CheckCheck size={16} className="mr-2" />
                     }
                     Mark all read
                   </Button>
@@ -245,7 +249,7 @@ export default function NotificationsPage() {
             </div>
 
             {/* Filter Tabs Chips */}
-            <div className="flex items-center gap-2 mt-5 flex-wrap">
+            <div className="flex items-center gap-3 mt-8 flex-wrap">
               {[
                 { key: 'ALL',     label: `All (${total})` },
                 { key: 'UNREAD',  label: `Unread (${unread})` },
@@ -257,9 +261,9 @@ export default function NotificationsPage() {
                   key={key}
                   onClick={() => setFilterType(key as typeof filterType)}
                   className={cn(
-                    'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border',
+                    'px-4 py-2 rounded-xl text-[12px] font-bold transition-all border shadow-sm backdrop-blur-md',
                     filterType === key
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-blue-600/30'
                       : 'bg-card/80 border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   )}
                 >
@@ -273,7 +277,7 @@ export default function NotificationsPage() {
 
       {/* ── NOTIFICATIONS LIST ─────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-        <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+        <div className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all overflow-hidden relative">
           {isLoading && notifications.length === 0 ? (
             <div className="space-y-4 p-5 sm:p-6">
               {[1, 2, 3, 4].map((i) => (
@@ -287,14 +291,14 @@ export default function NotificationsPage() {
               ))}
             </div>
           ) : filteredNotifications.length === 0 ? (
-            <div className="flex flex-col items-center py-20 px-6 text-center text-muted-foreground">
-              <div className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15 border border-blue-500/20 flex items-center justify-center mb-5">
-                <Bell size={32} className="text-primary opacity-60" />
+            <div className="flex flex-col items-center py-24 px-6 text-center text-muted-foreground">
+              <div className="mx-auto h-24 w-24 rounded-3xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20 flex items-center justify-center mb-6 shadow-sm">
+                <Bell size={40} className="text-primary opacity-80" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">
+              <h3 className="text-xl font-extrabold text-foreground">
                 {filterType === 'UNREAD' ? 'No unread notifications' : 'All caught up!'}
               </h3>
-              <p className="text-sm mt-1 max-w-xs leading-relaxed text-muted-foreground">
+              <p className="text-sm mt-2 max-w-sm leading-relaxed text-muted-foreground font-medium">
                 {filterType === 'UNREAD'
                   ? 'You have read all your notifications.'
                   : 'New alerts, friend updates, and group messages will appear here.'}
@@ -303,7 +307,7 @@ export default function NotificationsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-4 rounded-xl shadow-sm"
+                  className="mt-6 rounded-xl shadow-sm h-10 px-5 font-bold text-[13px]"
                   onClick={() => setFilterType('ALL')}
                 >
                   View All Notifications
@@ -326,7 +330,7 @@ export default function NotificationsPage() {
                       exit={{ opacity: 0, height: 0, paddingBottom: 0 }}
                       transition={{ delay: Math.min(i * 0.025, 0.25) }}
                       className={cn(
-                        'relative flex items-start gap-4 px-5 py-4 sm:px-6 sm:py-5 transition-all group',
+                        'relative flex items-start gap-4 px-5 py-5 sm:px-6 sm:py-6 transition-all duration-300 group',
                         !n.isRead
                           ? 'bg-primary/[0.04] hover:bg-primary/[0.08]'
                           : 'hover:bg-muted/30'
@@ -334,12 +338,12 @@ export default function NotificationsPage() {
                     >
                       {/* Unread vertical indicator line */}
                       {!n.isRead && (
-                        <div className="absolute left-0 top-2 bottom-2 w-1 bg-primary rounded-r-full" />
+                        <div className="absolute left-0 top-3 bottom-3 w-1 bg-primary rounded-r-full" />
                       )}
 
                       {/* Icon with gradient and shadow */}
                       <div className={cn(
-                        'h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br text-white',
+                        'h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br text-white border border-white/10 group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-300',
                         cfg.gradient,
                         !n.isRead && 'ring-2 ring-primary/25 ring-offset-2 ring-offset-card'
                       )}>
@@ -351,24 +355,24 @@ export default function NotificationsPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className={cn(
-                              'text-sm font-bold truncate leading-snug',
+                              'text-[15px] font-bold truncate leading-snug',
                               !n.isRead ? 'text-foreground font-extrabold' : 'text-foreground/80'
                             )}>
                               {n.title}
                             </p>
                             {!n.isRead && (
-                              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                              <span className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-sm shadow-primary/50" />
                             )}
                           </div>
 
-                          <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground/60 shrink-0 bg-muted/40 px-2 py-0.5 rounded-md">
+                          <span className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground/80 shrink-0 bg-muted/50 px-2 py-0.5 rounded-md">
                             <Clock size={10} />
                             {formatDistanceToNow(n.createdAt)}
                           </span>
                         </div>
 
                         <p className={cn(
-                          'text-xs mt-1.5 leading-relaxed', 
+                          'text-[13px] mt-1.5 leading-relaxed', 
                           !n.isRead ? 'text-foreground/80' : 'text-muted-foreground'
                         )}>
                           {n.body}
@@ -440,15 +444,15 @@ export default function NotificationsPage() {
 
               {/* Load More */}
               {hasMore && (
-                <div className="flex justify-center p-5 sm:p-6 bg-muted/10">
+                <div className="flex justify-center p-6 bg-muted/10 border-t border-border/30">
                   <Button
                     variant="outline"
-                    className="rounded-xl shadow-sm bg-card hover:bg-muted/50 px-6 h-10 font-semibold"
+                    className="rounded-xl shadow-sm bg-card hover:bg-muted/50 px-8 h-11 font-bold text-[13px]"
                     onClick={() => setPage((p) => p + 1)}
                     disabled={isFetching}
                   >
                     {isFetching ? (
-                      <><Loader2 size={14} className="mr-2 animate-spin" />Loading…</>
+                      <><Loader2 size={16} className="mr-2 animate-spin" />Loading…</>
                     ) : (
                       'Load More Notifications'
                     )}

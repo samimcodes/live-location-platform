@@ -70,26 +70,27 @@ export function SignUpForm() {
     >
       <div className="space-y-1.5">
         <Label htmlFor="name">Full Name</Label>
-        <Input id="name" placeholder="John Doe" {...register('name')} aria-invalid={!!errors.name} />
+        <Input id="name" placeholder="John Doe" {...register('name')} aria-invalid={!!errors.name} className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60" />
         {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="email">Email address</Label>
-        <Input id="email" type="email" placeholder="you@example.com" {...register('email')} aria-invalid={!!errors.email} />
+        <Input id="email" type="email" placeholder="you@example.com" {...register('email')} aria-invalid={!!errors.email} className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60" />
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
         <div className="relative">
-          <Input
-            id="password"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="Min 8 characters"
-            {...register('password')}
-            aria-invalid={!!errors.password}
-          />
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Min 8 characters"
+              {...register('password')}
+              aria-invalid={!!errors.password}
+              className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60 pr-10"
+            />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
@@ -104,17 +105,18 @@ export function SignUpForm() {
 
       <div className="space-y-1.5">
         <Label htmlFor="confirmPassword">Confirm Password</Label>
-        <Input
-          id="confirmPassword"
-          type="password"
-          placeholder="••••••••"
-          {...register('confirmPassword')}
-          aria-invalid={!!errors.confirmPassword}
-        />
+          <Input
+            id="confirmPassword"
+            type="password"
+            placeholder="••••••••"
+            {...register('confirmPassword')}
+            aria-invalid={!!errors.confirmPassword}
+            className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60"
+          />
         {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
       </div>
 
-      <Button type="submit" className="w-full h-10" disabled={isLoading}>
+      <Button type="submit" className="w-full h-11 rounded-xl shadow-sm font-semibold" disabled={isLoading}>
         {isLoading ? (
           <span className="flex items-center gap-2">
             <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />

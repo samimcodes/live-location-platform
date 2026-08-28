@@ -257,19 +257,23 @@ export default function SettingsPage() {
   const initials      = (user?.name ?? 'U').charAt(0).toUpperCase();
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-8 pb-8">
       {/* ── HEADER — Premium Banner ────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border shadow-sm">
-          <div className="relative z-10 px-6 py-6 sm:px-8 sm:py-7">
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all hover:shadow-md">
+          {/* Subtle gradient background accent */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
+          
+          <div className="relative z-10 px-6 py-8 sm:px-10">
             <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-600 dark:to-slate-800 flex items-center justify-center shadow-lg shadow-slate-900/25 shrink-0 text-white">
-                  <SettingsIcon size={24} className="text-white" />
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-600 dark:to-slate-800 flex items-center justify-center shadow-lg shadow-slate-900/30 shrink-0 text-white border border-slate-700/20">
+                  <SettingsIcon size={28} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Account Settings</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">Account Settings</h1>
+                  <p className="text-sm font-medium text-muted-foreground mt-1">
                     Manage your personal profile, security credentials, and app preferences
                   </p>
                 </div>
@@ -279,9 +283,9 @@ export default function SettingsPage() {
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
-                className="gap-1.5 rounded-xl h-10 px-4 text-muted-foreground hover:text-destructive border-border/60 hover:bg-destructive/10"
+                className="gap-2 rounded-xl h-11 px-5 font-bold text-[13px] text-muted-foreground hover:text-destructive border-border/60 hover:bg-destructive/10 transition-all shadow-sm"
               >
-                <LogOut size={14} />
+                <LogOut size={16} />
                 Sign Out
               </Button>
             </div>
@@ -296,7 +300,7 @@ export default function SettingsPage() {
           
           {/* ── Profile Information ── */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-            <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+            <div className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-sm overflow-hidden relative">
               <div className="px-6 py-4 flex items-center gap-3 border-b border-border/30 bg-muted/10">
                 <div className="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center">
                   <User size={15} className="text-indigo-500" />
@@ -418,7 +422,7 @@ export default function SettingsPage() {
 
           {/* ── Password & Security ── */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+            <div className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-sm overflow-hidden relative">
               <div className="px-6 py-4 flex items-center gap-3 border-b border-border/30 bg-muted/10">
                 <div className="h-8 w-8 rounded-lg bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center">
                   <Lock size={15} className="text-orange-500" />
@@ -547,7 +551,7 @@ export default function SettingsPage() {
 
           {/* ── Privacy & Live Location ── */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+            <div className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-sm overflow-hidden relative">
               <div className="px-5 py-4 flex items-center gap-3 border-b border-border/30 bg-muted/10">
                 <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center">
                   <MapPin size={15} className="text-emerald-500" />
@@ -591,7 +595,7 @@ export default function SettingsPage() {
 
           {/* ── Appearance & Theme ── */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+            <div className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-sm overflow-hidden relative">
               <div className="px-5 py-4 flex items-center gap-3 border-b border-border/30 bg-muted/10">
                 <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
                   <Sun size={15} className="text-blue-500" />
@@ -626,7 +630,7 @@ export default function SettingsPage() {
 
           {/* ── Danger Zone ── */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-            <div className="rounded-2xl border border-destructive/30 bg-card shadow-sm overflow-hidden">
+            <div className="rounded-3xl border border-destructive/30 bg-destructive/5 backdrop-blur-xl shadow-sm overflow-hidden relative">
               <div className="px-5 py-4 flex items-center gap-3 border-b border-destructive/20 bg-destructive/[0.03]">
                 <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center">
                   <AlertTriangle size={15} className="text-destructive" />

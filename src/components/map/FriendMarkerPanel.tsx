@@ -85,10 +85,10 @@ export function FriendMarkerPanel({
         {/* Title row */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Users size={13} className="text-primary" />
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+              <Users size={16} className="text-white" />
             </div>
-            <span className="text-sm font-bold tracking-tight">Friends</span>
+            <span className="text-base font-extrabold tracking-tight">Friends on Map</span>
             {live.length > 0 && (
               <span className="inline-flex items-center gap-1 h-5 rounded-full bg-chart-5/15 text-chart-5 text-[10px] font-bold px-2">
                 <Radio size={8} className="animate-pulse shrink-0" />
@@ -112,10 +112,10 @@ export function FriendMarkerPanel({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name or city…"
             className={cn(
-              'w-full pl-7 pr-7 py-1.5 text-xs rounded-lg',
-              'bg-muted/50 border border-border/40',
-              'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:bg-background/80',
-              'transition-all placeholder:text-muted-foreground/35',
+              'w-full pl-8 pr-8 py-2 text-[13px] rounded-xl font-medium',
+              'bg-muted/40 border border-border/60',
+              'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-card',
+              'transition-all placeholder:text-muted-foreground/50 shadow-sm',
             )}
           />
           <AnimatePresence>
@@ -226,11 +226,11 @@ function EmptyState({ icon, title, subtitle, actionHref, actionLabel }: {
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-14 px-4 text-center">
-      <div className="h-12 w-12 rounded-2xl bg-muted/60 flex items-center justify-center mb-3">
+      <div className="h-14 w-14 rounded-3xl bg-muted/60 flex items-center justify-center mb-4">
         {icon}
       </div>
-      <p className="text-xs font-semibold text-muted-foreground">{title}</p>
-      <p className="text-[11px] text-muted-foreground/45 mt-1 leading-relaxed">{subtitle}</p>
+      <p className="text-sm font-extrabold text-foreground">{title}</p>
+      <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-[200px]">{subtitle}</p>
       {actionHref && actionLabel && (
         <Link
           href={actionHref}
@@ -263,12 +263,12 @@ function Section({ label, dot, count, dimmed = false, pulse = false, children }:
           <span className={cn('relative inline-flex h-1.5 w-1.5 rounded-full', dot)} />
         </span>
         <span className={cn(
-          'text-[10px] font-bold uppercase tracking-widest flex-1',
-          dimmed ? 'text-muted-foreground/35' : 'text-muted-foreground/60',
+          'text-xs font-bold uppercase tracking-widest flex-1',
+          dimmed ? 'text-muted-foreground/40' : 'text-muted-foreground',
         )}>
           {label}
         </span>
-        <span className="text-[10px] text-muted-foreground/35 tabular-nums">{count}</span>
+        <span className="text-xs font-semibold text-muted-foreground/50 tabular-nums">{count}</span>
       </div>
 
       <div className={cn('px-2', dimmed && 'opacity-55')}>
@@ -309,17 +309,17 @@ function FriendRow({ friend, isFocused, onFocus, loc }: RowProps) {
       onClick={() => canFocus && onFocus(isFocused ? undefined : friend.id)}
       disabled={!canFocus}
       className={cn(
-        'group w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left',
-        'transition-all duration-150 select-none',
-        canFocus && 'hover:bg-muted/50 cursor-pointer active:scale-[0.98]',
+        'group w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left',
+        'transition-all duration-200 select-none',
+        canFocus && 'hover:bg-muted/80 cursor-pointer active:scale-[0.98]',
         !canFocus && 'cursor-default',
-        isFocused && 'bg-primary/[0.07] ring-1 ring-primary/25',
+        isFocused && 'bg-primary/10 ring-1 ring-primary/30 shadow-sm',
       )}
     >
       {/* Avatar */}
       <div className="relative shrink-0">
         <div className={cn(
-          'relative h-8 w-8 rounded-full overflow-hidden flex items-center justify-center font-semibold text-xs',
+          'relative h-10 w-10 rounded-2xl overflow-hidden flex items-center justify-center font-bold text-sm shadow-sm',
           bg, text,
           isFocused && 'ring-2 ring-primary/40 ring-offset-1 ring-offset-card',
         )}>
@@ -328,8 +328,8 @@ function FriendRow({ friend, isFocused, onFocus, loc }: RowProps) {
               src={friend.avatar}
               alt={friend.name}
               fill
-              sizes="32px"
-              className="object-cover rounded-full"
+              sizes="40px"
+              className="object-cover rounded-2xl"
             />
           ) : (
             friend.name.charAt(0).toUpperCase()
@@ -346,9 +346,8 @@ function FriendRow({ friend, isFocused, onFocus, loc }: RowProps) {
         )} />
       </div>
 
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold truncate leading-tight text-foreground/90">
+      <div className="flex-1 min-w-0 pt-0.5">
+        <p className="text-[13px] font-bold truncate leading-tight text-foreground">
           {friend.name}
         </p>
 
@@ -386,13 +385,13 @@ function FriendRow({ friend, isFocused, onFocus, loc }: RowProps) {
 
         {canFocus && (
           isFocused ? (
-            <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
-              <Navigation size={10} className="text-primary-foreground" />
+            <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center shadow-md">
+              <Navigation size={12} className="text-primary-foreground" />
             </div>
           ) : (
             <ChevronRight
-              size={12}
-              className="text-muted-foreground/25 group-hover:text-muted-foreground/60 transition-colors"
+              size={14}
+              className="text-muted-foreground/30 group-hover:text-muted-foreground/80 transition-colors"
             />
           )
         )}

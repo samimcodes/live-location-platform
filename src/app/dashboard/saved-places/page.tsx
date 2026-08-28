@@ -454,42 +454,46 @@ export default function SavedPlacesPage() {
   }, [places, selectedType, searchQuery]);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 pb-8">
       
       {/* ── Custom Confirm Dialog ───────────────────────────────────────── */}
       <ConfirmDialog {...confirmState} onCancel={closeConfirm} />
 
       {/* ── HEADER — Premium Banner ────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <div className="relative rounded-2xl overflow-hidden welcome-gradient border shadow-sm">
-          <div className="relative z-10 px-6 py-6 sm:px-8 sm:py-7">
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all hover:shadow-md">
+          {/* Subtle gradient background accent */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
+          
+          <div className="relative z-10 px-6 py-8 sm:px-10">
             <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
-                  <Bookmark size={24} className="text-white" />
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0 border border-emerald-400/20">
+                  <Bookmark size={28} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Saved Places</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">Saved Places</h1>
+                  <p className="text-sm font-medium text-muted-foreground mt-1">
                     {places.length} saved location{places.length !== 1 ? 's' : ''} for instant routing & sharing
                   </p>
                 </div>
               </div>
 
-              <Button onClick={() => setShowCreate(true)} className="gap-2 shadow-md shadow-emerald-500/20 shrink-0">
-                <Plus size={15} />
+              <Button onClick={() => setShowCreate(true)} className="gap-2 rounded-xl h-11 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold shrink-0">
+                <Plus size={16} />
                 Add Place
               </Button>
             </div>
 
             {/* Quick Type Filter Chips */}
-            <div className="flex items-center gap-2 mt-5 flex-wrap">
+            <div className="flex items-center gap-3 mt-8 flex-wrap">
               <button
                 onClick={() => setSelectedType('ALL')}
                 className={cn(
-                  'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border',
+                  'px-4 py-2 rounded-xl text-[12px] font-bold transition-all border shadow-sm backdrop-blur-md',
                   selectedType === 'ALL'
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/20'
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
                     : 'bg-card/80 border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 )}
               >
@@ -505,13 +509,13 @@ export default function SavedPlacesPage() {
                     key={t.value}
                     onClick={() => setSelectedType(t.value)}
                     className={cn(
-                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border',
+                      'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold transition-all border shadow-sm backdrop-blur-md',
                       selectedType === t.value
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/20'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
                         : 'bg-card/80 border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     )}
                   >
-                    <t.icon size={12} className={selectedType === t.value ? 'text-white' : ''} style={selectedType !== t.value ? { color: t.color } : undefined} />
+                    <t.icon size={14} className={selectedType === t.value ? 'text-white' : ''} style={selectedType !== t.value ? { color: t.color } : undefined} />
                     {t.label} ({count})
                   </button>
                 );
@@ -625,15 +629,18 @@ export default function SavedPlacesPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3, ease: 'easeOut' }}
               >
-                <div className="group card-shine h-full flex flex-col rounded-2xl border border-border/50 bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 overflow-hidden">
+                <div className="group h-full flex flex-col rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 overflow-hidden relative">
+                  
+                  {/* Subtle background glow from the place's color */}
+                  <div className={cn('absolute -top-16 -right-16 w-32 h-32 rounded-full blur-[50px] opacity-20 pointer-events-none bg-gradient-to-br', t.gradient)} />
                   
                   {/* Decorative top accent line */}
                   <div
-                    className={cn('h-1.5 w-full bg-gradient-to-r', t.gradient)}
+                    className={cn('h-1.5 w-full bg-gradient-to-r relative z-10', t.gradient)}
                   />
 
                   {/* Mini map preview */}
-                  <div className="relative h-36 w-full border-b border-border/40 overflow-hidden bg-muted">
+                  <div className="relative h-36 w-full border-b border-border/40 overflow-hidden bg-muted z-10">
                     <MiniMap
                       center={[place.longitude, place.latitude]}
                       zoom={15}
@@ -647,7 +654,7 @@ export default function SavedPlacesPage() {
                     
                     {/* Floating category badge */}
                     <div
-                      className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg backdrop-blur-md border shadow-sm text-[10px] font-bold uppercase tracking-wider text-white"
+                      className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl backdrop-blur-md border shadow-sm text-[10px] font-bold uppercase tracking-wider text-white"
                       style={{ backgroundColor: `${t.color}e6`, borderColor: `${t.color}40` }}
                     >
                       <t.icon size={11} />
@@ -659,81 +666,81 @@ export default function SavedPlacesPage() {
                       href={`https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="absolute bottom-2.5 right-2.5 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/60 hover:bg-black/80 backdrop-blur-md text-[10px] font-semibold text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
+                      className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md text-[11px] font-bold text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
                       title="Open in Google Maps"
                     >
-                      <Navigation size={10} />
+                      <Navigation size={12} />
                       Navigate
                     </a>
                   </div>
 
-                  <div className="p-5 flex-1 flex flex-col gap-3">
+                  <div className="p-6 flex-1 flex flex-col gap-4 z-10">
                     {/* Place title and action buttons */}
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-4 min-w-0">
                         <div
-                          className={cn('h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 shadow-md text-white bg-gradient-to-br', t.gradient)}
+                          className={cn('h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-md text-white bg-gradient-to-br border border-white/10 group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-300', t.gradient)}
                         >
-                          <t.icon size={19} className="text-white" />
+                          <t.icon size={20} className="text-white" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-base truncate leading-tight">{place.name}</p>
-                          <span className={cn('inline-block text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md mt-1', t.bgLight)}>
+                          <p className="font-extrabold text-lg truncate leading-tight text-foreground/90">{place.name}</p>
+                          <span className={cn('inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md mt-1 shadow-sm', t.bgLight)}>
                             {t.label}
                           </span>
                         </div>
                       </div>
 
                       {/* Edit & Delete actions */}
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0 -mr-2 -mt-2">
                         <button
                           onClick={() => setEditTarget(place)}
-                          className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
+                          className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 transition-colors"
                           title="Edit place"
                           aria-label="Edit place"
                         >
-                          <Pencil size={13} />
+                          <Pencil size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(place)}
-                          className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
                           title="Delete place"
                           aria-label="Delete place"
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
 
                     {/* Address */}
                     {place.address ? (
-                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      <p className="text-[13px] text-muted-foreground/80 line-clamp-2 leading-relaxed">
                         {place.address}
                       </p>
                     ) : (
-                      <p className="text-xs text-muted-foreground/40 italic">No street address saved</p>
+                      <p className="text-[13px] text-muted-foreground/40 italic">No street address saved</p>
                     )}
                     
                     {/* Bottom coordinates + copy button */}
-                    <div className="mt-auto pt-3 border-t border-border/30 flex items-center justify-between gap-2">
+                    <div className="mt-auto pt-4 flex items-center justify-between gap-2 border-t border-border/30">
                       <button
                         onClick={() => handleCopyCoords(place)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/40 hover:bg-muted/70 text-[10px] font-mono text-muted-foreground hover:text-foreground border border-border/40 transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/30 hover:bg-muted/60 text-[11px] font-mono font-medium text-muted-foreground hover:text-foreground border border-border/40 transition-colors"
                         title="Click to copy coordinates"
                       >
-                        <MapPin size={10} className="text-emerald-500 shrink-0" />
+                        <MapPin size={12} className="shrink-0" style={{ color: t.color }} />
                         <span>{place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}</span>
-                        {copiedId === place.id ? <Check size={10} className="text-emerald-500 ml-0.5" /> : <Copy size={10} className="opacity-40 ml-0.5" />}
+                        {copiedId === place.id ? <Check size={12} style={{ color: t.color }} className="ml-0.5" /> : <Copy size={12} className="opacity-40 ml-0.5" />}
                       </button>
 
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg gap-1"
+                        className="h-9 px-3 text-[12px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl gap-1.5"
                         asChild
                       >
                         <Link href={`/dashboard/map?lat=${place.latitude}&lng=${place.longitude}&zoom=16`}>
-                          View on map <ExternalLink size={11} />
+                          View <ExternalLink size={13} />
                         </Link>
                       </Button>
                     </div>

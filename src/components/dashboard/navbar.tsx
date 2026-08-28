@@ -80,7 +80,7 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false }: Navbar
     <header
       role="banner"
       aria-label="Dashboard top navigation"
-      className="h-16 flex items-center justify-between px-4 sm:px-6 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-10"
+      className="h-16 flex items-center justify-between px-4 sm:px-6 bg-background/60 backdrop-blur-2xl border-b border-border/50 sticky top-0 z-40 shadow-sm"
     >
       {/* Left — mobile menu trigger */}
       <div className="flex items-center gap-3 flex-1">
@@ -131,9 +131,9 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false }: Navbar
           </Button>
 
           {notifOpen && (
-            <div className="absolute right-0 top-12 w-80 bg-card border border-border rounded-2xl shadow-xl overflow-hidden z-50">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <span className="font-semibold text-sm">Notifications</span>
+            <div className="absolute right-0 top-12 w-80 bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/5 dark:ring-white/10">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border/50 bg-muted/20">
+                <span className="font-extrabold text-[15px]">Notifications</span>
                 <div className="flex items-center gap-3">
                   {unreadCount > 0 && (
                     <button
@@ -163,7 +163,7 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false }: Navbar
                     <div
                       key={n.id}
                       className={cn(
-                        "flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors",
+                        "flex items-start gap-3 px-5 py-4 hover:bg-muted/60 transition-colors border-b border-border/30 last:border-0",
                         !n.isRead && "bg-primary/5"
                       )}
                     >
@@ -217,27 +217,27 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false }: Navbar
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-xl overflow-hidden z-50">
+            <div className="absolute right-0 top-12 w-56 bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/5 dark:ring-white/10">
               {/* User info */}
-              <div className="px-4 py-3 border-b border-border">
-                <p className="text-sm font-semibold truncate">{user?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              <div className="px-5 py-4 border-b border-border/50 bg-muted/20">
+                <p className="text-sm font-bold truncate text-foreground">{user?.name}</p>
+                <p className="text-xs font-medium text-muted-foreground truncate mt-0.5">{user?.email}</p>
               </div>
               {/* Actions */}
-              <div className="p-1.5 space-y-0.5">
+              <div className="p-2 space-y-1">
                 <Link
                   href="/dashboard/settings"
                   onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
                 >
-                  <Settings size={14} className="text-muted-foreground" />
+                  <Settings size={16} />
                   Settings
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold text-destructive hover:bg-destructive/10 transition-all"
                 >
-                  <LogOut size={14} />
+                  <LogOut size={16} />
                   Sign out
                 </button>
               </div>

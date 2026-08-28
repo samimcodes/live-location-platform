@@ -66,6 +66,7 @@ export function SignInForm() {
           placeholder="you@example.com"
           {...register('email')}
           aria-invalid={!!errors.email}
+          className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60"
         />
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
@@ -88,6 +89,7 @@ export function SignInForm() {
             placeholder="••••••••"
             {...register('password')}
             aria-invalid={!!errors.password}
+            className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60 pr-10"
           />
           <button
             type="button"
@@ -101,7 +103,7 @@ export function SignInForm() {
         {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
       </div>
 
-      <Button type="submit" className="w-full h-10" disabled={isLoading}>
+      <Button type="submit" className="w-full h-11 rounded-xl shadow-sm font-semibold" disabled={isLoading}>
         {isLoading ? (
           <span className="flex items-center gap-2">
             <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
