@@ -274,91 +274,100 @@ export default function DashboardPage() {
     <div className="space-y-6 pb-8">
       {/* Hero */}
       <motion.div {...fadeUp(0)}>
-        <div className="relative overflow-hidden rounded-2xl welcome-gradient border shadow-sm">
-          <div className="relative z-10 px-5 py-6 sm:px-8 sm:py-8">
-            <div className="flex items-start justify-between gap-4">
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all hover:shadow-md">
+          {/* Subtle gradient background accent */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
+          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-chart-3/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
+          
+          <div className="relative z-10 px-6 py-8 sm:px-10 sm:py-10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  {formattedDate}
-                </p>
-                <h1 className="mt-1.5 text-2xl sm:text-[1.85rem] font-extrabold tracking-tight leading-tight">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                    <Sparkles size={12} />
+                    Overview
+                  </span>
+                  <p className="text-xs font-semibold text-muted-foreground/80 tracking-wide">
+                    {formattedDate}
+                  </p>
+                </div>
+                <h1 className="text-3xl sm:text-[2.5rem] font-extrabold tracking-tight text-foreground leading-tight">
                   Good {getGreeting()},{" "}
-                  <span className="text-primary">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-chart-3">
                     {user?.name?.split(" ")[0] ?? "there"}
                   </span>
                 </h1>
-                <p className="mt-1.5 text-sm text-muted-foreground max-w-lg">
+                <p className="mt-3 text-sm sm:text-base text-muted-foreground/80 max-w-xl leading-relaxed">
                   {isLoading
-                    ? "Loading your circle…"
+                    ? "Syncing your circle's latest updates…"
                     : onlineFriends.length > 0
-                      ? `${onlineFriends.length} friend${onlineFriends.length !== 1 ? "s" : ""} online.`
-                      : "No friends online right now."}{" "}
+                      ? `You have ${onlineFriends.length} friend${onlineFriends.length !== 1 ? "s" : ""} online and active.`
+                      : "Your circle is quiet right now."}{" "}
                   {isSharing
-                    ? "Your location is live."
-                    : "Location sharing is paused."}
+                    ? "Your location is actively broadcasting."
+                    : "Your location is currently hidden."}
                 </p>
               </div>
 
-              <div className="hidden sm:flex flex-col items-end gap-3 shrink-0">
-                <p className="text-2xl font-bold tabular-nums tracking-tight text-foreground/80">
-                  {formattedTime}
-                </p>
+              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-5 shrink-0">
+                <div className="text-right hidden sm:block">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 mb-1.5">Local Time</p>
+                  <p className="text-2xl font-bold tabular-nums tracking-tighter text-foreground/90 bg-background/40 backdrop-blur-sm px-4 py-1.5 rounded-xl border border-border/50 shadow-sm">
+                    {formattedTime}
+                  </p>
+                </div>
                 {onlineFriends.length > 0 && (
-                  <AvatarStack items={onlineFriends} max={5} size={32} />
+                  <div className="flex items-center gap-3 bg-background/60 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-border/60 shadow-sm">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-chart-5 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-chart-5"></span>
+                    </span>
+                    <AvatarStack items={onlineFriends} max={4} size={30} />
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-2">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <div
                 className={cn(
-                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border backdrop-blur-md",
+                  "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all shadow-sm",
                   isSharing
-                    ? "bg-card/70 text-chart-5 border-chart-5/30"
-                    : "bg-card/50 text-muted-foreground border-border/50",
+                    ? "bg-chart-5/10 text-chart-5 border border-chart-5/20"
+                    : "bg-muted/50 text-muted-foreground border border-border",
                 )}
               >
-                <span className="relative flex h-2 w-2">
-                  {isSharing && (
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-chart-5 opacity-60" />
-                  )}
-                  <span
-                    className={cn(
-                      "relative h-2 w-2 rounded-full",
-                      isSharing ? "bg-chart-5" : "bg-muted-foreground/40",
-                    )}
-                  />
-                </span>
-                {isSharing ? "Location live" : "Sharing paused"}
+                <Radio size={16} className={cn(isSharing && "animate-pulse")} />
+                {isSharing ? "Broadcasting Live" : "Sharing Paused"}
               </div>
 
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-card/70 border border-border/50 backdrop-blur-md">
-                <UserCheck size={12} className="text-primary" />
-                {friends.length} friend{friends.length !== 1 ? "s" : ""}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold bg-background/60 backdrop-blur-md border border-border/60 text-foreground/80 shadow-sm">
+                <Users size={16} className="text-primary/80" />
+                {friends.length} Network
               </div>
 
               {friendsLocations.size > 0 && (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-card/70 border border-border/50 backdrop-blur-md">
-                  <Navigation size={12} className="text-chart-3" />
-                  {friendsLocations.size} on map
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold bg-background/60 backdrop-blur-md border border-border/60 text-foreground/80 shadow-sm">
+                  <MapPin size={16} className="text-chart-3/80" />
+                  {friendsLocations.size} Visible
                 </div>
               )}
 
               {unreadCount > 0 && (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-card/70 border border-chart-4/30 text-chart-4 backdrop-blur-md">
-                  <Bell size={12} />
-                  {unreadCount} unread
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold bg-chart-4/10 border border-chart-4/20 text-chart-4 shadow-sm">
+                  <Bell size={16} />
+                  {unreadCount} Alerts
                 </div>
               )}
 
               <Button
                 asChild
-                size="sm"
-                className="ml-auto w-full sm:w-auto gap-2 rounded-xl shadow-md shadow-primary/15 font-semibold"
+                className="ml-auto w-full sm:w-auto gap-2 rounded-xl h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold"
               >
                 <Link href="/dashboard/map">
-                  <Navigation size={13} />
-                  Open Map
+                  <Map size={16} />
+                  View Live Map
                 </Link>
               </Button>
             </div>
