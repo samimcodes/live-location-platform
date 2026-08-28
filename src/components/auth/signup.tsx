@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/toast';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
-import { Eye, EyeOff, MapPin } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Navigation, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
@@ -29,6 +29,7 @@ type FormData = z.infer<typeof schema>;
 export function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
 
   const {
@@ -40,6 +41,7 @@ export function SignUpForm() {
   const onSubmit = async (formData: FormData) => {
     setIsLoading(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmPassword, ...payload } = formData;
       const { data } = await api.post('/auth/register', payload);
       if (data.success) {
@@ -64,76 +66,128 @@ export function SignUpForm() {
     <motion.form
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-4 w-full"
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
+      {/* Full Name */}
       <div className="space-y-1.5">
-        <Label htmlFor="name">Full Name</Label>
-        <Input id="name" placeholder="John Doe" {...register('name')} aria-invalid={!!errors.name} className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60" />
-        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="email">Email address</Label>
-        <Input id="email" type="email" placeholder="you@example.com" {...register('email')} aria-invalid={!!errors.email} className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60" />
-        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="name" className="text-xs font-bold text-slate-700">Full Name</Label>
         <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Min 8 characters"
-              {...register('password')}
-              aria-invalid={!!errors.password}
-              className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60 pr-10"
-            />
+          <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Input
+            id="name"
+            placeholder="John Doe"
+            {...register('name')}
+            aria-invalid={!!errors.name}
+            className="h-12 pl-10 rounded-xl border-slate-200 bg-[#f0f4fd] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-400 text-sm font-medium text-slate-800 placeholder:text-slate-400 transition-all shadow-none"
+          />
+        </div>
+        {errors.name && <p className="text-xs text-red-500 font-medium">{errors.name.message}</p>}
+      </div>
+
+      {/* Email */}
+      <div className="space-y-1.5">
+        <Label htmlFor="email" className="text-xs font-bold text-slate-700">Email address</Label>
+        <div className="relative">
+          <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            {...register('email')}
+            aria-invalid={!!errors.email}
+            className="h-12 pl-10 rounded-xl border-slate-200 bg-[#f0f4fd] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-400 text-sm font-medium text-slate-800 placeholder:text-slate-400 transition-all shadow-none"
+          />
+        </div>
+        {errors.email && <p className="text-xs text-red-500 font-medium">{errors.email.message}</p>}
+      </div>
+
+      {/* Password */}
+      <div className="space-y-1.5">
+        <Label htmlFor="password" className="text-xs font-bold text-slate-700">Password</Label>
+        <div className="relative">
+          <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Min 8 characters"
+            {...register('password')}
+            aria-invalid={!!errors.password}
+            className="h-12 pl-10 pr-11 rounded-xl border-slate-200 bg-[#f0f4fd] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-400 text-sm font-medium text-slate-800 placeholder:text-slate-400 transition-all shadow-none"
+          />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
-        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+        {errors.password && <p className="text-xs text-red-500 font-medium">{errors.password.message}</p>}
       </div>
 
+      {/* Confirm Password */}
       <div className="space-y-1.5">
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
+        <Label htmlFor="confirmPassword" className="text-xs font-bold text-slate-700">Confirm Password</Label>
+        <div className="relative">
+          <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <Input
             id="confirmPassword"
-            type="password"
+            type={showConfirm ? 'text' : 'password'}
             placeholder="••••••••"
             {...register('confirmPassword')}
             aria-invalid={!!errors.confirmPassword}
-            className="h-11 rounded-xl bg-muted/40 focus:bg-card border-border/60"
+            className="h-12 pl-10 pr-11 rounded-xl border-slate-200 bg-[#f0f4fd] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-400 text-sm font-medium text-slate-800 placeholder:text-slate-400 transition-all shadow-none"
           />
-        {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
+          <button
+            type="button"
+            onClick={() => setShowConfirm(!showConfirm)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
+          >
+            {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
+        {errors.confirmPassword && <p className="text-xs text-red-500 font-medium">{errors.confirmPassword.message}</p>}
       </div>
 
-      <Button type="submit" className="w-full h-11 rounded-xl shadow-sm font-semibold" disabled={isLoading}>
+      {/* Submit Button */}
+      <Button
+        type="submit"
+        disabled={isLoading}
+        className="w-full h-12 rounded-xl text-white text-sm font-bold shadow-lg flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer border-0"
+        style={{
+          background: 'linear-gradient(90deg, #5b5fc7 0%, #7c3aed 100%)',
+          boxShadow: '0 6px 20px rgba(99,102,241,0.35)',
+        }}
+      >
         {isLoading ? (
-          <span className="flex items-center gap-2">
+          <>
             <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
             Creating account…
-          </span>
+          </>
         ) : (
-          <span className="flex items-center gap-2">
-            <MapPin size={16} />
+          <>
+            <Navigation size={15} className="text-white" style={{ transform: 'rotate(-30deg)' }} />
             Create Free Account
-          </span>
+            <ArrowRight size={15} />
+          </>
         )}
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
+      {/* Terms note */}
+      <p className="text-center text-[11px] text-slate-400 leading-relaxed">
+        By creating an account, you agree to our{' '}
+        <span className="text-indigo-600 font-semibold cursor-pointer hover:underline">Terms</span>
+        {' & '}
+        <span className="text-indigo-600 font-semibold cursor-pointer hover:underline">Privacy Policy</span>.
+      </p>
+
+      {/* Sign in link */}
+      <p className="text-center text-xs text-slate-500 font-medium">
         Already have an account?{' '}
-        <Link href="/login" className="text-primary hover:underline font-medium">
-          Sign in
+        <Link href="/login" className="text-indigo-600 hover:underline font-bold inline-flex items-center gap-0.5">
+          Sign in <ArrowRight size={12} />
         </Link>
       </p>
     </motion.form>
