@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Send, ShieldCheck, Users, Zap, Star } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const stats = [
   { value: '2K+', label: 'Active Families', icon: Users },
@@ -147,7 +148,15 @@ export function CTASection() {
                         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&q=80",
                         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80",
                       ].map((url, i) => (
-                        <img key={i} src={url} alt="" className="h-8 w-8 rounded-full ring-2 ring-white/30 object-cover" />
+                        <Image
+                          key={i}
+                          src={url}
+                          alt="User avatar"
+                          width={32}
+                          height={32}
+                          unoptimized
+                          className="h-8 w-8 rounded-full ring-2 ring-white/30 object-cover"
+                        />
                       ))}
                     </div>
                     <p className="text-white/70 text-xs font-medium">

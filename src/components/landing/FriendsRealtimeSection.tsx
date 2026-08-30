@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Users, EyeOff, UserPlus, Battery, CheckCircle2, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const friendItems = [
   {
@@ -88,7 +89,14 @@ export function FriendsRealtimeSection() {
                     <div className="flex items-center gap-3.5">
                       <div className="relative">
                         <div className="h-11 w-11 rounded-full border-2 border-white dark:border-background overflow-hidden shadow-sm">
-                          <img src={item.avatar} alt={item.name} className="w-full h-full object-cover" />
+                          <Image
+                            src={item.avatar}
+                            alt={item.name}
+                            width={44}
+                            height={44}
+                            unoptimized
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                         <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white dark:border-background ${item.color}`} />
                       </div>

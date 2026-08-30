@@ -21,6 +21,7 @@ import {
   Settings,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function HeroSection() {
   const [activeTab, setActiveTab] = useState<'live' | 'circles' | 'alerts' | 'history' | 'settings'>('live');
@@ -246,9 +247,12 @@ export function HeroSection() {
                   {/* Teardrop Map Pin */}
                   <div className="relative flex flex-col items-center">
                     <div className="h-14 w-14 rounded-full bg-[#7C3AED] p-0.5 shadow-2xl ring-4 ring-purple-500/25 overflow-hidden flex items-center justify-center">
-                      <img
+                      <Image
                         src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
                         alt="Rasel"
+                        width={56}
+                        height={56}
+                        unoptimized
                         className="w-full h-full object-cover rounded-full"
                       />
                     </div>
@@ -277,9 +281,12 @@ export function HeroSection() {
                   {/* Teardrop Map Pin */}
                   <div className="relative flex flex-col items-center">
                     <div className="h-14 w-14 rounded-full bg-[#3B82F6] p-0.5 shadow-2xl ring-4 ring-blue-500/25 overflow-hidden flex items-center justify-center">
-                      <img
+                      <Image
                         src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
                         alt="Mim"
+                        width={56}
+                        height={56}
+                        unoptimized
                         className="w-full h-full object-cover rounded-full"
                       />
                     </div>
@@ -307,9 +314,12 @@ export function HeroSection() {
                   {/* Teardrop Map Pin */}
                   <div className="relative flex flex-col items-center">
                     <div className="h-14 w-14 rounded-full bg-[#F59E0B] p-0.5 shadow-2xl ring-4 ring-amber-500/25 overflow-hidden flex items-center justify-center">
-                      <img
+                      <Image
                         src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80"
                         alt="Ayaan"
+                        width={56}
+                        height={56}
+                        unoptimized
                         className="w-full h-full object-cover rounded-full"
                       />
                     </div>
@@ -410,10 +420,13 @@ export function HeroSection() {
                   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
                   "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80",
                 ].map((url, idx) => (
-                  <img
+                  <Image
                     key={idx}
                     src={url}
                     alt={`User ${idx}`}
+                    width={32}
+                    height={32}
+                    unoptimized
                     className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-background object-cover shadow-sm hover:scale-110 transition-transform"
                   />
                 ))}

@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Menu, X, LogIn } from 'lucide-react';
+import { ArrowRight, Menu, X, LogIn, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/components/ThemeProvider';
 
 const navLinks = [
   { label: 'Live Map', href: '#map-preview', id: 'map-preview' },
@@ -16,10 +17,30 @@ const navLinks = [
 ];
 
 export function LandingNavbar() {
+  const { theme, setTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('map-preview');
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const mounted = React.useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false
+  );
+
+  const currentTheme = mounted ? (theme ?? 'system') : 'system';
+  const ThemeIcon =
+    !mounted                 ? Monitor :
+    currentTheme === 'dark'  ? Moon :
+    currentTheme === 'light' ? Sun :
+    Monitor;
+
+  const cycleTheme = () => {
+    if (theme === 'light') setTheme('dark');
+    else if (theme === 'dark') setTheme('system');
+    else setTheme('light');
+  };
 
   // Scroll listener for sticky glass elevation & section tracking
   useEffect(() => {
@@ -126,7 +147,15 @@ export function LandingNavbar() {
           </nav>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            <button
+              onClick={cycleTheme}
+              aria-label={mounted ? `Theme: ${theme ?? 'system'}` : 'Toggle theme'}
+              className="p-2 rounded-xl text-slate-600 dark:text-muted-foreground hover:text-[#7C3AED] hover:bg-slate-100 dark:hover:bg-muted transition-colors"
+            >
+              <ThemeIcon size={18} />
+            </button>
+
             <Link
               href="/login"
               className="text-sm font-bold text-slate-700 dark:text-foreground hover:text-[#7C3AED] flex items-center gap-1.5 transition-colors px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-muted/50"
@@ -147,14 +176,23 @@ export function LandingNavbar() {
             </Button>
           </div>
 
-          {/* Mobile menu toggle */}
-          <button
-            className="md:hidden p-2 rounded-xl text-slate-700 dark:text-foreground hover:bg-slate-100 dark:hover:bg-muted transition-colors"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          {/* Mobile menu toggle & theme */}
+          <div className="md:hidden flex items-center gap-1">
+            <button
+              onClick={cycleTheme}
+              aria-label={mounted ? `Theme: ${theme ?? 'system'}` : 'Toggle theme'}
+              className="p-2 rounded-xl text-slate-700 dark:text-foreground hover:bg-slate-100 dark:hover:bg-muted transition-colors"
+            >
+              <ThemeIcon size={18} />
+            </button>
+            <button
+              className="p-2 rounded-xl text-slate-700 dark:text-foreground hover:bg-slate-100 dark:hover:bg-muted transition-colors"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Navigation, Compass, ShieldCheck, Layers, Bell, Smartphone, Radio } from 'lucide-react';
+import { Navigation, Compass, ShieldCheck, Layers, Bell, Smartphone, Radio, MapPin, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const mapFeatures = [
   {
@@ -34,7 +35,7 @@ export function LocationMapSection() {
   const [activeTab, setActiveTab] = useState<'live' | 'geofence' | 'history'>('live');
 
   return (
-    <section className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden bg-white dark:bg-background border-y border-slate-100 dark:border-border/60">
+    <section id="map-preview" className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden bg-white dark:bg-background border-y border-slate-100 dark:border-border/60 scroll-mt-20">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           
@@ -130,55 +131,96 @@ export function LocationMapSection() {
               <div className="relative aspect-[4/3] bg-[#EEF2F7] dark:bg-slate-900 overflow-hidden flex items-center justify-center">
                 {/* Simulated Road Lines */}
                 <svg className="absolute inset-0 w-full h-full fill-none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="5%" y="10%" width="35%" height="30%" rx="14" fill="#F8FAFC" />
-                  <rect x="50%" y="15%" width="45%" height="35%" rx="14" fill="#F8FAFC" />
-                  <rect x="10%" y="50%" width="40%" height="35%" rx="14" fill="#F8FAFC" />
+                  <rect x="5%" y="10%" width="35%" height="30%" rx="14" fill="#F8FAFC" className="dark:fill-slate-800/40" />
+                  <rect x="50%" y="15%" width="45%" height="35%" rx="14" fill="#F8FAFC" className="dark:fill-slate-800/40" />
+                  <rect x="10%" y="50%" width="40%" height="35%" rx="14" fill="#F8FAFC" className="dark:fill-slate-800/40" />
 
-                  <path d="M-20 120 H 600" stroke="#FFFFFF" strokeWidth="12" />
-                  <path d="M-20 260 H 600" stroke="#FFFFFF" strokeWidth="10" />
-                  <path d="M 220 -20 V 500" stroke="#FFFFFF" strokeWidth="12" />
+                  <path d="M-20 120 H 600" stroke="#FFFFFF" strokeWidth="12" className="dark:stroke-slate-800" />
+                  <path d="M-20 260 H 600" stroke="#FFFFFF" strokeWidth="10" className="dark:stroke-slate-800" />
+                  <path d="M 220 -20 V 500" stroke="#FFFFFF" strokeWidth="12" className="dark:stroke-slate-800" />
 
                   <path d="M 120 260 Q 220 260, 320 180 T 480 120" stroke="#7C3AED" strokeWidth="4" strokeLinecap="round" className="drop-shadow-[0_0_8px_rgba(124,58,237,0.7)]" />
                 </svg>
 
-                {/* Center Pulse Geofence Circle */}
-                <div className="absolute w-44 h-44 rounded-full border-2 border-[#7C3AED]/40 bg-[#7C3AED]/10 animate-pulse flex items-center justify-center">
-                  <span className="text-[10px] font-mono font-bold text-[#7C3AED] bg-white px-2.5 py-0.5 rounded-full border border-purple-200 shadow-sm">
-                    Home Safe Zone (500m)
-                  </span>
-                </div>
+                {/* Center Pulse Geofence Circle or History Overlay based on tab */}
+                {activeTab === 'geofence' && (
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="absolute w-52 h-52 rounded-full border-2 border-dashed border-[#10B981] bg-[#10B981]/15 animate-pulse flex items-center justify-center z-10"
+                  >
+                    <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-card px-2.5 py-0.5 rounded-full border border-emerald-300 shadow-sm">
+                      School Zone (Active Perimeter)
+                    </span>
+                  </motion.div>
+                )}
+
+                {activeTab === 'live' && (
+                  <div className="absolute w-44 h-44 rounded-full border-2 border-[#7C3AED]/40 bg-[#7C3AED]/10 animate-pulse flex items-center justify-center">
+                    <span className="text-[10px] font-mono font-bold text-[#7C3AED] bg-white dark:bg-card px-2.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-800 shadow-sm">
+                      Home Safe Zone (500m)
+                    </span>
+                  </div>
+                )}
+
+                {activeTab === 'history' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 bg-purple-950/20 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none"
+                  >
+                    <div className="bg-white/95 dark:bg-card px-4 py-2 rounded-2xl shadow-xl border border-purple-200 dark:border-border flex items-center gap-2 text-xs font-bold text-purple-700 dark:text-purple-300">
+                      <History size={16} />
+                      Route Replay: 8.4 km travelled today
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Active Member Pins */}
                 <div className="absolute top-1/3 left-1/4 flex flex-col items-center z-10">
                   <div className="relative">
                     <span className="animate-ping absolute inset-0 rounded-full bg-[#10B981] opacity-75" />
-                    <div className="relative h-10 w-10 rounded-full bg-[#10B981] text-white font-bold flex items-center justify-center border-2 border-white shadow-lg text-sm overflow-hidden">
-                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Sarah" className="w-full h-full object-cover" />
+                    <div className="relative h-10 w-10 rounded-full bg-[#10B981] text-white font-bold flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-lg text-sm overflow-hidden">
+                      <Image
+                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+                        alt="Sarah"
+                        width={40}
+                        height={40}
+                        unoptimized
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   </div>
-                  <div className="mt-1 bg-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-md border border-slate-100 flex items-center gap-1.5 text-slate-800">
+                  <div className="mt-1 bg-white dark:bg-card px-2.5 py-1 rounded-full text-[11px] font-bold shadow-md border border-slate-100 dark:border-border flex items-center gap-1.5 text-slate-800 dark:text-foreground">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
                     Sarah • 42 km/h
                   </div>
                 </div>
 
                 <div className="absolute bottom-1/4 right-1/4 flex flex-col items-center z-10">
-                  <div className="h-10 w-10 rounded-full bg-[#7C3AED] text-white font-bold flex items-center justify-center border-2 border-white shadow-lg text-sm overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" alt="Alex" className="w-full h-full object-cover" />
+                  <div className="h-10 w-10 rounded-full bg-[#7C3AED] text-white font-bold flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-lg text-sm overflow-hidden">
+                    <Image
+                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
+                      alt="Alex"
+                      width={40}
+                      height={40}
+                      unoptimized
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <div className="mt-1 bg-white px-2.5 py-1 rounded-full text-[11px] font-bold shadow-md border border-slate-100 flex items-center gap-1.5 text-slate-800">
+                  <div className="mt-1 bg-white dark:bg-card px-2.5 py-1 rounded-full text-[11px] font-bold shadow-md border border-slate-100 dark:border-border flex items-center gap-1.5 text-slate-800 dark:text-foreground">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#7C3AED]" />
                     Alex • Arrived Home
                   </div>
                 </div>
 
                 {/* Status Bar */}
-                <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md border border-slate-100 rounded-xl p-3 flex items-center justify-between text-xs shadow-lg z-20">
-                  <div className="flex items-center gap-2 text-slate-800 font-medium">
+                <div className="absolute bottom-4 left-4 right-4 bg-white/95 dark:bg-card/95 backdrop-blur-md border border-slate-100 dark:border-border rounded-xl p-3 flex items-center justify-between text-xs shadow-lg z-20">
+                  <div className="flex items-center gap-2 text-slate-800 dark:text-foreground font-medium">
                     <Smartphone size={14} className="text-[#7C3AED]" />
                     GPS Signal: <span className="font-bold text-[#10B981]">Excellent (±3m)</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono">Updated 2s ago</span>
+                  <span className="text-[10px] text-slate-400 dark:text-muted-foreground font-mono">Updated 2s ago</span>
                 </div>
               </div>
             </div>
