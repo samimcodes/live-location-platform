@@ -54,23 +54,31 @@ export function ThemeProvider({
   disableTransitionOnChange = false,
 }: Props) {
 
-  const getSystem = useCallback((): 'light' | 'dark' =>
-    typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark' : 'light',
-  []);
-
-  const [theme,       setThemeState] = useState<Theme>(defaultTheme);
+  const [theme, setThemeState] = useState<Theme>(defaultTheme);
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>('light');
 
-  // Hydrate from localStorage on mount (client-only)
+  // Hydrate stored theme and system preference on mount
   useEffect(() => {
-    const stored = localStorage.getItem(storageKey) as Theme | null;
-    if (stored) setThemeState(stored);
-    setSystemTheme(getSystem());
-  }, [storageKey, getSystem]);
+    const id = requestAnimationFrame(() => {
+      try {
+        const stored = localStorage.getItem(storageKey) as Theme | null;
+        if (stored) setThemeState(stored);
+      } catch {
+        // ignore
+      }
+
+      if (typeof window !== 'undefined') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setSystemTheme(isDark ? 'dark' : 'light');
+      }
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [storageKey]);
 
   // Watch OS preference
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = (e: MediaQueryListEvent) =>
       setSystemTheme(e.matches ? 'dark' : 'light');

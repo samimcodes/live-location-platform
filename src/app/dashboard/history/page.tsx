@@ -214,20 +214,19 @@ export default function HistoryPage() {
     placeholderData: (prev) => prev,
   });
 
-  // Accumulate pages into allRecords
-  React.useEffect(() => {
-    if (!historyData) return;
+  // Accumulate pages into allRecords during render when historyData changes
+  const [prevHistoryData, setPrevHistoryData] = useState<HistoryResponse | undefined>(undefined);
+  if (historyData && historyData !== prevHistoryData) {
+    setPrevHistoryData(historyData);
     const records = Array.isArray(historyData.records) ? historyData.records : [];
     if (skip === 0) {
       setAllRecords(records);
     } else {
-      setAllRecords((prev) => {
-        const existingIds = new Set(prev.map((r) => r.id));
-        const newOnes     = records.filter((r) => !existingIds.has(r.id));
-        return [...prev, ...newOnes];
-      });
+      const existingIds = new Set(allRecords.map((r) => r.id));
+      const newOnes     = records.filter((r) => !existingIds.has(r.id));
+      setAllRecords([...allRecords, ...newOnes]);
     }
-  }, [historyData, skip]);
+  }
 
   // ── Stats query ────────────────────────────────────────────────
   const { data: stats } = useQuery({

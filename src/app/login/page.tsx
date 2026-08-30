@@ -204,8 +204,8 @@ export default function LoginPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.35 }}
-            className="rounded-xl p-4 grid grid-cols-4 divide-x text-center"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', divideColor: 'rgba(255,255,255,0.1)' }}
+            className="rounded-xl p-4 grid grid-cols-4 divide-x divide-white/10 text-center"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
           >
             {[
               { val: '10K+', label: 'Active Users' },

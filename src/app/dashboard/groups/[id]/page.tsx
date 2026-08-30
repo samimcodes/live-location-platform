@@ -182,22 +182,18 @@ export default function GroupDetailPage() {
     setConfirmState({ ...opts, open: true }), []);
 
   // ── Socket room join/leave ────────────────────────────────────────────
-  // `emit` is wrapped in useCallback inside SocketProvider so it's stable.
-  // We use a ref copy here as an additional safety net — if emit's reference
-  // somehow changes the effect won't fire again needlessly.
-  const emitRef = useRef(emit);
-  emitRef.current = emit;
-
   useEffect(() => {
     if (!groupId) return;
-    emitRef.current('join', `group:${groupId}`);
-    return () => { emitRef.current('leave', `group:${groupId}`); };
-  }, [groupId]); // intentionally excludes emit — stable ref handles it
+    emit('join', `group:${groupId}`);
+    return () => { emit('leave', `group:${groupId}`); };
+  }, [groupId, emit]);
 
   // ── Sync name input when group data arrives ───────────────────────────
-  useEffect(() => {
-    if (group) setNameInput(group.name);
-  }, [group]);
+  const [prevGroupName, setPrevGroupName] = useState(group?.name);
+  if (group?.name !== prevGroupName) {
+    setPrevGroupName(group?.name);
+    if (group?.name) setNameInput(group.name);
+  }
 
   // ── Derived values (memoized) ─────────────────────────────────────────
   const isAdmin = useMemo(

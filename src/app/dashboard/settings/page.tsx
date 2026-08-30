@@ -100,14 +100,16 @@ export default function SettingsPage() {
     phone: user?.phone ?? '',
     bio:   user?.bio   ?? '',
   });
+  const [prevUser, setPrevUser] = useState(user);
 
-  useEffect(() => {
+  if (user !== prevUser) {
+    setPrevUser(user);
     setProfile({
       name:  user?.name  ?? '',
       phone: user?.phone ?? '',
       bio:   user?.bio   ?? '',
     });
-  }, [user?.name, user?.phone, user?.bio]);
+  }
 
   // Check if profile was changed
   const isProfileChanged = 

@@ -28,11 +28,13 @@ export function useLocationSharing(): LocationSharingResult {
   const isSharingRef = useRef(isSharing);
   const userIdRef    = useRef<number>(user?.id ?? 0);
 
-  // Sync refs on every render (no re-render side-effects)
-  watchIdRef.current   = watchId;
-  isAuthRef.current    = isAuthenticated;
-  isSharingRef.current = isSharing;
-  userIdRef.current    = user?.id ?? 0;
+  // Sync refs safely in effect
+  useEffect(() => {
+    watchIdRef.current   = watchId;
+    isAuthRef.current    = isAuthenticated;
+    isSharingRef.current = isSharing;
+    userIdRef.current    = user?.id ?? 0;
+  }, [watchId, isAuthenticated, isSharing, user?.id]);
 
   useEffect(() => {
     if (!isAuthenticated || !isSharing) {

@@ -62,6 +62,13 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false }: Navbar
     router.push("/login");
   };
 
+  // Clean hydration-safe client check via useSyncExternalStore
+  const mounted = React.useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false
+  );
+
   // Cycle: light → dark → system
   const cycleTheme = () => {
     if (theme === "light")  setTheme("dark");
@@ -69,9 +76,11 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false }: Navbar
     else setTheme("light");
   };
 
+  const currentTheme = mounted ? (theme ?? "system") : "system";
   const ThemeIcon =
-    theme === "dark"   ? Moon :
-    theme === "light"  ? Sun  :
+    !mounted                 ? Monitor :
+    currentTheme === "dark"  ? Moon :
+    currentTheme === "light" ? Sun  :
     Monitor;
 
   const initials = (user?.name ?? "U").charAt(0).toUpperCase();
@@ -105,7 +114,7 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false }: Navbar
           variant="ghost"
           size="icon"
           onClick={cycleTheme}
-          aria-label={`Theme: ${theme ?? "system"}. Click to cycle.`}
+          aria-label={mounted ? `Theme: ${theme ?? "system"}. Click to cycle.` : "Toggle theme"}
           className="text-muted-foreground hover:text-foreground"
         >
           <ThemeIcon size={18} />

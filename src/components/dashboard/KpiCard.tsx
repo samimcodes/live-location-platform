@@ -32,7 +32,7 @@ function useCountUp(target: number, duration = 700) {
   const raf = useRef<number | null>(null);
 
   useEffect(() => {
-    if (typeof target !== "number" || target === 0) { setCount(target); return; }
+    if (typeof target !== "number" || target === 0) return;
     const start = performance.now();
     const tick  = (now: number) => {
       const t  = Math.min((now - start) / duration, 1);
@@ -44,6 +44,10 @@ function useCountUp(target: number, duration = 700) {
     return () => { if (raf.current) cancelAnimationFrame(raf.current); };
   }, [target, duration]);
 
+  if (typeof target !== "number" || target === 0) {
+    return target;
+  }
+
   return count;
 }
 
@@ -52,10 +56,13 @@ function useCountUp(target: number, duration = 700) {
 function useCssVar(varName: string, fallback = "oklch(0.55 0.2 280)"): string {
   const [value, setValue] = useState(fallback);
   useEffect(() => {
-    const resolved = getComputedStyle(document.documentElement)
-      .getPropertyValue(varName)
-      .trim();
-    if (resolved) setValue(resolved);
+    const id = requestAnimationFrame(() => {
+      const resolved = getComputedStyle(document.documentElement)
+        .getPropertyValue(varName)
+        .trim();
+      if (resolved) setValue(resolved);
+    });
+    return () => cancelAnimationFrame(id);
   }, [varName]);
   return value;
 }

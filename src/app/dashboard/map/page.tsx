@@ -64,16 +64,18 @@ function MapPageInner() {
     [friends, friendsLocations]
   );
 
-  allPointsRef.current = allPoints;
+  useEffect(() => {
+    allPointsRef.current = allPoints;
+  }, [allPoints]);
 
   // Auto-focus from ?focus=ID (navigated from Friends page)
-  useEffect(() => {
-    const id = searchParams.get('focus');
-    if (id) {
-      setFocusedUserId(Number(id));
-      setMobileDrawerOpen(false);
-    }
-  }, [searchParams]);
+  const focusParam = searchParams.get('focus');
+  const [prevFocusParam, setPrevFocusParam] = useState<string | null>(null);
+  if (focusParam && focusParam !== prevFocusParam) {
+    setPrevFocusParam(focusParam);
+    setFocusedUserId(Number(focusParam));
+    setMobileDrawerOpen(false);
+  }
 
   const handleFitAll = useCallback(() => {
     fitToPoints(allPointsRef.current, 80);

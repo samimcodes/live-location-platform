@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useCallback, useState } from 'react';
 import { Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
@@ -22,6 +22,7 @@ export const useSocketContext = () => useContext(SocketContext);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { token, isAuthenticated } = useAppSelector((s) => s.auth);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
   const updateFriendLocation = useLocationStore((s) => s.updateFriendLocation);
@@ -40,6 +41,15 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     const s = connectSocket(token || '');
     socketRef.current = s;
+
+    const handleConnect = () => setSocket(s);
+    const handleDisconnect = () => setSocket(null);
+
+    if (s.connected) {
+      handleConnect();
+    }
+    s.on('connect', handleConnect);
+    s.on('disconnect', handleDisconnect);
 
     // ── location:receive — real-time friend position update ──────────
     s.on('location:receive', (data: {
@@ -132,6 +142,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      s.off('connect', handleConnect);
+      s.off('disconnect', handleDisconnect);
       s.off('location:receive');
       s.off('group:location:receive');
       s.off('friend:online');
@@ -149,7 +161,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SocketContext.Provider value={{ socket: socketRef.current, emit }}>
+    <SocketContext.Provider value={{ socket, emit }}>
       {children}
     </SocketContext.Provider>
   );
