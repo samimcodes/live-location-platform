@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
   ArrowRight,
@@ -19,61 +19,185 @@ import {
   Bell,
   History,
   Settings,
+  Navigation,
+  Battery,
+  Wifi,
+  CheckCircle2,
+  Play,
+  Pause,
+  ChevronDown,
+  Sparkles,
+  Search,
+  Star,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+interface Member {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  status: string;
+  speed: number;
+  battery: number;
+  address: string;
+  color: string;
+  pinX: string;
+  pinY: string;
+}
+
+const mockMembers: Member[] = [
+  {
+    id: 'rasel',
+    name: 'Rasel',
+    role: 'Driving',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    status: 'In Transit • 45 km/h',
+    speed: 45,
+    battery: 78,
+    address: 'Road 11, Banani, Dhaka',
+    color: '#7C3AED',
+    pinX: '74%',
+    pinY: '24%',
+  },
+  {
+    id: 'mim',
+    name: 'Mim',
+    role: 'At Home',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    status: 'Safe at Home',
+    speed: 0,
+    battery: 94,
+    address: 'Dhanmondi 27, Dhaka',
+    color: '#3B82F6',
+    pinX: '30%',
+    pinY: '52%',
+  },
+  {
+    id: 'ayaan',
+    name: 'Ayaan',
+    role: 'At School',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    status: 'Scholastica Campus',
+    speed: 0,
+    battery: 86,
+    address: 'Sector 3, Uttara, Dhaka',
+    color: '#F59E0B',
+    pinX: '66%',
+    pinY: '68%',
+  },
+];
+
+const mockAlerts = [
+  {
+    id: 1,
+    title: 'Ayaan arrived at Scholastica',
+    desc: 'School Safe Zone (Uttara) triggered',
+    time: '2m ago',
+    icon: CheckCircle2,
+    color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40',
+  },
+  {
+    id: 2,
+    title: 'Rasel heading to Banani',
+    desc: 'Speed: 45 km/h • ETA: 12 mins',
+    time: '6m ago',
+    icon: Navigation,
+    color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/40',
+  },
+  {
+    id: 3,
+    title: 'Mim battery level at 94%',
+    desc: 'Device active on Wi-Fi',
+    time: '20m ago',
+    icon: Battery,
+    color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/40',
+  },
+];
+
 export function HeroSection() {
   const [activeTab, setActiveTab] = useState<'live' | 'circles' | 'alerts' | 'history' | 'settings'>('live');
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [selectedMember, setSelectedMember] = useState<Member>(mockMembers[0]);
+  const [liveSpeed, setLiveSpeed] = useState(45);
+  const [ghostMode, setGhostMode] = useState(false);
+  const [historyProgress, setHistoryProgress] = useState(70);
+  const [isPlayingHistory, setIsPlayingHistory] = useState(false);
+
+  // Speed fluctuation simulation for live telemetry
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLiveSpeed((prev) => {
+        const delta = Math.floor(Math.random() * 5) - 2;
+        return Math.max(38, Math.min(52, prev + delta));
+      });
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // History playback
+  useEffect(() => {
+    if (!isPlayingHistory) return;
+    const interval = setInterval(() => {
+      setHistoryProgress((prev) => {
+        if (prev >= 100) {
+          setIsPlayingHistory(false);
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 350);
+    return () => clearInterval(interval);
+  }, [isPlayingHistory]);
 
   return (
-    <section className="relative min-h-[100dvh] flex flex-col justify-center overflow-hidden pt-28 pb-16 bg-[#F8F9FD] dark:bg-background text-slate-900 dark:text-foreground">
+    <section className="relative min-h-[92dvh] flex flex-col justify-center overflow-hidden pt-28 pb-16 bg-gradient-to-b from-[#F7F9FD] via-[#F4F6FC] to-[#EEF2FB] dark:from-background dark:via-background dark:to-card/40 text-slate-900 dark:text-foreground">
       
-      {/* ── Background Subtle Ambient Waves ── */}
+      {/* Background ambient lighting */}
       <div className="absolute inset-0 -z-10 pointer-events-none select-none overflow-hidden">
-        <div className="absolute top-[8%] left-[5%] w-[45vw] h-[45vw] max-w-[650px] max-h-[650px] bg-purple-200/30 dark:bg-purple-900/10 rounded-full blur-[140px]" />
-        <div className="absolute top-[20%] right-[5%] w-[45vw] h-[45vw] max-w-[650px] max-h-[650px] bg-indigo-200/25 dark:bg-indigo-900/10 rounded-full blur-[160px]" />
+        <div className="absolute top-[5%] left-[8%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] bg-purple-300/25 dark:bg-purple-900/15 rounded-full blur-[140px]" />
+        <div className="absolute top-[18%] right-[8%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] bg-indigo-300/20 dark:bg-indigo-900/15 rounded-full blur-[160px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
           
-          {/* ── LEFT COLUMN ── */}
+          {/* ── LEFT COLUMN: REFINED TYPOGRAPHY & CALLS TO ACTION ── */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
             className="lg:col-span-5 space-y-6 text-left"
           >
-            {/* Status Pill Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EDE9FE] border border-purple-200/50 text-[#7C3AED] text-xs font-bold shadow-sm"
-            >
-              <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
-              LocaLink 2.0 • Ultra-Low Latency GPS Tracking
-            </motion.div>
+            {/* Live Telemetry Pill */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-card/90 border border-purple-200/70 dark:border-purple-800/60 text-[#7C3AED] dark:text-purple-400 text-xs font-bold shadow-xs backdrop-blur-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span>LocaLink 2.0 • Ultra-Low Latency GPS</span>
+            </div>
 
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-[#0F172A] dark:text-foreground leading-[1.12]">
-              Always stay close<br />
-              to <span className="text-[#7C3AED] dark:text-purple-400">the people</span><br />
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-black tracking-tight text-slate-900 dark:text-foreground leading-[1.12]">
+              Always stay close to{' '}
+              <span className="bg-gradient-to-r from-[#7C3AED] via-[#6366F1] to-[#4F46E5] bg-clip-text text-transparent">
+                the people
+              </span>{' '}
               you love.
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base text-[#64748B] dark:text-muted-foreground leading-relaxed font-normal max-w-md">
-              LocaLink brings your family and friends together on an interactive, real-time map with automatic safety geofences and instant alerts.
+            <p className="text-base sm:text-lg text-slate-600 dark:text-muted-foreground leading-relaxed font-normal max-w-lg">
+              LocaLink connects family and friends on an intelligent real-time live map with automated geofence alerts, trip history, and total privacy control.
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-1">
+            <div className="flex flex-wrap items-center gap-3.5 pt-1">
               <Button
                 size="lg"
-                className="h-13 px-7 font-bold text-sm rounded-2xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-purple-500/30 hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0 group gap-2"
+                className="h-12 px-7 font-bold text-sm rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0 group gap-2"
                 asChild
               >
                 <Link href="/register">
@@ -85,314 +209,513 @@ export function HeroSection() {
               <Button
                 variant="outline"
                 size="lg"
-                className="h-13 px-6 font-bold text-sm rounded-2xl bg-white border border-slate-200 text-[#1E293B] dark:bg-card dark:border-border dark:text-foreground shadow-sm hover:bg-slate-50 dark:hover:bg-muted transition-all hover:-translate-y-0.5 active:translate-y-0 gap-2"
+                className="h-12 px-6 font-bold text-sm rounded-xl bg-white/80 dark:bg-card/80 backdrop-blur-md border-slate-200/90 dark:border-border text-slate-800 dark:text-foreground shadow-xs hover:bg-white dark:hover:bg-muted transition-all hover:-translate-y-0.5 active:translate-y-0 gap-2"
                 asChild
               >
                 <Link href="/login">
                   <Send size={15} className="text-[#7C3AED]" />
-                  Sign In to Dashboard
+                  Live Dashboard
                 </Link>
               </Button>
             </div>
 
-            {/* Micro Trust Badges */}
-            <div className="grid grid-cols-3 gap-3 pt-4">
-              <div className="flex items-center gap-2.5 group">
-                <div className="h-8 w-8 rounded-full bg-[#ECFDF5] text-[#10B981] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+            {/* Micro Trust Pills */}
+            <div className="grid grid-cols-3 gap-2.5 pt-2">
+              <div className="p-3 rounded-xl bg-white/75 dark:bg-card/75 border border-slate-100 dark:border-border/80 shadow-xs flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center shrink-0">
                   <ShieldCheck size={16} />
                 </div>
-                <div className="text-[11px] font-bold text-[#475569] dark:text-muted-foreground leading-tight">
+                <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
                   End-to-End<br />Encrypted
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 group">
-                <div className="h-8 w-8 rounded-full bg-[#EDE9FE] text-[#7C3AED] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <div className="p-3 rounded-xl bg-white/75 dark:bg-card/75 border border-slate-100 dark:border-border/80 shadow-xs flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-[#7C3AED] flex items-center justify-center shrink-0">
                   <Target size={16} />
                 </div>
-                <div className="text-[11px] font-bold text-[#475569] dark:text-muted-foreground leading-tight">
-                  High-Precision<br />GPS
+                <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
+                  High-Precision<br />GPS Tracking
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 group">
-                <div className="h-8 w-8 rounded-full bg-[#FDF2F8] text-[#EC4899] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <div className="p-3 rounded-xl bg-white/75 dark:bg-card/75 border border-slate-100 dark:border-border/80 shadow-xs flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 flex items-center justify-center shrink-0">
                   <Zap size={16} />
                 </div>
-                <div className="text-[11px] font-bold text-[#475569] dark:text-muted-foreground leading-tight">
+                <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
                   Instant 15s<br />Socket Sync
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* ── RIGHT COLUMN: EXACT INTERACTIVE MAP CARD ── */}
+          {/* ── RIGHT COLUMN: SLEEK MODERN GLASS DASHBOARD WINDOW ── */}
           <motion.div
-            id="map-preview"
-            initial={{ opacity: 0, scale: 0.96, y: 30 }}
+            initial={{ opacity: 0, scale: 0.96, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
             className="lg:col-span-7 relative"
           >
-            {/* Outer Subtle Glow Container */}
-            <div className="absolute -inset-3 bg-gradient-to-r from-purple-400/15 to-indigo-400/15 rounded-[3rem] blur-2xl -z-10" />
+            {/* Outer Ambient Glow Behind Window */}
+            <div className="absolute -inset-4 bg-gradient-to-tr from-purple-500/20 via-indigo-500/15 to-transparent rounded-[2.5rem] blur-2xl -z-10" />
 
-            {/* Main Interactive Card Frame */}
-            <div className="relative bg-white dark:bg-card rounded-[2.5rem] p-3 sm:p-5 border border-slate-100 dark:border-border shadow-[0_25px_70px_rgba(124,58,237,0.09)] overflow-hidden aspect-[16/11]">
+            {/* Sleek Dashboard Frame */}
+            <div className="relative bg-white/95 dark:bg-card/95 backdrop-blur-2xl rounded-3xl border border-slate-200/80 dark:border-border/90 shadow-[0_20px_60px_rgba(15,23,42,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col aspect-[16/11]">
               
-              {/* Map Surface Background with subtle scale zoom interaction */}
-              <motion.div
-                animate={{ scale: zoomLevel }}
-                transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                className="relative w-full h-full rounded-[2rem] bg-[#EEF2F7] dark:bg-slate-900 overflow-hidden flex items-center justify-center"
-              >
+              {/* Window Chrome Header (Mac/Web Window Style) */}
+              <div className="h-12 px-4 bg-slate-50/90 dark:bg-muted/40 border-b border-slate-100 dark:border-border flex items-center justify-between shrink-0 select-none">
                 
-                {/* ── High-Fidelity Vector Map Graphics matching image exactly ── */}
-                <svg className="absolute inset-0 w-full h-full fill-none" xmlns="http://www.w3.org/2000/svg">
-                  {/* City Land & Building Blocks */}
-                  <rect x="3%" y="6%" width="32%" height="26%" rx="14" fill="#F8FAFC" className="dark:fill-slate-800/40" />
-                  <rect x="38%" y="5%" width="28%" height="30%" rx="14" fill="#E2E8F0" className="dark:fill-slate-800/60" />
-                  <rect x="69%" y="10%" width="28%" height="35%" rx="14" fill="#F8FAFC" className="dark:fill-slate-800/40" />
-                  <rect x="6%" y="38%" width="36%" height="30%" rx="14" fill="#E2E8F0" className="dark:fill-slate-800/60" />
-                  <rect x="48%" y="42%" width="48%" height="36%" rx="14" fill="#F8FAFC" className="dark:fill-slate-800/40" />
-
-                  {/* Green Park Areas */}
-                  <path d="M 52% 8% Q 62% 6%, 60% 20% Q 50% 22%, 52% 8%" fill="#DCFCE7" className="dark:fill-emerald-950/30" />
-                  <path d="M 12% 52% Q 24% 50%, 22% 66% Q 10% 68%, 12% 52%" fill="#DCFCE7" className="dark:fill-emerald-950/30" />
-                  <path d="M 76% 54% Q 86% 52%, 84% 64% Q 74% 66%, 76% 54%" fill="#DCFCE7" className="dark:fill-emerald-950/30" />
-
-                  {/* Blue Winding River (matching image) */}
-                  <path
-                    d="M-50 100 Q 200 130, 380 260 T 600 480 T 1000 650"
-                    stroke="#BAE6FD"
-                    strokeWidth="20"
-                    strokeLinecap="round"
-                    className="dark:stroke-sky-950/40"
-                  />
-
-                  {/* Clean City Street Lines */}
-                  <path d="M-50 120 H 1200" stroke="#FFFFFF" strokeWidth="12" className="dark:stroke-slate-700/60" />
-                  <path d="M-50 240 H 1200" stroke="#FFFFFF" strokeWidth="10" className="dark:stroke-slate-700/60" />
-                  <path d="M-50 380 H 1200" stroke="#FFFFFF" strokeWidth="14" className="dark:stroke-slate-700/60" />
-                  <path d="M 180 -50 V 800" stroke="#FFFFFF" strokeWidth="12" className="dark:stroke-slate-700/60" />
-                  <path d="M 440 -50 V 800" stroke="#FFFFFF" strokeWidth="14" className="dark:stroke-slate-700/60" />
-                  <path d="M 700 -50 V 800" stroke="#FFFFFF" strokeWidth="10" className="dark:stroke-slate-700/60" />
-
-                  {/* Glowing Purple Navigation Path connecting Mim/Home to Rasel (matching image) */}
-                  <path
-                    d="M 440 290 C 440 210, 390 200, 390 170 C 390 140, 520 160, 560 120"
-                    stroke="url(#route-gradient)"
-                    strokeWidth="5"
-                    strokeLinecap="round"
-                    className="drop-shadow-[0_0_12px_rgba(124,58,237,0.7)]"
-                  />
-
-                  <defs>
-                    <linearGradient id="route-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#A855F7" />
-                      <stop offset="50%" stopColor="#8B5CF6" />
-                      <stop offset="100%" stopColor="#7C3AED" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-
-                {/* ── Top Left Floating Status Badge ── */}
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="absolute top-4 left-4 bg-white shadow-md rounded-2xl px-4 py-2 border border-slate-100 flex flex-col text-left z-10"
-                >
-                  <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#10B981]">
-                    <span className="h-2 w-2 rounded-full bg-[#10B981] animate-ping" />
-                    • Live
-                  </div>
-                  <span className="text-[11px] text-[#64748B] font-medium">All systems active</span>
-                </motion.div>
-
-                {/* ── GEOFENCE SAFE ZONES ── */}
-
-                {/* 1. Home Zone (Center Green Oval) */}
-                <div className="absolute top-[52%] left-[45%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-                  <div className="w-40 h-28 rounded-[50%] bg-[#10B981]/15 border border-[#10B981]/40 flex items-center justify-center">
-                    <div className="h-10 w-10 rounded-full bg-[#10B981] text-white flex items-center justify-center shadow-lg">
-                      <Home size={20} />
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-bold text-[#047857] mt-1">
-                    Home
-                  </span>
+                {/* Traffic lights */}
+                <div className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-[#E0443E]" />
+                  <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
+                  <span className="h-3 w-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
                 </div>
 
-                {/* 2. School Zone (Right Blue Oval) */}
-                <div className="absolute top-[58%] left-[74%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-                  <div className="w-44 h-32 rounded-[50%] bg-[#3B82F6]/15 border border-[#3B82F6]/40 flex items-center justify-center">
-                    <div className="h-10 w-10 rounded-full bg-[#3B82F6] text-white flex items-center justify-center shadow-lg">
-                      <GraduationCap size={20} />
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-bold text-[#1D4ED8] mt-1">
-                    School
-                  </span>
+                {/* Center Circle Selector Pill */}
+                <div className="flex items-center gap-2 bg-white dark:bg-card px-3 py-1 rounded-xl border border-slate-200/70 dark:border-border shadow-2xs text-xs font-bold text-slate-800 dark:text-foreground">
+                  <Users2 size={13} className="text-[#7C3AED]" />
+                  <span>Family Circle (3)</span>
+                  <ChevronDown size={12} className="text-slate-400" />
                 </div>
 
-                {/* ── USER PIN MARKERS WITH GENTLE FLOATING ANIMATION ── */}
-
-                {/* 1. RASEL (Top Right - Purple Teardrop Pin) */}
-                <motion.div
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="absolute top-[10%] right-[15%] flex items-center gap-3 z-20"
-                >
-                  {/* Teardrop Map Pin */}
-                  <div className="relative flex flex-col items-center">
-                    <div className="h-14 w-14 rounded-full bg-[#7C3AED] p-0.5 shadow-2xl ring-4 ring-purple-500/25 overflow-hidden flex items-center justify-center">
-                      <Image
-                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
-                        alt="Rasel"
-                        width={56}
-                        height={56}
-                        unoptimized
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    </div>
-                    {/* Downward Pointer Triangle & Ground Dot */}
-                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#7C3AED] -mt-0.5" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#7C3AED] shadow-[0_0_8px_#7C3AED] mt-0.5" />
-                  </div>
-                  
-                  {/* Floating Info Box */}
-                  <div className="bg-white p-3.5 rounded-2xl shadow-xl border border-slate-100 text-left min-w-[145px] hover:shadow-2xl transition-shadow">
-                    <div className="font-bold text-sm text-[#0F172A]">Rasel</div>
-                    <div className="text-xs font-bold text-[#10B981] mt-0.5 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                      Moving • 45 km/h
-                    </div>
-                    <div className="text-xs text-[#64748B] font-medium mt-0.5">Battery 72%</div>
-                  </div>
-                </motion.div>
-
-                {/* 2. MIM (Left Center - Blue Teardrop Pin) */}
-                <motion.div
-                  animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                  className="absolute top-[38%] left-[12%] flex items-center gap-3 z-20"
-                >
-                  {/* Teardrop Map Pin */}
-                  <div className="relative flex flex-col items-center">
-                    <div className="h-14 w-14 rounded-full bg-[#3B82F6] p-0.5 shadow-2xl ring-4 ring-blue-500/25 overflow-hidden flex items-center justify-center">
-                      <Image
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
-                        alt="Mim"
-                        width={56}
-                        height={56}
-                        unoptimized
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    </div>
-                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#3B82F6] -mt-0.5" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#3B82F6] shadow-[0_0_8px_#3B82F6] mt-0.5" />
-                  </div>
-                  
-                  {/* Floating Info Box */}
-                  <div className="bg-white p-3.5 rounded-2xl shadow-xl border border-slate-100 text-left min-w-[135px] hover:shadow-2xl transition-shadow">
-                    <div className="font-bold text-sm text-[#0F172A]">Mim</div>
-                    <div className="text-xs font-bold text-[#2563EB] mt-0.5 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
-                      At Home
-                    </div>
-                    <div className="text-xs text-[#64748B] font-medium mt-0.5">Battery 92%</div>
-                  </div>
-                </motion.div>
-
-                {/* 3. AYAAN (Right Center - Amber Teardrop Pin) */}
-                <motion.div
-                  animate={{ y: [0, -3.5, 0] }}
-                  transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                  className="absolute top-[38%] right-[4%] flex items-center gap-3 z-20"
-                >
-                  {/* Teardrop Map Pin */}
-                  <div className="relative flex flex-col items-center">
-                    <div className="h-14 w-14 rounded-full bg-[#F59E0B] p-0.5 shadow-2xl ring-4 ring-amber-500/25 overflow-hidden flex items-center justify-center">
-                      <Image
-                        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80"
-                        alt="Ayaan"
-                        width={56}
-                        height={56}
-                        unoptimized
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    </div>
-                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#F59E0B] -mt-0.5" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] shadow-[0_0_8px_#F59E0B] mt-0.5" />
-                  </div>
-                  
-                  {/* Floating Info Box */}
-                  <div className="bg-white p-3.5 rounded-2xl shadow-xl border border-slate-100 text-left min-w-[135px] hover:shadow-2xl transition-shadow">
-                    <div className="font-bold text-sm text-[#0F172A]">Ayaan</div>
-                    <div className="text-xs font-bold text-[#D97706] mt-0.5 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
-                      At School
-                    </div>
-                    <div className="text-xs text-[#64748B] font-medium mt-0.5">Battery 85%</div>
-                  </div>
-                </motion.div>
-
-                {/* ── MAP CONTROL ZOOM WIDGET (Interactive Zoom & Center) ── */}
-                <div className="absolute bottom-16 right-4 flex flex-col items-center gap-1.5 bg-white shadow-xl border border-slate-100 rounded-2xl p-2 z-10 text-slate-700">
-                  <button
-                    onClick={() => setZoomLevel((prev) => Math.min(prev + 0.1, 1.3))}
-                    className="p-1 hover:bg-slate-100 rounded-xl transition-colors active:scale-95"
-                    title="Zoom In"
-                  >
-                    <Plus size={16} />
-                  </button>
-                  <button
-                    onClick={() => setZoomLevel((prev) => Math.max(prev - 0.1, 0.8))}
-                    className="p-1 hover:bg-slate-100 rounded-xl transition-colors active:scale-95"
-                    title="Zoom Out"
-                  >
-                    <Minus size={16} />
-                  </button>
-                  <div className="h-px w-4 bg-slate-200 my-0.5" />
-                  <button
-                    onClick={() => setZoomLevel(1)}
-                    className="p-1 hover:bg-slate-100 rounded-xl transition-colors text-[#7C3AED] active:scale-95"
-                    title="Reset Center"
-                  >
-                    <Crosshair size={16} />
-                  </button>
+                {/* Telemetry Status Right */}
+                <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-500 dark:text-muted-foreground">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="hidden sm:inline">GPS Live</span>
                 </div>
+              </div>
 
-                {/* ── FLOATING APP NAVIGATION BAR (Interactive Tabs) ── */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white shadow-[0_10px_35px_rgba(0,0,0,0.08)] border border-slate-100 px-7 py-2.5 rounded-2xl flex items-center gap-8 z-30">
-                  {[
-                    { id: 'live', label: 'Live', icon: Radio },
-                    { id: 'circles', label: 'Circles', icon: Users2 },
-                    { id: 'alerts', label: 'Alerts', icon: Bell },
-                    { id: 'history', label: 'History', icon: History },
-                    { id: 'settings', label: 'Settings', icon: Settings },
-                  ].map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = activeTab === tab.id;
-                    return (
+              {/* Dashboard Content Area */}
+              <div className="relative flex-1 bg-[#EEF2F8] dark:bg-slate-950 overflow-hidden">
+                
+                {/* TAB 1: LIVE MAP */}
+                {activeTab === 'live' && (
+                  <motion.div
+                    key="live-map-view"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="relative w-full h-full flex items-center justify-center"
+                  >
+                    {/* Zoomable Canvas */}
+                    <motion.div
+                      animate={{ scale: zoomLevel }}
+                      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                      className="absolute inset-0 w-full h-full flex items-center justify-center"
+                    >
+                      {/* Stylized Modern High-Contrast Vector Map */}
+                      <svg className="absolute inset-0 w-full h-full fill-none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4%" y="6%" width="30%" height="28%" rx="12" fill="#FFFFFF" className="dark:fill-slate-900/80" />
+                        <rect x="38%" y="5%" width="28%" height="32%" rx="12" fill="#E8EEF5" className="dark:fill-slate-900/50" />
+                        <rect x="70%" y="8%" width="26%" height="36%" rx="12" fill="#FFFFFF" className="dark:fill-slate-900/80" />
+                        <rect x="6%" y="42%" width="36%" height="32%" rx="12" fill="#E8EEF5" className="dark:fill-slate-900/50" />
+                        <rect x="48%" y="44%" width="46%" height="34%" rx="12" fill="#FFFFFF" className="dark:fill-slate-900/80" />
+
+                        {/* Parks */}
+                        <path d="M 52% 8% Q 62% 6%, 60% 20% Q 50% 22%, 52% 8%" fill="#DCFCE7" className="dark:fill-emerald-950/25" />
+                        <path d="M 12% 52% Q 24% 50%, 22% 66% Q 10% 68%, 12% 52%" fill="#DCFCE7" className="dark:fill-emerald-950/25" />
+
+                        {/* River */}
+                        <path
+                          d="M-50 110 Q 200 140, 380 270 T 600 480 T 1000 650"
+                          stroke="#BAE6FD"
+                          strokeWidth="22"
+                          strokeLinecap="round"
+                          className="dark:stroke-sky-950/30"
+                        />
+
+                        {/* Streets Grid */}
+                        <path d="M-50 120 H 1200" stroke="#FFFFFF" strokeWidth="14" className="dark:stroke-slate-800" />
+                        <path d="M-50 250 H 1200" stroke="#FFFFFF" strokeWidth="12" className="dark:stroke-slate-800" />
+                        <path d="M-50 380 H 1200" stroke="#FFFFFF" strokeWidth="14" className="dark:stroke-slate-800" />
+                        <path d="M 180 -50 V 800" stroke="#FFFFFF" strokeWidth="12" className="dark:stroke-slate-800" />
+                        <path d="M 440 -50 V 800" stroke="#FFFFFF" strokeWidth="14" className="dark:stroke-slate-800" />
+                        <path d="M 700 -50 V 800" stroke="#FFFFFF" strokeWidth="12" className="dark:stroke-slate-800" />
+
+                        {/* Glowing Route connecting Mim to Rasel */}
+                        <path
+                          d="M 440 280 C 440 200, 390 190, 390 160 C 390 130, 520 150, 560 110"
+                          stroke="url(#sleek-route-gradient)"
+                          strokeWidth="5"
+                          strokeLinecap="round"
+                          className="drop-shadow-[0_0_10px_rgba(124,58,237,0.8)]"
+                        />
+
+                        <defs>
+                          <linearGradient id="sleek-route-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#A855F7" />
+                            <stop offset="50%" stopColor="#8B5CF6" />
+                            <stop offset="100%" stopColor="#7C3AED" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+
+                      {/* Geofence 1: Home */}
+                      <div className="absolute top-[52%] left-[45%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 pointer-events-none">
+                        <div className="w-32 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center">
+                          <div className="h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                            <Home size={14} />
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 mt-0.5 bg-white/90 dark:bg-card px-2 py-0.5 rounded-full shadow-2xs border border-emerald-200 dark:border-emerald-900">
+                          Home Safe Zone
+                        </span>
+                      </div>
+
+                      {/* Geofence 2: School */}
+                      <div className="absolute top-[68%] left-[72%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 pointer-events-none">
+                        <div className="w-32 h-24 rounded-full bg-blue-500/10 border border-blue-500/40 flex items-center justify-center">
+                          <div className="h-7 w-7 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-xs">
+                            <GraduationCap size={14} />
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 mt-0.5 bg-white/90 dark:bg-card px-2 py-0.5 rounded-full shadow-2xs border border-blue-200 dark:border-blue-900">
+                          Scholastica School
+                        </span>
+                      </div>
+
+                      {/* Interactive Member Pins on Map */}
+                      {mockMembers.map((member) => {
+                        const isSelected = selectedMember.id === member.id;
+                        return (
+                          <motion.div
+                            key={member.id}
+                            animate={{ y: isSelected ? [0, -5, 0] : [0, -3, 0] }}
+                            transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                            style={{ top: member.pinY, left: member.pinX }}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 cursor-pointer"
+                            onClick={() => setSelectedMember(member)}
+                          >
+                            <div className="relative">
+                              {isSelected && (
+                                <span className="animate-ping absolute -inset-1 rounded-full bg-[#7C3AED] opacity-75" />
+                              )}
+                              <div
+                                className={`relative h-11 w-11 rounded-full p-0.5 shadow-xl transition-all ${
+                                  isSelected
+                                    ? 'ring-4 ring-purple-500 scale-110'
+                                    : 'ring-2 ring-white/90 dark:ring-card hover:scale-105'
+                                }`}
+                                style={{ backgroundColor: member.color }}
+                              >
+                                <Image
+                                  src={member.avatar}
+                                  alt={member.name}
+                                  width={44}
+                                  height={44}
+                                  unoptimized
+                                  className="w-full h-full object-cover rounded-full"
+                                />
+                              </div>
+                              <div
+                                className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] mx-auto -mt-0.5"
+                                style={{ borderTopColor: member.color }}
+                              />
+                            </div>
+
+                            {/* Crisp Compact Pin Badge */}
+                            <div className="mt-1 bg-white/95 dark:bg-card px-2 py-0.5 rounded-lg shadow-md border border-slate-100 dark:border-border text-center flex items-center gap-1.5">
+                              <span className="font-bold text-[11px] text-slate-800 dark:text-foreground">
+                                {member.name}
+                              </span>
+                              {member.speed > 0 ? (
+                                <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                                  {liveSpeed} km/h
+                                </span>
+                              ) : (
+                                <span className="text-[9px] text-slate-500 font-medium">
+                                  {member.role}
+                                </span>
+                              )}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+
+                    {/* Top Left Floating Telemetry HUD (Unobtrusive) */}
+                    <div className="absolute top-3 left-3 z-20 pointer-events-none">
+                      <div className="bg-white/90 dark:bg-card/90 backdrop-blur-md rounded-2xl p-2.5 shadow-md border border-slate-100 dark:border-border flex flex-col gap-1 text-left min-w-[130px]">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-800 dark:text-foreground">
+                          <span className="flex items-center gap-1">
+                            <Radio size={12} className="text-[#7C3AED]" /> Live Tracking
+                          </span>
+                          <span className="text-emerald-600 font-mono text-[10px]">{liveSpeed} km/h</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 flex items-center justify-between font-mono">
+                          <span>Battery: {selectedMember.battery}%</span>
+                          <span>±3m GPS</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Top Right Zoom Controls */}
+                    <div className="absolute top-3 right-3 flex flex-col items-center gap-1 bg-white/90 dark:bg-card/90 backdrop-blur-md shadow-md border border-slate-100 dark:border-border rounded-xl p-1 z-20 text-slate-700 dark:text-slate-300">
                       <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={`flex flex-col items-center transition-all ${
-                          isActive
-                            ? 'text-[#7C3AED] font-bold scale-105'
-                            : 'text-[#64748B] hover:text-slate-900 font-semibold'
+                        onClick={() => setZoomLevel((p) => Math.min(p + 0.15, 1.35))}
+                        className="p-1 hover:bg-slate-100 dark:hover:bg-muted rounded-lg transition-colors"
+                        title="Zoom In"
+                      >
+                        <Plus size={14} />
+                      </button>
+                      <button
+                        onClick={() => setZoomLevel((p) => Math.max(p - 0.15, 0.85))}
+                        className="p-1 hover:bg-slate-100 dark:hover:bg-muted rounded-lg transition-colors"
+                        title="Zoom Out"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <button
+                        onClick={() => setZoomLevel(1)}
+                        className="p-1 hover:bg-slate-100 dark:hover:bg-muted rounded-lg transition-colors text-[#7C3AED]"
+                        title="Recenter"
+                      >
+                        <Crosshair size={14} />
+                      </button>
+                    </div>
+
+                    {/* Bottom Floating Member Focus Chip (Sleek, Not blocking) */}
+                    <div className="absolute bottom-3 left-3 right-3 z-20">
+                      <div className="bg-white/90 dark:bg-card/90 backdrop-blur-xl border border-slate-100 dark:border-border rounded-xl px-3 py-2 shadow-lg flex items-center justify-between gap-3 text-left">
+                        <div className="flex items-center gap-2.5 overflow-hidden">
+                          <div className="relative shrink-0">
+                            <div className="h-8 w-8 rounded-full overflow-hidden ring-2 ring-purple-500">
+                              <Image
+                                src={selectedMember.avatar}
+                                alt={selectedMember.name}
+                                width={32}
+                                height={32}
+                                unoptimized
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-white" />
+                          </div>
+                          <div className="overflow-hidden">
+                            <div className="font-bold text-xs text-slate-900 dark:text-foreground truncate flex items-center gap-1.5">
+                              {selectedMember.name}
+                              <span className="text-[10px] font-normal text-slate-500 truncate">
+                                • {selectedMember.address}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                              {selectedMember.status}
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button size="sm" className="h-7 px-2.5 text-[11px] font-bold rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white shrink-0 gap-1" asChild>
+                          <Link href="/dashboard/map">
+                            <Navigation size={11} />
+                            Track
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* TAB 2: CIRCLES */}
+                {activeTab === 'circles' && (
+                  <motion.div
+                    key="circles-view"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="p-4 sm:p-5 h-full overflow-y-auto space-y-3 text-left"
+                  >
+                    <div className="flex items-center justify-between pb-1">
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-foreground">Active Circle Members</h3>
+                        <p className="text-[11px] text-slate-500">Family & Loved Ones (3 members)</p>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-[#7C3AED] dark:bg-purple-950/40">
+                        Code: #LNK892
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {mockMembers.map((m) => (
+                        <div
+                          key={m.id}
+                          className="bg-white dark:bg-card p-3 rounded-2xl border border-slate-100 dark:border-border shadow-2xs flex flex-col justify-between"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-9 w-9 rounded-full overflow-hidden ring-2 ring-purple-400 shrink-0">
+                              <Image src={m.avatar} alt={m.name} width={36} height={36} unoptimized className="w-full h-full object-cover" />
+                            </div>
+                            <div className="overflow-hidden">
+                              <div className="font-bold text-xs text-slate-900 dark:text-foreground truncate">{m.name}</div>
+                              <div className="text-[10px] text-slate-500 truncate">{m.address}</div>
+                            </div>
+                          </div>
+                          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-border/60 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400 font-mono">
+                            <span>🔋 {m.battery}%</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">Online</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* TAB 3: ALERTS */}
+                {activeTab === 'alerts' && (
+                  <motion.div
+                    key="alerts-view"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="p-4 sm:p-5 h-full overflow-y-auto space-y-2.5 text-left"
+                  >
+                    <div className="flex items-center justify-between pb-1">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-foreground">Recent Geofence Activity</h3>
+                      <span className="text-[10px] text-slate-400 font-mono">Real-time alerts</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {mockAlerts.map((alert) => {
+                        const Icon = alert.icon;
+                        return (
+                          <div
+                            key={alert.id}
+                            className="bg-white dark:bg-card p-2.5 rounded-xl border border-slate-100 dark:border-border shadow-2xs flex items-center justify-between gap-3"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${alert.color}`}>
+                                <Icon size={15} />
+                              </div>
+                              <div>
+                                <div className="font-bold text-xs text-slate-900 dark:text-foreground">{alert.title}</div>
+                                <div className="text-[10px] text-slate-500">{alert.desc}</div>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-mono text-slate-400 shrink-0">{alert.time}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* TAB 4: HISTORY */}
+                {activeTab === 'history' && (
+                  <motion.div
+                    key="history-view"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="p-4 sm:p-5 h-full overflow-y-auto space-y-3 text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-foreground">Trip Route Replay</h3>
+                        <p className="text-[11px] text-slate-500">Today • 18.4 km total distance</p>
+                      </div>
+                      <button
+                        onClick={() => setIsPlayingHistory(!isPlayingHistory)}
+                        className="px-3 py-1 rounded-xl bg-[#7C3AED] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs"
+                      >
+                        {isPlayingHistory ? <Pause size={12} /> : <Play size={12} />}
+                        {isPlayingHistory ? 'Pause' : 'Replay'}
+                      </button>
+                    </div>
+
+                    <div className="bg-white dark:bg-card p-3.5 rounded-2xl border border-slate-100 dark:border-border space-y-2.5">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span>08:30 AM (Home)</span>
+                        <span className="text-purple-600 font-mono">{historyProgress}%</span>
+                        <span>05:45 PM (Banani)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-muted h-2 rounded-full overflow-hidden">
+                        <motion.div
+                          className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full"
+                          style={{ width: `${historyProgress}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                        <span>Avg: 38 km/h</span>
+                        <span>Top: 58 km/h</span>
+                        <span>Stops: 3</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* TAB 5: SETTINGS */}
+                {activeTab === 'settings' && (
+                  <motion.div
+                    key="settings-view"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="p-4 sm:p-5 h-full overflow-y-auto space-y-2.5 text-left"
+                  >
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-foreground">Privacy Controls</h3>
+
+                    <div className="bg-white dark:bg-card p-3 rounded-xl border border-slate-100 dark:border-border flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-xs text-slate-900 dark:text-foreground">Ghost Mode</div>
+                        <div className="text-[10px] text-slate-500">Pause location sharing immediately</div>
+                      </div>
+                      <button
+                        onClick={() => setGhostMode(!ghostMode)}
+                        className={`w-10 h-5 rounded-full p-0.5 transition-colors ${
+                          ghostMode ? 'bg-[#7C3AED]' : 'bg-slate-300 dark:bg-muted'
                         }`}
                       >
-                        <Icon size={20} />
-                        <span className="text-[10px] mt-0.5">{tab.label}</span>
+                        <div
+                          className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                            ghostMode ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
                       </button>
-                    );
-                  })}
-                </div>
+                    </div>
 
-              </motion.div>
+                    <div className="bg-white dark:bg-card p-3 rounded-xl border border-slate-100 dark:border-border flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-xs text-slate-900 dark:text-foreground">High Precision GPS</div>
+                        <div className="text-[10px] text-slate-500">15-second refresh rate</div>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                        Active (±3m)
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+
+              </div>
+
+              {/* Bottom Minimalist Dock */}
+              <div className="h-12 bg-white/95 dark:bg-card/95 backdrop-blur-md border-t border-slate-100 dark:border-border px-3 flex items-center justify-around shrink-0 select-none">
+                {[
+                  { id: 'live', label: 'Live Map', icon: Radio },
+                  { id: 'circles', label: 'Circles', icon: Users2 },
+                  { id: 'alerts', label: 'Alerts', icon: Bell },
+                  { id: 'history', label: 'History', icon: History },
+                  { id: 'settings', label: 'Privacy', icon: Settings },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all text-xs ${
+                        isActive
+                          ? 'bg-purple-50 dark:bg-purple-950/40 text-[#7C3AED] dark:text-purple-300 font-bold'
+                          : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
+                      }`}
+                    >
+                      <Icon size={14} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
             </div>
           </motion.div>
 
@@ -400,18 +723,23 @@ export function HeroSection() {
 
         {/* ── BOTTOM SOCIAL PROOF SECTION ── */}
         <div className="relative mt-20 pt-10">
-          {/* Subtle Wave SVG line spanning horizontally */}
-          <svg className="absolute top-0 left-0 right-0 w-full h-6 stroke-purple-200/60 fill-none" viewBox="0 0 1200 24" preserveAspectRatio="none">
+          <svg className="absolute top-0 left-0 right-0 w-full h-6 stroke-purple-200/60 dark:stroke-purple-900/40 fill-none" viewBox="0 0 1200 24" preserveAspectRatio="none">
             <path d="M0 12 Q 300 24, 600 12 T 1200 12" strokeWidth="1.5" />
           </svg>
 
-          <div className="flex flex-col items-center text-center space-y-4 pt-2">
-            <p className="text-sm font-semibold text-[#64748B] dark:text-muted-foreground">
-              Trusted by families across Bangladesh and beyond
+          <div className="flex flex-col items-center text-center space-y-3 pt-2">
+            <div className="flex items-center gap-1.5 text-amber-500 text-sm">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={15} className="fill-amber-400 text-amber-400" />
+              ))}
+              <span className="font-bold text-slate-800 dark:text-foreground text-xs ml-1">4.9 / 5.0</span>
+            </div>
+
+            <p className="text-sm font-semibold text-slate-600 dark:text-muted-foreground">
+              Trusted by thousands of families across Bangladesh and worldwide
             </p>
 
             <div className="flex items-center gap-3">
-              {/* Overlapping Avatar Stack */}
               <div className="flex -space-x-2.5 overflow-hidden">
                 {[
                   "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
@@ -427,18 +755,13 @@ export function HeroSection() {
                     width={32}
                     height={32}
                     unoptimized
-                    className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-background object-cover shadow-sm hover:scale-110 transition-transform"
+                    className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-background object-cover shadow-xs hover:scale-110 transition-transform"
                   />
                 ))}
               </div>
 
-              {/* 2K+ Purple Badge */}
-              <span className="px-3 py-1 rounded-full bg-[#7C3AED] text-white font-bold text-xs shadow-md">
-                2K+
-              </span>
-
-              <span className="text-sm font-bold text-[#1E293B] dark:text-foreground">
-                Active Families
+              <span className="px-3 py-1 rounded-full bg-[#7C3AED] text-white font-bold text-xs shadow-xs">
+                2K+ Active
               </span>
             </div>
           </div>
