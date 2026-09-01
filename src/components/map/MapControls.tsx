@@ -18,6 +18,8 @@ import {
   Layers,
   Check,
   Compass,
+  Plus,
+  Minus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import api from '@/lib/axios';
@@ -37,6 +39,9 @@ export interface MapControlsProps {
   onSelectMapTheme?: (theme: MapThemeStyle) => void;
   is3D?:             boolean;
   onToggle3D?:       () => void;
+  onZoomIn?:         () => void;
+  onZoomOut?:        () => void;
+  searchSlot?:       React.ReactNode;
   className?:        string;
 }
 
@@ -57,11 +62,11 @@ function MapBtn({
       onClick={onClick}
       title={title}
       className={cn(
-        'h-7.5 w-7.5 rounded-lg flex items-center justify-center cursor-pointer',
-        'transition-all duration-150 border active:scale-95 select-none',
+        'h-8 w-8 rounded-xl flex items-center justify-center cursor-pointer',
+        'transition-all duration-150 border active:scale-95 select-none shrink-0',
         active
-          ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/25'
-          : 'bg-background/80 text-foreground/80 border-border/60 hover:bg-background hover:text-foreground',
+          ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/25 font-bold'
+          : 'bg-background/80 text-foreground/80 border-border/60 hover:bg-background hover:text-foreground shadow-xs',
       )}
     >
       {children}
@@ -77,10 +82,13 @@ export function MapControls({
   allPoints,
   onRecenter,
   canRecenter = false,
-  mapTheme = 'dark',
+  mapTheme = 'street',
   onSelectMapTheme,
   is3D = false,
   onToggle3D,
+  onZoomIn,
+  onZoomOut,
+  searchSlot,
   className,
 }: MapControlsProps) {
   const { isSharing, setSharing } = useLocationStore();
@@ -107,19 +115,29 @@ export function MapControls({
     try {
       await api.patch('/location/sharing', { sharing: next });
       toast.success(next ? 'Live broadcasting resumed' : 'Location broadcasting paused');
-    } catch {
+    } catch (err: unknown) {
       setSharing(!next);
-      toast.error('Failed to update sharing preference');
+      const msg = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+        || (err as Error)?.message
+        || 'Failed to update sharing preference';
+      toast.error(msg);
     } finally {
       setIsPending(false);
     }
   };
 
   return (
-    <div className={cn('flex items-center justify-between gap-3 px-3.5 py-2.5', className)}>
+    <div className={cn('flex items-center justify-between gap-3 px-3 py-2', className)}>
 
-      {/* ── Left: sharing toggle + friend count ─────────────────── */}
-      <div className="flex items-center gap-2">
+      {/* ── Left: Search slot + Sharing toggle + Friend count ────────── */}
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        
+        {/* Search Bar Slot */}
+        {searchSlot && (
+          <div className="shrink-0 max-w-[15rem] sm:max-w-xs w-full">
+            {searchSlot}
+          </div>
+        )}
 
         {/* Sharing pill */}
         <button
@@ -127,8 +145,8 @@ export function MapControls({
           disabled={isPending}
           title={isSharing ? 'Pause location sharing' : 'Start sharing location'}
           className={cn(
-            'inline-flex items-center gap-1.5 h-7.5 px-3 rounded-full text-xs font-bold cursor-pointer',
-            'border transition-all duration-200 select-none active:scale-95',
+            'inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-bold cursor-pointer shrink-0',
+            'border transition-all duration-200 select-none active:scale-95 shadow-xs',
             isSharing
               ? [
                   'bg-chart-5/90 text-white border-chart-5/50',
@@ -154,13 +172,13 @@ export function MapControls({
               )} />
             </span>
           )}
-          <span>{isPending ? 'Saving…' : isSharing ? 'Live Radar' : 'Sharing Paused'}</span>
+          <span className="hidden sm:inline">{isPending ? 'Saving…' : isSharing ? 'Live Radar' : 'Sharing Paused'}</span>
         </button>
 
         {/* Active friends count badge */}
         {activeFriendCount > 0 && (
           <div className={cn(
-            'inline-flex items-center gap-1.5 h-7.5 px-2.5 rounded-full text-xs font-bold',
+            'hidden md:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-bold shrink-0',
             'bg-background/80 text-foreground border border-border/60 shadow-xs',
           )}>
             <Users size={12} className="text-primary shrink-0" />
@@ -170,82 +188,101 @@ export function MapControls({
       </div>
 
       {/* ── Right: action buttons & map style picker ────────────────── */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
+
+        {/* Zoom Controls */}
+        {onZoomIn && onZoomOut && (
+          <div className="hidden sm:flex items-center bg-background/80 border border-border/60 rounded-xl p-0.5 shadow-xs">
+            <button
+              onClick={onZoomIn}
+              title="Zoom In"
+              className="h-7 w-7 rounded-lg flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+            >
+              <Plus size={13} strokeWidth={2.5} />
+            </button>
+            <div className="w-[1px] h-3.5 bg-border/60" />
+            <button
+              onClick={onZoomOut}
+              title="Zoom Out"
+              className="h-7 w-7 rounded-lg flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+            >
+              <Minus size={13} strokeWidth={2.5} />
+            </button>
+          </div>
+        )}
 
         {/* Style switcher dropdown */}
         <div className="relative" ref={styleMenuRef}>
           <MapBtn
-            onClick={() => setStyleMenuOpen((v) => !v)}
-            title="Switch map layer style"
+            onClick={() => setStyleMenuOpen((prev) => !prev)}
+            title="Switch Map Layers"
             active={styleMenuOpen}
           >
-            <Layers size={14} />
+            <Layers size={15} />
           </MapBtn>
 
-          {styleMenuOpen && (
-            <div className="absolute right-0 top-9 w-48 bg-card/95 backdrop-blur-2xl border border-border/70 rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2.5 py-1.5">
-                Map Styles
+          {styleMenuOpen && onSelectMapTheme && (
+            <div className="absolute right-0 top-10 w-44 rounded-2xl bg-card/95 backdrop-blur-2xl border border-border/70 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <p className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest px-2.5 py-1">
+                Map Style
               </p>
-              <div className="space-y-0.5">
-                {(Object.keys(MAP_STYLES) as MapThemeStyle[]).map((themeKey) => {
-                  const styleObj = MAP_STYLES[themeKey];
-                  const isSelected = mapTheme === themeKey;
-                  return (
-                    <button
-                      key={themeKey}
-                      onClick={() => {
-                        onSelectMapTheme?.(themeKey);
-                        setStyleMenuOpen(false);
-                      }}
-                      className={cn(
-                        'w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all select-none cursor-pointer',
-                        isSelected
-                          ? 'bg-primary/10 text-primary font-bold'
-                          : 'text-foreground/80 hover:bg-muted hover:text-foreground',
-                      )}
-                    >
-                      <span>{styleObj.name}</span>
-                      {isSelected && <Check size={13} className="text-primary" />}
-                    </button>
-                  );
-                })}
-              </div>
+              {(Object.keys(MAP_STYLES) as MapThemeStyle[]).map((themeKey) => {
+                const isSelected = mapTheme === themeKey;
+                return (
+                  <button
+                    key={themeKey}
+                    onClick={() => {
+                      onSelectMapTheme(themeKey);
+                      setStyleMenuOpen(false);
+                    }}
+                    className={cn(
+                      'w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer select-none',
+                      isSelected
+                        ? 'bg-primary text-primary-foreground font-bold'
+                        : 'text-foreground hover:bg-muted/70'
+                    )}
+                  >
+                    <span>{MAP_STYLES[themeKey].name}</span>
+                    {isSelected && <Check size={13} className="shrink-0" />}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* 3D Tilt toggle */}
+        {/* 3D Perspective Tilt Button */}
         {onToggle3D && (
           <MapBtn
             onClick={onToggle3D}
-            title={is3D ? 'Reset to 2D Top-Down View' : '3D Perspective Tilt View'}
+            title={is3D ? 'Reset to 2D Top View' : 'Switch to 3D Perspective Tilt'}
             active={is3D}
           >
-            <Compass size={14} className={cn(is3D && 'text-primary')} />
+            <Compass size={15} className={cn('transition-transform duration-300', is3D && 'rotate-45')} />
           </MapBtn>
         )}
 
-        {/* Recenter button */}
+        {/* Fit all points */}
+        {allPoints.length > 0 && (
+          <MapBtn onClick={onFitAll} title={`Fit all ${allPoints.length} pins`}>
+            <Scan size={15} />
+          </MapBtn>
+        )}
+
+        {/* Recenter on me */}
         {canRecenter && onRecenter && (
           <MapBtn onClick={onRecenter} title="Recenter on my location">
-            <LocateFixed size={14} />
+            <LocateFixed size={15} className="text-primary" />
           </MapBtn>
         )}
 
-        {/* Fit all markers */}
-        {allPoints.length > 1 && (
-          <MapBtn onClick={onFitAll} title="Fit all markers in view">
-            <Scan size={14} />
-          </MapBtn>
-        )}
-
-        {/* Fullscreen button */}
+        {/* Fullscreen */}
         <MapBtn
           onClick={onFullscreen}
-          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen view'}
+          title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          active={isFullscreen}
         >
-          {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
         </MapBtn>
       </div>
     </div>

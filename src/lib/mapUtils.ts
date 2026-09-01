@@ -49,55 +49,35 @@ export interface MapRasterStyle {
 }
 
 export const MAP_STYLES: Record<MapThemeStyle, { id: MapThemeStyle; name: string; style: MapRasterStyle }> = {
-  dark: {
-    id: 'dark',
-    name: 'Dark Navigation',
-    style: {
-      version: 8,
-      sources: {
-        'carto-dark': {
-          type: 'raster',
-          tiles: [
-            'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
-            'https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
-            'https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
-          ],
-          tileSize: 256,
-          attribution: '© CARTO, © OpenStreetMap',
-          maxzoom: 19,
-        },
-      },
-      layers: [
-        { id: 'carto-dark-tiles', type: 'raster', source: 'carto-dark', minzoom: 0, maxzoom: 22 },
-      ],
-    },
-  },
   street: {
     id: 'street',
-    name: 'Clean Street',
+    name: 'Vibrant Street (OSM)',
+    style: OSM_STYLE,
+  },
+  light: {
+    id: 'light',
+    name: 'World Street Map',
     style: {
       version: 8,
       sources: {
-        'carto-voyager': {
+        'esri-street': {
           type: 'raster',
           tiles: [
-            'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-            'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-            'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
           ],
           tileSize: 256,
-          attribution: '© CARTO, © OpenStreetMap',
+          attribution: '© Esri, OpenStreetMap contributors',
           maxzoom: 19,
         },
       },
       layers: [
-        { id: 'carto-voyager-tiles', type: 'raster', source: 'carto-voyager', minzoom: 0, maxzoom: 22 },
+        { id: 'esri-street-tiles', type: 'raster', source: 'esri-street', minzoom: 0, maxzoom: 22 },
       ],
     },
   },
   satellite: {
     id: 'satellite',
-    name: 'Satellite',
+    name: 'Satellite Hybrid',
     style: {
       version: 8,
       sources: {
@@ -116,10 +96,26 @@ export const MAP_STYLES: Record<MapThemeStyle, { id: MapThemeStyle; name: string
       ],
     },
   },
-  light: {
-    id: 'light',
-    name: 'Standard OSM',
-    style: OSM_STYLE,
+  dark: {
+    id: 'dark',
+    name: 'Dark Night Canvas',
+    style: {
+      version: 8,
+      sources: {
+        'esri-dark': {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          attribution: '© Esri, OpenStreetMap contributors',
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        { id: 'esri-dark-tiles', type: 'raster', source: 'esri-dark', minzoom: 0, maxzoom: 22 },
+      ],
+    },
   },
 };
 
@@ -387,3 +383,45 @@ export function isValidLatLng(lat: unknown, lng: unknown): boolean {
     lng <= 180
   );
 }
+
+// ── Routing / Directions Engine (OSRM) ────────────────────────────────────
+export interface RouteInfo {
+  coordinates: [number, number][]; // [lng, lat][]
+  distanceMeters: number;
+  durationSeconds: number;
+}
+
+export async function fetchLiveRoute(
+  startLng: number,
+  startLat: number,
+  endLng: number,
+  endLat: number
+): Promise<RouteInfo | null> {
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.routes || data.routes.length === 0) return null;
+    const route = data.routes[0];
+    return {
+      coordinates: route.geometry.coordinates as [number, number][],
+      distanceMeters: route.distance,
+      durationSeconds: route.duration,
+    };
+  } catch (err) {
+    console.warn('Failed to fetch route:', err);
+    return null;
+  }
+}
+
+export function formatDuration(durationSeconds: number): string {
+  const mins = Math.max(1, Math.round(durationSeconds / 60));
+  if (mins < 60) {
+    return `${mins} min${mins !== 1 ? 's' : ''}`;
+  }
+  const hours = Math.floor(mins / 60);
+  const remainingMins = mins % 60;
+  return `${hours} hr ${remainingMins > 0 ? `${remainingMins} min` : ''}`;
+}
+

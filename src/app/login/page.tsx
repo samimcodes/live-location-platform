@@ -140,7 +140,7 @@ export default function LoginPage() {
               {/* Avatar */}
               <div className="h-14 w-14 rounded-full border-[2.5px] border-indigo-400 overflow-hidden shadow-2xl relative"
                 style={{ boxShadow: '0 0 24px rgba(99,102,241,0.6), 0 0 8px rgba(99,102,241,0.4)' }}>
-                <Image src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="user" width={56} height={56} className="w-full h-full object-cover" />
+                <Image src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="user" width={56} height={56} unoptimized className="w-full h-full object-cover" />
               </div>
               {/* Pin pointer */}
               <div className="w-3 h-3 -mt-1.5 rotate-45 bg-indigo-500 rounded-sm shadow-lg" />
@@ -152,7 +152,7 @@ export default function LoginPage() {
                 style={{ background: 'rgba(34,211,238,0.5)' }} />
               <div className="h-9 w-9 rounded-full border-2 border-cyan-400 overflow-hidden shadow-xl relative"
                 style={{ boxShadow: '0 0 16px rgba(34,211,238,0.5)' }}>
-                <Image src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face" alt="user2" width={36} height={36} className="w-full h-full object-cover" />
+                <Image src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face" alt="user2" width={36} height={36} unoptimized className="w-full h-full object-cover" />
               </div>
               <div className="w-2 h-2 -mt-1 rotate-45 bg-cyan-400 rounded-sm" />
             </div>

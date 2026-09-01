@@ -18,6 +18,7 @@ export interface FriendMarkerPanelProps {
   friends:        Friend[];
   focusedUserId?: number;
   onFocusFriend:  (userId: number | undefined) => void;
+  onRouteTo?:     (lat: number, lng: number, name: string) => void;
   className?:     string;
   style?:         React.CSSProperties;
   isLoading?:     boolean;
@@ -44,6 +45,7 @@ export function FriendMarkerPanel({
   friends,
   focusedUserId,
   onFocusFriend,
+  onRouteTo,
   className,
   style,
   isLoading = false,
@@ -231,6 +233,7 @@ export function FriendMarkerPanel({
                   friend={f}
                   isFocused={focusedUserId === f.id}
                   onFocus={onFocusFriend}
+                  onRouteTo={onRouteTo}
                   loc={friendsLocations.get(f.id)}
                   myLocation={myLocation}
                 />
@@ -246,6 +249,7 @@ export function FriendMarkerPanel({
                   friend={f}
                   isFocused={focusedUserId === f.id}
                   onFocus={onFocusFriend}
+                  onRouteTo={onRouteTo}
                   loc={friendsLocations.get(f.id)}
                   myLocation={myLocation}
                 />
@@ -263,6 +267,7 @@ export function FriendMarkerPanel({
                     friend={f}
                     isFocused={focusedUserId === f.id}
                     onFocus={onFocusFriend}
+                    onRouteTo={onRouteTo}
                     loc={friendsLocations.get(f.id)}
                     myLocation={myLocation}
                   />
@@ -375,6 +380,7 @@ interface RowProps {
   friend:    Friend;
   isFocused: boolean;
   onFocus:   (id: number | undefined) => void;
+  onRouteTo?: (lat: number, lng: number, name: string) => void;
   loc?:      {
     city?: string;
     latitude: number;
@@ -388,7 +394,7 @@ interface RowProps {
   } | null;
 }
 
-function FriendRow({ friend, isFocused, onFocus, loc, myLocation }: RowProps) {
+function FriendRow({ friend, isFocused, onFocus, onRouteTo, loc, myLocation }: RowProps) {
   const canFocus = !!loc && friend.sharingLocation;
   const speedKmh = loc?.speed != null && loc.speed > 0
     ? Math.round(loc.speed * 3.6)
@@ -451,9 +457,13 @@ function FriendRow({ friend, isFocused, onFocus, loc, myLocation }: RowProps) {
         )} />
       </div>
 
-      <div className="flex-1 min-w-0 pt-0.5">
-        <div className="flex items-center gap-1.5">
-          <p className="text-xs font-bold truncate text-foreground group-hover:text-primary transition-colors">
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-1">
+          <p className={cn(
+            'text-xs font-bold truncate transition-colors',
+            isFocused ? 'text-primary font-extrabold' : 'text-foreground',
+          )}>
             {friend.name}
           </p>
           {distanceStr && (
@@ -486,8 +496,8 @@ function FriendRow({ friend, isFocused, onFocus, loc, myLocation }: RowProps) {
         </div>
       </div>
 
-      {/* Right side */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* Right side controls */}
+      <div className="flex items-center gap-1 shrink-0">
         {speedKmh != null && speedKmh > 2 && (
           <span className="flex items-center gap-1 bg-chart-4/15 text-chart-4 border border-chart-4/20 rounded-lg px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums">
             <Gauge size={9} />
@@ -495,7 +505,21 @@ function FriendRow({ friend, isFocused, onFocus, loc, myLocation }: RowProps) {
           </span>
         )}
 
-        {canFocus && (
+        {canFocus && onRouteTo && myLocation && (
+          <button
+            type="button"
+            title="Get Directions"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRouteTo(loc!.latitude, loc!.longitude, friend.name);
+            }}
+            className="h-7 w-7 rounded-xl bg-primary/10 hover:bg-primary text-primary hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+          >
+            <Compass size={13} />
+          </button>
+        )}
+
+        {canFocus && !onRouteTo && (
           isFocused ? (
             <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center shadow-md text-primary-foreground animate-in zoom-in-50 duration-150">
               <Compass size={13} className="animate-spin-slow" />

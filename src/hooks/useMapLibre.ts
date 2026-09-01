@@ -56,12 +56,14 @@ export interface UseMapLibreReturn {
   setMapThemeStyle: (theme: MapThemeStyle) => void;
   is3D: boolean;
   toggle3D: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
 }
 
 export function useMapLibre({
   center   = DEFAULT_CENTER,
   zoom     = DEFAULT_ZOOM,
-  initialTheme = 'dark',
+  initialTheme = 'street',
   controls = true,
   skipInit = false,
 }: UseMapLibreOptions = {}): UseMapLibreReturn {
@@ -195,6 +197,15 @@ export function useMapLibre({
     }
   }, []);
 
+  // ── Zoom controls ───────────────────────────────────────────────────
+  const zoomIn = useCallback(() => {
+    mapRef.current?.zoomIn({ duration: 300 });
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    mapRef.current?.zoomOut({ duration: 300 });
+  }, []);
+
   return {
     containerRef,
     mapRef,
@@ -208,5 +219,7 @@ export function useMapLibre({
     setMapThemeStyle,
     is3D,
     toggle3D,
+    zoomIn,
+    zoomOut,
   };
 }

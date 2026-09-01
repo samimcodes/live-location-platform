@@ -249,9 +249,12 @@ export default function DashboardPage() {
           ? "Location sharing is now live and broadcasting"
           : "Location broadcasting paused",
       );
-    } catch {
+    } catch (err: unknown) {
       setSharing(!nextState);
-      toast.error("Failed to update sharing preference");
+      const msg = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+        || (err as Error)?.message
+        || "Failed to update sharing preference";
+      toast.error(msg);
     } finally {
       setTogglingSharing(false);
     }

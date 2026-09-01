@@ -10,6 +10,7 @@ export interface AuthUser {
   role: string;
   isOnline: boolean;
   sharingLocation: boolean;
+  createdAt?: string | Date;
 }
 
 interface AuthState {
