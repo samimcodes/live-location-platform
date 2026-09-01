@@ -44,7 +44,8 @@ function MapPageInner() {
   const {
     containerRef, mapRef, mapLoaded, mapError,
     flyTo, fitToPoints, toggleFullscreen, isFullscreen,
-  } = useMapLibre({ controls: true });
+    mapTheme, setMapThemeStyle, is3D, toggle3D,
+  } = useMapLibre({ controls: true, initialTheme: 'dark' });
 
   // Memoize allPoints so it only recalculates when locations actually change,
   // preventing unnecessary LiveMap re-renders on every unrelated state update.
@@ -122,11 +123,15 @@ function MapPageInner() {
           overlayControls={{
             activeFriendCount,
             allPoints,
-            onFitAll:     handleFitAll,
-            onRecenter:   handleRecenter,
-            canRecenter:  !!(myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude)),
-            onFullscreen: toggleFullscreen,
+            onFitAll:         handleFitAll,
+            onRecenter:       handleRecenter,
+            canRecenter:      !!(myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude)),
+            onFullscreen:     toggleFullscreen,
             isFullscreen,
+            mapTheme,
+            onSelectMapTheme: setMapThemeStyle,
+            is3D,
+            onToggle3D:       toggle3D,
           }}
         />
 

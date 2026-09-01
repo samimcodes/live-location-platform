@@ -5,24 +5,20 @@
  * -----------
  * Encapsulates the MapLibre GL JS lifecycle:
  *  - Dynamic import (prevents SSR crash)
- *  - Map initialisation with OSM tiles
+ *  - Map initialisation with modern MAP_STYLES (Dark, Street, Satellite, Light)
  *  - NavigationControl
- *  - flyTo / fitToPoints / toggleFullscreen helpers
+ *  - flyTo / fitToPoints / toggleFullscreen / setMapThemeStyle / toggle3D helpers
  *  - Full cleanup on unmount
- *
- * `skipInit` — pass true when a parent component already owns the map
- * instance and is passing refs down to LiveMap in "controlled mode".
- * The hook still runs (Rules of Hooks) but never creates a Map object,
- * preventing the double-map bug.
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  OSM_STYLE,
+  MAP_STYLES,
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
   computeBounds,
   type LatLng,
+  type MapThemeStyle,
 } from '@/lib/mapUtils';
 
 import type { Map as MapLibreMap } from 'maplibre-gl';
@@ -31,11 +27,13 @@ type MapLibreModule = typeof import('maplibre-gl');
 export interface UseMapLibreOptions {
   center?: [number, number];
   zoom?: number;
+  /** Initial map theme style (defaults to 'dark') */
+  initialTheme?: MapThemeStyle;
   /** Skip adding NavigationControl (useful for thumbnail/mini maps). */
   controls?: boolean;
   /**
    * When true the hook sets up the container ref but does NOT create a
-   * MapLibre Map instance.  Use this in LiveMap's self-contained mode when
+   * MapLibre Map instance. Use this in LiveMap's self-contained mode when
    * MapPage already owns the map.
    */
   skipInit?: boolean;
@@ -54,11 +52,16 @@ export interface UseMapLibreReturn {
   fitToPoints: (points: LatLng[], paddingPx?: number) => void;
   toggleFullscreen: () => void;
   isFullscreen: boolean;
+  mapTheme: MapThemeStyle;
+  setMapThemeStyle: (theme: MapThemeStyle) => void;
+  is3D: boolean;
+  toggle3D: () => void;
 }
 
 export function useMapLibre({
   center   = DEFAULT_CENTER,
   zoom     = DEFAULT_ZOOM,
+  initialTheme = 'dark',
   controls = true,
   skipInit = false,
 }: UseMapLibreOptions = {}): UseMapLibreReturn {
@@ -69,6 +72,8 @@ export function useMapLibre({
   const [mapLoaded,    setMapLoaded]    = useState(false);
   const [mapError,     setMapError]     = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mapTheme,     setMapTheme]     = useState<MapThemeStyle>(initialTheme);
+  const [is3D,         setIs3D]         = useState(false);
 
   // ── Map initialisation ───────────────────────────────────────────────
   useEffect(() => {
@@ -86,9 +91,10 @@ export function useMapLibre({
         mglRef.current = mgl;
 
         try {
+          const selectedStyle = MAP_STYLES[initialTheme]?.style ?? MAP_STYLES.dark.style;
           const map: MapLibreMap = new mgl.Map({
             container: containerRef.current,
-            style: OSM_STYLE,
+            style: selectedStyle,
             center,
             zoom,
             attributionControl: false,
@@ -125,7 +131,7 @@ export function useMapLibre({
     };
   // center/zoom excluded — init runs only once; skipInit change would be abnormal
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [controls, skipInit]);
+  }, [controls, skipInit, initialTheme]);
 
   // ── Fullscreen listener ──────────────────────────────────────────────
   useEffect(() => {
@@ -157,6 +163,26 @@ export function useMapLibre({
     });
   }, []);
 
+  // ── setMapThemeStyle ─────────────────────────────────────────────────
+  const setMapThemeStyle = useCallback((theme: MapThemeStyle) => {
+    setMapTheme(theme);
+    if (!mapRef.current) return;
+    const targetStyle = MAP_STYLES[theme]?.style ?? MAP_STYLES.dark.style;
+    mapRef.current.setStyle(targetStyle);
+  }, []);
+
+  // ── toggle3D ─────────────────────────────────────────────────────────
+  const toggle3D = useCallback(() => {
+    if (!mapRef.current) return;
+    const next = !is3D;
+    setIs3D(next);
+    mapRef.current.easeTo({
+      pitch: next ? 55 : 0,
+      bearing: next ? -25 : 0,
+      duration: 800,
+    });
+  }, [is3D]);
+
   // ── toggleFullscreen ─────────────────────────────────────────────────
   const toggleFullscreen = useCallback(() => {
     // Fullscreen the wrapper around canvas + overlays, not just the GL canvas.
@@ -178,5 +204,9 @@ export function useMapLibre({
     fitToPoints,
     toggleFullscreen,
     isFullscreen,
+    mapTheme,
+    setMapThemeStyle,
+    is3D,
+    toggle3D,
   };
 }

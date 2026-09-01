@@ -34,6 +34,8 @@ import {
   buildMePopup,
   buildFriendPopup,
   isValidLatLng,
+  calculateDistanceKm,
+  formatDistance,
   type LatLng,
 } from '@/lib/mapUtils';
 import { cn } from '@/lib/utils';
@@ -227,11 +229,17 @@ export function LiveMap({
         const name     = friend?.name    ?? `User ${userId}`;
         const isOnline = friend?.isOnline ?? false;
 
+        let distStr: string | undefined;
+        if (myLocation && isValidLatLng(myLocation.latitude, myLocation.longitude)) {
+          const d = calculateDistanceKm(myLocation.latitude, myLocation.longitude, latitude, longitude);
+          distStr = formatDistance(d);
+        }
+
         if (friendMarkersRef.current[userId]) {
           // Update existing marker
           friendMarkersRef.current[userId].setLngLat([longitude, latitude]);
           // Only rebuild popup HTML when content changed (avoids DOM teardown on every tick)
-          const newHtml = buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp);
+          const newHtml = buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp, distStr);
           if (newHtml !== friendPopupHtmlRef.current[userId]) {
             friendPopupHtmlRef.current[userId] = newHtml;
             friendPopupsRef.current[userId]?.setHTML(newHtml);
@@ -244,9 +252,9 @@ export function LiveMap({
           // Create new marker
           const grad   = friendGradient(userId);
           const el     = createMarkerElement({ label: name, letter: name.charAt(0).toUpperCase(), gradient: grad, isOnline });
-          const html   = buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp);
+          const html   = buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp, distStr);
           friendPopupHtmlRef.current[userId] = html;
-          const popup  = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '200px' })
+          const popup  = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '240px' })
             .setHTML(html);
           friendPopupsRef.current[userId]  = popup;
           friendMarkersRef.current[userId] = new Marker({ element: el, anchor: 'bottom' })

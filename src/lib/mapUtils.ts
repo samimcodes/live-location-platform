@@ -27,6 +27,102 @@ export const OSM_STYLE = {
   ],
 };
 
+// ── Map Styles (Dark Navigation, Clean Street, Satellite, Light) ───────────
+export type MapThemeStyle = 'dark' | 'street' | 'satellite' | 'light';
+
+export interface MapRasterStyle {
+  version: 8;
+  sources: Record<string, {
+    type: 'raster';
+    tiles: string[];
+    tileSize?: number;
+    attribution?: string;
+    maxzoom?: number;
+  }>;
+  layers: Array<{
+    id: string;
+    type: 'raster';
+    source: string;
+    minzoom?: number;
+    maxzoom?: number;
+  }>;
+}
+
+export const MAP_STYLES: Record<MapThemeStyle, { id: MapThemeStyle; name: string; style: MapRasterStyle }> = {
+  dark: {
+    id: 'dark',
+    name: 'Dark Navigation',
+    style: {
+      version: 8,
+      sources: {
+        'carto-dark': {
+          type: 'raster',
+          tiles: [
+            'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+            'https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+            'https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+          ],
+          tileSize: 256,
+          attribution: '© CARTO, © OpenStreetMap',
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        { id: 'carto-dark-tiles', type: 'raster', source: 'carto-dark', minzoom: 0, maxzoom: 22 },
+      ],
+    },
+  },
+  street: {
+    id: 'street',
+    name: 'Clean Street',
+    style: {
+      version: 8,
+      sources: {
+        'carto-voyager': {
+          type: 'raster',
+          tiles: [
+            'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+            'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+            'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          ],
+          tileSize: 256,
+          attribution: '© CARTO, © OpenStreetMap',
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        { id: 'carto-voyager-tiles', type: 'raster', source: 'carto-voyager', minzoom: 0, maxzoom: 22 },
+      ],
+    },
+  },
+  satellite: {
+    id: 'satellite',
+    name: 'Satellite',
+    style: {
+      version: 8,
+      sources: {
+        'esri-sat': {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          attribution: '© Esri, Maxar, Earthstar Geographics',
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        { id: 'esri-sat-tiles', type: 'raster', source: 'esri-sat', minzoom: 0, maxzoom: 22 },
+      ],
+    },
+  },
+  light: {
+    id: 'light',
+    name: 'Standard OSM',
+    style: OSM_STYLE,
+  },
+};
+
 // ── Default map centre (Dhaka) ─────────────────────────────────────────────
 export const DEFAULT_CENTER: [number, number] = [
   parseFloat(process.env.NEXT_PUBLIC_MAP_DEFAULT_LNG ?? '90.4125'),
@@ -36,6 +132,28 @@ export const DEFAULT_CENTER: [number, number] = [
 export const DEFAULT_ZOOM = parseFloat(
   process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM ?? '11'
 );
+
+// ── Distance calculations (Haversine) ──────────────────────────────────────
+export function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+export function formatDistance(distanceKm: number): string {
+  if (distanceKm < 1) {
+    return `${Math.round(distanceKm * 1000)} m away`;
+  }
+  return `${distanceKm.toFixed(1)} km away`;
+}
 
 // ── Marker colour palette ──────────────────────────────────────────────────
 // Using CSS custom properties so markers respect the design token theme.
@@ -206,10 +324,15 @@ export function buildMePopup(name: string, city?: string, lat?: number, lng?: nu
   const rawLoc = city ?? (lat !== undefined && lng !== undefined ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : '');
   const safeLoc = rawLoc ? escapeHtml(rawLoc) : '';
   return /* html */ `
-    <div style="padding:10px 12px;min-width:140px">
-      <p style="font-weight:700;margin:0 0 4px;font-size:13px">${safeName}</p>
-      ${safeLoc ? `<p style="color:var(--muted-foreground,#6b7280);font-size:11px;margin:0">${safeLoc}</p>` : ''}
-      <p style="color:var(--primary,#6366f1);font-size:11px;margin:4px 0 0;font-weight:500">● You</p>
+    <div style="padding:10px 14px;min-width:160px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--primary,#6366f1)"></span>
+        <p style="font-weight:800;margin:0;font-size:13px;color:var(--foreground,#0f172a)">${safeName} (You)</p>
+      </div>
+      ${safeLoc ? `<p style="color:var(--muted-foreground,#64748b);font-size:11px;margin:0 0 4px;font-weight:500">${safeLoc}</p>` : ''}
+      <div style="display:inline-flex;align-items:center;gap:4px;background:color-mix(in oklch, var(--primary) 12%, transparent);color:var(--primary,#6366f1);font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px">
+        <span>Broadcasting Live</span>
+      </div>
     </div>`;
 }
 
@@ -220,7 +343,8 @@ export function buildFriendPopup(
   lat?: number,
   lng?: number,
   speed?: number,
-  timestamp?: string
+  timestamp?: string,
+  distanceStr?: string,
 ): string {
   const safeName = escapeHtml(name);
   const rawLoc = city ?? (lat !== undefined && lng !== undefined ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : '');
@@ -230,20 +354,23 @@ export function buildFriendPopup(
   const timeStr = timestamp
     ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : null;
-  // online/offline use CSS custom properties so they respect the theme
-  const onlineColor   = isOnline ? 'var(--chart-5,#10b981)' : 'var(--muted-foreground,#9ca3af)';
-  const secondaryColor = 'var(--muted-foreground,#9ca3af)';
+  const onlineColor = isOnline ? 'var(--chart-5,#10b981)' : 'var(--muted-foreground,#9ca3af)';
+  const secondaryColor = 'var(--muted-foreground,#64748b)';
+
   return /* html */ `
-    <div style="padding:10px 12px;min-width:140px">
-      <p style="font-weight:700;margin:0 0 4px;font-size:13px">${safeName}</p>
-      ${safeLoc ? `<p style="color:${secondaryColor};font-size:11px;margin:0 0 3px">${safeLoc}</p>` : ''}
-      ${speedStr ? `<p style="color:${secondaryColor};font-size:11px;margin:0 0 3px">🚗 ${escapeHtml(speedStr)}</p>` : ''}
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px">
-        <span style="color:${onlineColor};font-size:11px;font-weight:500">
-          ${isOnline ? '● Online' : '○ Offline'}
+    <div style="padding:12px 14px;min-width:170px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px">
+        <p style="font-weight:800;margin:0;font-size:13px;color:var(--foreground,#0f172a)">${safeName}</p>
+        <span style="color:${onlineColor};font-size:10px;font-weight:700;background:color-mix(in oklch, ${onlineColor} 12%, transparent);padding:2px 6px;border-radius:6px">
+          ${isOnline ? '● Live' : '○ Offline'}
         </span>
-        ${timeStr ? `<span style="color:${secondaryColor};font-size:10px">${escapeHtml(timeStr)}</span>` : ''}
       </div>
+      ${safeLoc ? `<p style="color:${secondaryColor};font-size:11px;margin:0 0 4px;font-weight:500">${safeLoc}</p>` : ''}
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 2px">
+        ${distanceStr ? `<span style="font-size:10px;font-weight:700;background:color-mix(in oklch, var(--primary) 10%, transparent);color:var(--primary);padding:2px 6px;border-radius:6px">📍 ${escapeHtml(distanceStr)}</span>` : ''}
+        ${speedStr ? `<span style="font-size:10px;font-weight:700;background:color-mix(in oklch, var(--chart-3) 12%, transparent);color:var(--chart-3);padding:2px 6px;border-radius:6px">🚗 ${escapeHtml(speedStr)}</span>` : ''}
+      </div>
+      ${timeStr ? `<p style="color:${secondaryColor};font-size:10px;margin:4px 0 0;opacity:0.75">Updated at ${escapeHtml(timeStr)}</p>` : ''}
     </div>`;
 }
 
