@@ -173,6 +173,10 @@ export class LocationService {
 
   // ── Toggle location sharing ──────────────────────────────────
   static toggleSharing = catchServiceAsync(async (userId: number, sharing: boolean) => {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) {
+      throw new Error('User not found');
+    }
     return prisma.user.update({
       where: { id: userId },
       data: { sharingLocation: sharing },
