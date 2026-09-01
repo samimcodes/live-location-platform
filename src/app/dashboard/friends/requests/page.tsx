@@ -85,15 +85,26 @@ function ErrorRow({ onRetry }: { onRetry?: () => void }) {
 }
 
 function EmptyRow({
-  icon: Icon, title, subtitle,
-}: { icon: React.ComponentType<{ size?: number; className?: string }>; title: string; subtitle: string }) {
+  icon: Icon, title, subtitle, actionHref, actionLabel,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  title: string;
+  subtitle: string;
+  actionHref?: string;
+  actionLabel?: string;
+}) {
   return (
     <div className="flex flex-col items-center py-14 text-muted-foreground gap-1">
-      <div className="h-12 w-12 rounded-2xl bg-muted/60 flex items-center justify-center mb-2">
-        <Icon size={20} className="opacity-25" />
+      <div className="h-12 w-12 rounded-2xl bg-muted/60 flex items-center justify-center mb-2 shadow-inner">
+        <Icon size={22} className="opacity-40 text-primary" />
       </div>
-      <p className="text-sm font-semibold">{title}</p>
-      <p className="text-xs opacity-50 text-center max-w-[16rem] leading-relaxed">{subtitle}</p>
+      <p className="text-sm font-bold text-foreground">{title}</p>
+      <p className="text-xs opacity-60 text-center max-w-[17rem] leading-relaxed">{subtitle}</p>
+      {actionHref && actionLabel && (
+        <Button asChild size="sm" variant="outline" className="mt-3.5 h-8 text-xs rounded-xl shadow-xs">
+          <Link href={actionHref}>{actionLabel}</Link>
+        </Button>
+      )}
     </div>
   );
 }
@@ -228,7 +239,7 @@ export default function RequestsPage() {
               {ePending     ? <ErrorRow onRetry={() => refetchPending()} />
               : lPending    ? <div className="divide-y divide-border/20">{[1,2].map(i => <SkeletonRow key={i} wide />)}</div>
               : pending.length === 0
-                ? <EmptyRow icon={Inbox} title="No pending requests" subtitle="When someone sends you a request it'll appear here" />
+                ? <EmptyRow icon={Inbox} title="No pending requests" subtitle="When someone sends you a friend request it'll appear here" actionHref="/dashboard/friends" actionLabel="Find Friends" />
               : (
                 <AnimatePresence initial={false}>
                   <div className="divide-y divide-border/20">
@@ -316,7 +327,7 @@ export default function RequestsPage() {
               {eSent     ? <ErrorRow onRetry={() => refetchSent()} />
               : lSent    ? <div className="divide-y divide-border/20">{[1,2].map(i => <SkeletonRow key={i} wide />)}</div>
               : sent.length === 0
-                ? <EmptyRow icon={Send} title="No sent requests" subtitle="Requests you send will appear here" />
+                ? <EmptyRow icon={Send} title="No sent requests" subtitle="Friend requests you send to others will appear here" actionHref="/dashboard/friends" actionLabel="Find People" />
               : (
                 <AnimatePresence initial={false}>
                   <div className="divide-y divide-border/20">

@@ -33,6 +33,7 @@ import {
   Sparkles,
   AlertTriangle,
   X,
+  Gauge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,6 +43,7 @@ import type { Friend } from "@/hooks/useFriends";
 import { formatDistanceToNow } from "@/lib/dateUtils";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useFriendsLocations } from "@/hooks/useFriendsLocations";
+import { calculateDistanceKm, formatDistance, isValidLatLng } from "@/lib/mapUtils";
 
 // ── Avatar color palette (id-based, never changes per user) ──────────────
 const AVATAR_BG = [
@@ -225,7 +227,7 @@ export default function FriendsPage() {
   const { mutate: sendRequest } = useSendFriendRequest();
   const { data: pendingCount = 0 } = usePendingRequestCount();
   const { data: sentRequests = [] } = useSentRequests();
-  const { friendsLocations } = useLocationStore();
+  const { friendsLocations, myLocation } = useLocationStore();
   useFriendsLocations();
 
   const [removingId, setRemovingId] = useState<number | null>(null);
@@ -694,7 +696,27 @@ export default function FriendsPage() {
                     const liveLoc = friendsLocations.get(friend.id);
                     const displayCity =
                       liveLoc?.city ?? friend.locations?.[0]?.city;
-                    const isLive = !!liveLoc;
+                    const isLive = !!liveLoc && friend.sharingLocation;
+
+                    const distanceStr =
+                      myLocation &&
+                      liveLoc &&
+                      isValidLatLng(myLocation.latitude, myLocation.longitude) &&
+                      isValidLatLng(liveLoc.latitude, liveLoc.longitude)
+                        ? formatDistance(
+                            calculateDistanceKm(
+                              myLocation.latitude,
+                              myLocation.longitude,
+                              liveLoc.latitude,
+                              liveLoc.longitude,
+                            ),
+                          )
+                        : null;
+
+                    const speedKmh =
+                      liveLoc?.speed != null && liveLoc.speed > 0
+                        ? Math.round(liveLoc.speed * 3.6)
+                        : null;
 
                     return (
                       <motion.div
@@ -705,52 +727,67 @@ export default function FriendsPage() {
                           delay: Math.min(i * 0.03, 0.24),
                           duration: 0.22,
                         }}
-                        className="flex flex-col rounded-2xl border border-border/50 bg-background/50 p-4 hover:border-border hover:shadow-sm transition-all"
+                        className="flex flex-col justify-between rounded-2xl border border-border/50 bg-background/50 p-4 hover:border-border hover:shadow-sm transition-all"
                       >
-                        <div className="flex items-start gap-3">
-                          <FriendAvatar
-                            id={friend.id}
-                            name={friend.name}
-                            avatar={friend.avatar}
-                            size={48}
-                            isOnline={friend.isOnline}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold truncate">
-                              {friend.name}
-                            </p>
-                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              {friend.isOnline ? (
-                                <span className="inline-flex items-center gap-1 text-[11px] text-chart-5 font-medium">
-                                  <span className="relative flex h-1.5 w-1.5">
-                                    <span className="animate-ping absolute inset-0 rounded-full bg-chart-5 opacity-50" />
-                                    <span className="relative rounded-full h-1.5 w-1.5 bg-chart-5" />
+                        <div>
+                          <div className="flex items-start gap-3">
+                            <FriendAvatar
+                              id={friend.id}
+                              name={friend.name}
+                              avatar={friend.avatar}
+                              size={48}
+                              isOnline={friend.isOnline}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <p className="text-sm font-bold truncate text-foreground">
+                                  {friend.name}
+                                </p>
+                                {distanceStr && (
+                                  <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md shrink-0">
+                                    📍 {distanceStr}
                                   </span>
-                                  Online
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/60">
-                                  <Clock size={9} />
-                                  {formatDistanceToNow(friend.lastSeen)}
-                                </span>
+                                )}
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                {friend.isOnline ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] text-chart-5 font-semibold">
+                                    <span className="relative flex h-1.5 w-1.5">
+                                      <span className="animate-ping absolute inset-0 rounded-full bg-chart-5 opacity-50" />
+                                      <span className="relative rounded-full h-1.5 w-1.5 bg-chart-5" />
+                                    </span>
+                                    Online
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/60">
+                                    <Clock size={9} />
+                                    {formatDistanceToNow(friend.lastSeen)}
+                                  </span>
+                                )}
+
+                                {speedKmh != null && speedKmh > 2 && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-chart-4 bg-chart-4/10 px-1.5 py-0.5 rounded-md">
+                                    <Gauge size={9} /> {speedKmh} km/h
+                                  </span>
+                                )}
+                              </div>
+                              {displayCity && friend.sharingLocation && (
+                                <p
+                                  className={cn(
+                                    "mt-1.5 inline-flex items-center gap-1 text-[11px]",
+                                    isLive
+                                      ? "text-primary font-semibold"
+                                      : "text-muted-foreground/60",
+                                  )}
+                                >
+                                  <MapPin size={10} className="shrink-0" />
+                                  <span className="truncate">{displayCity}</span>
+                                  {isLive && (
+                                    <span className="h-1 w-1 rounded-full bg-primary animate-pulse shrink-0" />
+                                  )}
+                                </p>
                               )}
                             </div>
-                            {displayCity && friend.sharingLocation && (
-                              <p
-                                className={cn(
-                                  "mt-1 inline-flex items-center gap-1 text-[11px]",
-                                  isLive
-                                    ? "text-primary font-medium"
-                                    : "text-muted-foreground/60",
-                                )}
-                              >
-                                <MapPin size={10} className="shrink-0" />
-                                <span className="truncate">{displayCity}</span>
-                                {isLive && (
-                                  <span className="h-1 w-1 rounded-full bg-primary animate-pulse shrink-0" />
-                                )}
-                              </p>
-                            )}
                           </div>
                         </div>
 
