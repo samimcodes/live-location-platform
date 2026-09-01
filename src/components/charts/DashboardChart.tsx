@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 
@@ -22,7 +22,7 @@ export function DashboardChart({ title, description, data, dataKeys, className }
   // Generate the chart config dynamically based on the passed dataKeys
   const chartConfig = React.useMemo(() => {
     const config: ChartConfig = {}
-    dataKeys.forEach((item, index) => {
+    dataKeys.forEach((item) => {
       config[item.key] = {
         label: item.label,
         color: item.color,

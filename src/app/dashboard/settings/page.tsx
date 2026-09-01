@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAppSelector, useAppDispatch } from '@/store/store';
@@ -12,7 +12,7 @@ import {
   User, Lock, MapPin, Sun, Moon, Monitor,
   Camera, Loader2, AlertTriangle, Check, X,
   Settings as SettingsIcon, Save, Eye, EyeOff,
-  Shield, Mail, Phone, LogOut, CheckCircle2,
+  LogOut, CheckCircle2,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { motion, AnimatePresence } from 'framer-motion';

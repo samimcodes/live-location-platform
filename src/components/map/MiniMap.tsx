@@ -22,8 +22,9 @@ import { OSM_STYLE, isValidLatLng } from '@/lib/mapUtils';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyMap = any;
+import type { Map as MglMap } from 'maplibre-gl';
+
+type AnyMap = MglMap;
 
 export interface MiniMapMarker {
   latitude: number;
@@ -95,7 +96,7 @@ export function MiniMap({
         setLoaded(true);
 
         // ── Drop markers ──────────────────────────────────────────────
-        markers.forEach(({ latitude, longitude, color, label }) => {
+        markers.forEach(({ latitude, longitude, color }) => {
           if (!isValidLatLng(latitude, longitude)) return;
           const el = document.createElement('div');
           el.style.cssText = `

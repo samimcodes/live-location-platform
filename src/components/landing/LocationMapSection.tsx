@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Navigation, Compass, ShieldCheck, Layers, Bell, Smartphone, Radio, MapPin, History } from 'lucide-react';
+import { Navigation, Compass, ShieldCheck, Layers, Bell, Smartphone, Radio, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';

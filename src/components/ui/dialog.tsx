@@ -26,7 +26,10 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   );
 }
 
-export function DialogTrigger({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) {
+export function DialogTrigger({ children, asChild = false }: { children: React.ReactNode; asChild?: boolean }) {
+  if (asChild && React.isValidElement(children)) {
+    return <>{children}</>;
+  }
   return <>{children}</>;
 }
 

@@ -25,10 +25,8 @@ import {
   type LatLng,
 } from '@/lib/mapUtils';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type MapLibreMap    = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type MapLibreModule = any;
+import type { Map as MapLibreMap } from 'maplibre-gl';
+type MapLibreModule = typeof import('maplibre-gl');
 
 export interface UseMapLibreOptions {
   center?: [number, number];

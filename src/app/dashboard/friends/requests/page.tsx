@@ -320,7 +320,7 @@ export default function RequestsPage() {
               : (
                 <AnimatePresence initial={false}>
                   <div className="divide-y divide-border/20">
-                    {sent.map((req, i) => (
+                    {sent.map((req) => (
                       <motion.div key={req.id} layout
                         initial={{ opacity: 0, y: -4 }}
                         animate={{ opacity: 1, y: 0  }}

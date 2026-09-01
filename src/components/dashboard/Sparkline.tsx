@@ -7,9 +7,12 @@ interface Props {
   height?: number;
 }
 
-// Tiny tooltip — just the value, no label
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function SparkTooltip({ active, payload }: any) {
+interface SparkTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+}
+
+function SparkTooltip({ active, payload }: SparkTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-border bg-card px-2 py-1 text-[11px] font-semibold shadow-md">

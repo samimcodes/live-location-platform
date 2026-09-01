@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { Radio, Maximize2, Minimize2, LocateFixed, Users, Loader2, Scan } from 'lucide-react';
+import { Maximize2, Minimize2, LocateFixed, Users, Loader2, Scan } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import api from '@/lib/axios';
 import { useLocationStore } from '@/store/useLocationStore';

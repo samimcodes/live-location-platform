@@ -38,11 +38,12 @@ import {
 } from '@/lib/mapUtils';
 import { cn } from '@/lib/utils';
 import { MapPin, WifiOff } from 'lucide-react';
+import type { Marker as MglMarker, Popup as MglPopup } from 'maplibre-gl';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyMarker = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyPopup  = any;
+type AnyMarker = MglMarker;
+type AnyPopup  = MglPopup;
+type MarkerConstructor = typeof import('maplibre-gl').Marker;
+type PopupConstructor  = typeof import('maplibre-gl').Popup;
 
 const ACC_THRESHOLD_PX = 5;
 
@@ -122,7 +123,7 @@ export function LiveMap({
   const lastFocusRef     = useRef<number | undefined>(undefined);
 
   // Stable cache for { Marker, Popup } — imported once, reused forever
-  const mglCacheRef = useRef<{ Marker: AnyMarker; Popup: AnyPopup } | null>(null);
+  const mglCacheRef = useRef<{ Marker: MarkerConstructor; Popup: PopupConstructor } | null>(null);
 
   // getMgl is stored in a ref so it's never recreated and never stale
   const getMglRef = useRef(async () => {

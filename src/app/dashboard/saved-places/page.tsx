@@ -17,8 +17,8 @@ import { Label } from '@/components/ui/label';
 import {
   Bookmark, Plus, Trash2, Home, Briefcase,
   GraduationCap, Dumbbell, MapPin, X, Loader2, Pencil,
-  Map as MapIcon, Search, AlertTriangle, ExternalLink,
-  Copy, Check, Navigation, Sparkles,
+  Search, AlertTriangle, ExternalLink,
+  Copy, Check, Navigation,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/lib/toast';
@@ -378,7 +378,7 @@ export default function SavedPlacesPage() {
   const { data: places = [], isLoading }             = useGetSavedPlaces();
   const { mutate: createPlace, isPending: creating } = useCreateSavedPlace();
   const { mutate: updatePlace, isPending: updating } = useUpdateSavedPlace();
-  const { mutate: deletePlace, isPending: deleting } = useDeleteSavedPlace();
+  const { mutate: deletePlace }                      = useDeleteSavedPlace();
 
   const [showCreate,     setShowCreate]     = useState(false);
   const [editTarget,     setEditTarget]     = useState<SavedPlace | null>(null);

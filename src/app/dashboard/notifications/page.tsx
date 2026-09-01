@@ -8,14 +8,13 @@ import {
   useMarkRead,
   useDeleteNotification,
   useDeleteAllRead,
-  type Notification,
 } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import {
   Bell, Check, Trash2, UserPlus,
   MapPin, Users, Info, Loader2, CheckCheck,
-  ArrowRight, Sparkles, AlertTriangle, X,
-  Clock, ShieldAlert,
+  ArrowRight, AlertTriangle, X,
+  Clock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -156,11 +155,11 @@ export default function NotificationsPage() {
   const { mutate: deleteNotif }                           = useDeleteNotification();
   const { mutate: deleteAllRead, isPending: deletingAll } = useDeleteAllRead();
 
-  const notifications  = data?.notifications ?? [];
+  const notifications  = useMemo(() => data?.notifications ?? [], [data?.notifications]);
   const totalPages     = data?.pagination?.totalPages ?? 1;
   const total          = data?.pagination?.total ?? 0;
-  const unread         = notifications.filter((n) => !n.isRead).length;
-  const readCount      = notifications.filter((n) => n.isRead).length;
+  const unread         = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
+  const readCount      = useMemo(() => notifications.filter((n) => n.isRead).length, [notifications]);
   const hasMore        = page < totalPages;
 
   // Filtered notifications
