@@ -11,12 +11,13 @@ import {
   History, MapPin, Trash2, Navigation, Map as MapIcon,
   Route, Building2, Gauge, Calendar, Filter, Loader2,
   ListRestart, Clock, AlertTriangle, X, Sparkles,
-  ChevronRight, Compass,
+  ChevronRight, Compass, BarChart2,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isValidLatLng } from '@/lib/mapUtils';
 import { cn } from '@/lib/utils';
+import StatsChart from '@/components/dashboard/StatsChart';
 
 const MiniMap = dynamic(
   () => import('@/components/map/MiniMap').then((m) => m.MiniMap),
@@ -192,6 +193,7 @@ export default function HistoryPage() {
   const [skip,            setSkip]            = useState(0);
   const [allRecords,      setAllRecords]      = useState<HistoryEntry[]>([]);
   const [showRouteMap,    setShowRouteMap]    = useState(false);
+  const [showChart,       setShowChart]       = useState(false);
   const [showFilters,     setShowFilters]     = useState(false);
   const [selectedPointId, setSelectedPointId] = useState<number | null>(null);
 
@@ -329,6 +331,14 @@ export default function HistoryPage() {
 
   const grouped = useMemo(() => groupByDate(Array.isArray(allRecords) ? allRecords : []), [allRecords]);
 
+  const chartData = useMemo(() => {
+    if (!grouped.length) return [];
+    return [...grouped].reverse().map((g) => ({
+      date: g.label,
+      value: g.entries.length,
+    }));
+  }, [grouped]);
+
   const total       = historyData?.total ?? 0;
   const hasMore     = allRecords.length < total;
   const isFiltered  = !!(applied.start || applied.end);
@@ -368,7 +378,23 @@ export default function HistoryPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                {allRecords.length > 2 && (
+                  <Button
+                    variant={showChart ? "secondary" : "outline"}
+                    className={cn(
+                      "gap-2 shadow-sm rounded-xl h-11 px-5 transition-all font-bold text-[13px]",
+                      showChart
+                        ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700"
+                        : ""
+                    )}
+                    onClick={() => setShowChart((v) => !v)}
+                  >
+                    <BarChart2 size={16} />
+                    {showChart ? 'Hide Graph' : 'Activity Graph'}
+                  </Button>
+                )}
+
                 {routeCoords.length > 1 && (
                   <Button
                     variant={showRouteMap ? "secondary" : "outline"}
@@ -521,6 +547,43 @@ export default function HistoryPage() {
           />
         </motion.div>
       )}
+
+      {/* ── ACTIVITY GRAPH (Collapsible) ─────────────────────────────── */}
+      <AnimatePresence>
+        {showChart && chartData.length > 0 && (
+          <motion.div
+            key="activity-chart"
+            initial={{ opacity: 0, height: 0, scale: 0.98 }}
+            animate={{ opacity: 1, height: 'auto', scale: 1 }}
+            exit={{ opacity: 0, height: 0, scale: 0.98 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                    <BarChart2 size={15} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Location Recording Density</h3>
+                    <p className="text-xs text-muted-foreground">Coordinates points logged per day</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowChart(false)}
+                  className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+              <div className="pt-2">
+                <StatsChart data={chartData} height={180} color="var(--chart-4)" unit="points" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── ROUTE MAP ──────────────────────────────────────────────────── */}
       <AnimatePresence>

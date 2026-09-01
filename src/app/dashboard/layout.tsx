@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Navbar } from '@/components/dashboard/navbar';
+import CommandPalette from '@/components/dashboard/CommandPalette';
 import { useLocationSharing } from '@/hooks/useLocationSharing';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [isCollapsed,       setIsCollapsed]       = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isCollapsed,         setIsCollapsed]         = useState(false);
+  const [mobileSidebarOpen,   setMobileSidebarOpen]   = useState(false);
+  const [commandPaletteOpen,  setCommandPaletteOpen]  = useState(false);
 
   const pathname = usePathname();
 
@@ -18,8 +20,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Start GPS + socket location sharing for the whole dashboard
   useLocationSharing();
 
+  // Global Ctrl+K / Cmd+K keyboard shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
+      {/* Global Spotlight Command Palette */}
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+      />
 
       {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
@@ -46,6 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Navbar
           onMobileMenuToggle={() => setMobileSidebarOpen(!mobileSidebarOpen)}
           mobileSidebarOpen={mobileSidebarOpen}
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         />
 
         {isMapPage ? (

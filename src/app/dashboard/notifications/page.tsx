@@ -10,11 +10,12 @@ import {
   useDeleteAllRead,
 } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Bell, Check, Trash2, UserPlus,
   MapPin, Users, Info, Loader2, CheckCheck,
   ArrowRight, AlertTriangle, X,
-  Clock,
+  Clock, Search,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -147,6 +148,7 @@ function ConfirmDialog({
 export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [filterType, setFilterType] = useState<'ALL' | 'UNREAD' | 'FRIENDS' | 'GROUPS' | 'ALERTS'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   const { data, isLoading, isFetching }                  = useNotifications(page);
@@ -164,14 +166,16 @@ export default function NotificationsPage() {
 
   // Filtered notifications
   const filteredNotifications = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return notifications.filter((n) => {
-      if (filterType === 'UNREAD') return !n.isRead;
-      if (filterType === 'FRIENDS') return n.type === 'FRIEND_REQUEST' || n.type === 'FRIEND_ACCEPTED';
-      if (filterType === 'GROUPS') return n.type === 'GROUP_INVITE' || n.type === 'GROUP_JOINED';
-      if (filterType === 'ALERTS') return n.type === 'LOCATION_ALERT' || n.type === 'SYSTEM';
+      if (filterType === 'UNREAD' && n.isRead) return false;
+      if (filterType === 'FRIENDS' && n.type !== 'FRIEND_REQUEST' && n.type !== 'FRIEND_ACCEPTED') return false;
+      if (filterType === 'GROUPS' && n.type !== 'GROUP_INVITE' && n.type !== 'GROUP_JOINED') return false;
+      if (filterType === 'ALERTS' && n.type !== 'LOCATION_ALERT' && n.type !== 'SYSTEM') return false;
+      if (q && !n.title.toLowerCase().includes(q) && !n.body.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [notifications, filterType]);
+  }, [notifications, filterType, searchQuery]);
 
   const handleDeleteAllReadConfirm = useCallback(() => {
     deleteAllRead(undefined, {
@@ -274,6 +278,29 @@ export default function NotificationsPage() {
         </div>
       </motion.div>
 
+      {/* ── SEARCH & FILTER ROW ────────────────────────────────────── */}
+      {notifications.length > 0 && (
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+            <Input
+              placeholder="Search notifications by title or message…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-10 pl-10 pr-8 rounded-xl bg-card border-border/60 focus:border-blue-500/50 text-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── NOTIFICATIONS LIST ─────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
         <div className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all overflow-hidden relative">
@@ -295,19 +322,28 @@ export default function NotificationsPage() {
                 <Bell size={40} className="text-primary opacity-80" />
               </div>
               <h3 className="text-xl font-extrabold text-foreground">
-                {filterType === 'UNREAD' ? 'No unread notifications' : 'All caught up!'}
+                {searchQuery
+                  ? 'No matching notifications'
+                  : filterType === 'UNREAD'
+                    ? 'No unread notifications'
+                    : 'All caught up!'}
               </h3>
               <p className="text-sm mt-2 max-w-sm leading-relaxed text-muted-foreground font-medium">
-                {filterType === 'UNREAD'
-                  ? 'You have read all your notifications.'
-                  : 'New alerts, friend updates, and group messages will appear here.'}
+                {searchQuery
+                  ? `No alerts or messages matched "${searchQuery}".`
+                  : filterType === 'UNREAD'
+                    ? 'You have read all your notifications.'
+                    : 'New alerts, friend updates, and group messages will appear here.'}
               </p>
-              {filterType !== 'ALL' && (
+              {(filterType !== 'ALL' || searchQuery) && (
                 <Button
                   variant="outline"
                   size="sm"
                   className="mt-6 rounded-xl shadow-sm h-10 px-5 font-bold text-[13px]"
-                  onClick={() => setFilterType('ALL')}
+                  onClick={() => {
+                    setFilterType('ALL');
+                    setSearchQuery('');
+                  }}
                 >
                   View All Notifications
                 </Button>

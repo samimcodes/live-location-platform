@@ -165,6 +165,8 @@ export default function GroupsPage() {
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
   const [memberSearch,    setMemberSearch]    = useState('');
   const [actionGroupId,   setActionGroupId]   = useState<number | null>(null);
+  const [filterRole,      setFilterRole]      = useState<'all' | 'admin' | 'member'>('all');
+  const [searchQuery,     setSearchQuery]     = useState('');
 
   const [confirmState, setConfirmState] = useState<{
     open: boolean; title: string; description: string;
@@ -180,6 +182,19 @@ export default function GroupsPage() {
     const q = memberSearch.trim().toLowerCase();
     return q ? friends.filter((f) => f.name.toLowerCase().includes(q)) : friends;
   }, [friends, memberSearch]);
+
+  const filteredGroups = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return groups.filter((g) => {
+      const isCreator = g.createdById === currentUser?.id;
+      if (filterRole === 'admin' && !isCreator) return false;
+      if (filterRole === 'member' && isCreator) return false;
+      if (q && !g.name.toLowerCase().includes(q) && !g.description?.toLowerCase().includes(q)) {
+        return false;
+      }
+      return true;
+    });
+  }, [groups, filterRole, searchQuery, currentUser?.id]);
 
   const closeModal = useCallback(() => {
     setShowCreate(false); setMemberSearch(''); setSelectedMembers([]);
@@ -427,6 +442,60 @@ export default function GroupsPage() {
         )}
       </AnimatePresence>
 
+      {/* ── SEARCH & ROLE FILTER BAR ────────────────────────────────────── */}
+      {!isLoading && groups.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card/60 backdrop-blur-md p-2.5 rounded-2xl border border-border/60 shadow-xs">
+            {/* Search input */}
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+              <Input
+                placeholder="Search circles by name or topic…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-10 pl-9 pr-8 rounded-xl bg-background/70 border-border/50 text-sm focus:bg-background transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-muted-foreground/15 flex items-center justify-center hover:bg-muted-foreground/25 transition-colors"
+                >
+                  <X size={10} className="text-muted-foreground" />
+                </button>
+              )}
+            </div>
+
+            {/* Role Filter Tabs */}
+            <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/40 shrink-0">
+              {[
+                { key: 'all' as const,    label: 'All',   count: groups.length },
+                { key: 'admin' as const,  label: 'Admin', count: myCreatedGroups },
+                { key: 'member' as const, label: 'Member', count: groups.length - myCreatedGroups },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setFilterRole(tab.key)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none',
+                    filterRole === tab.key
+                      ? 'bg-background text-foreground shadow-xs font-bold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <span>{tab.label}</span>
+                  <span className={cn(
+                    'text-[10px] px-1.5 py-0.5 rounded-full tabular-nums',
+                    filterRole === tab.key ? 'bg-primary/10 text-primary font-bold' : 'bg-muted-foreground/10 text-muted-foreground'
+                  )}>
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* ── GROUPS GRID ────────────────────────────────────────────────── */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -450,9 +519,36 @@ export default function GroupsPage() {
             Create your first group
           </Button>
         </motion.div>
+      ) : filteredGroups.length === 0 ? (
+        /* ── Filtered Empty state ── */
+        <motion.div
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-8 py-16 text-center"
+        >
+          <div className="mx-auto h-14 w-14 rounded-2xl bg-muted/60 flex items-center justify-center mb-3">
+            <Search size={22} className="text-muted-foreground/40" />
+          </div>
+          <h3 className="text-base font-bold">No circles found</h3>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+            {searchQuery
+              ? `No circles matched "${searchQuery}" in ${filterRole} tab.`
+              : `You have no groups in the ${filterRole} role.`}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4 h-8 text-xs rounded-xl"
+            onClick={() => {
+              setSearchQuery('');
+              setFilterRole('all');
+            }}
+          >
+            Show all groups
+          </Button>
+        </motion.div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {groups.map((group, i) => {
+          {filteredGroups.map((group, i) => {
             const isCreator   = group.createdById === currentUser?.id;
             const onlineCount = group.members.filter((m) => m.user.isOnline).length;
             const isActing    = actionGroupId === group.id && (deleting || leaving);
@@ -464,7 +560,7 @@ export default function GroupsPage() {
                 key={group.id}
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.3, ease: 'easeOut' }}
+                transition={{ delay: i * 0.05, duration: 0.28, ease: 'easeOut' }}
               >
                 <div className={cn(
                   'group/card h-full flex flex-col rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl',

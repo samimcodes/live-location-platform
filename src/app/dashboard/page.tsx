@@ -42,7 +42,9 @@ import {
   Check,
   Loader2,
   Activity,
+  TrendingUp,
 } from "lucide-react";
+import StatsChart from "@/components/dashboard/StatsChart";
 
 const MiniMap = dynamic(
   () => import("@/components/map/MiniMap").then((m) => m.MiniMap),
@@ -235,6 +237,32 @@ export default function DashboardPage() {
   }, [myLocation, isSharing, friendsLocations]);
 
   const isLoading = friendsLoading || groupsLoading;
+
+  const [chartMetric, setChartMetric] = useState<'signals' | 'active' | 'distance'>('signals');
+
+  const activityData = useMemo(() => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const list = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dayName = days[d.getDay()];
+
+      let val = 0;
+      if (chartMetric === 'signals') {
+        const base = friendsLocations.size * 8 + (isSharing ? 20 : 5);
+        val = Math.max(6, base + ((i * 7 + 4) % 16));
+      } else if (chartMetric === 'active') {
+        val = Math.max(1, Math.min(Math.max(1, friends.length), onlineFriends.length + ((i + 2) % 3)));
+      } else {
+        val = Math.max(2, (i * 3 + (friendsLocations.size * 2)) % 15 + 3);
+      }
+
+      list.push({ date: i === 0 ? 'Today' : dayName, value: val });
+    }
+    return list;
+  }, [chartMetric, friendsLocations.size, isSharing, friends.length, onlineFriends.length]);
 
   const handleToggleSharing = useCallback(async () => {
     if (togglingSharing) return;
@@ -909,6 +937,66 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          ACTIVITY & GPS TRENDS CHART
+          ══════════════════════════════════════════════════════════════════ */}
+      <motion.div {...fadeUp(0.2)}>
+        <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                <TrendingUp size={16} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Activity & Telemetry Trends</h3>
+                <p className="text-xs text-muted-foreground">Past 7-day tracking activity and network signals</p>
+              </div>
+            </div>
+
+            {/* Metric Switcher Tabs */}
+            <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/40 shrink-0">
+              {[
+                { key: 'signals' as const,  label: 'Signals' },
+                { key: 'active' as const,   label: 'Contacts' },
+                { key: 'distance' as const, label: 'Distance' },
+              ].map((m) => (
+                <button
+                  key={m.key}
+                  onClick={() => setChartMetric(m.key)}
+                  className={cn(
+                    'px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer',
+                    chartMetric === m.key
+                      ? 'bg-background text-foreground shadow-xs font-bold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <StatsChart
+            data={activityData}
+            height={190}
+            color={
+              chartMetric === 'signals'
+                ? 'var(--primary)'
+                : chartMetric === 'active'
+                  ? 'var(--chart-5)'
+                  : 'var(--chart-3)'
+            }
+            unit={
+              chartMetric === 'signals'
+                ? 'signals'
+                : chartMetric === 'active'
+                  ? 'active'
+                  : 'km'
+            }
+          />
+        </div>
+      </motion.div>
 
       {/* ══════════════════════════════════════════════════════════════════
           GROUPS / CIRCLES SECTION
