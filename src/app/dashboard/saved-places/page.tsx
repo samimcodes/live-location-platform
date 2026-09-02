@@ -385,6 +385,7 @@ export default function SavedPlacesPage() {
   const [selectedType,   setSelectedType]   = useState<string>('ALL');
   const [searchQuery,    setSearchQuery]    = useState('');
   const [copiedId,       setCopiedId]       = useState<number | null>(null);
+  const [hoveredCardId,  setHoveredCardId]  = useState<number | null>(null);
 
   // Confirm dialog state
   const [confirmState, setConfirmState] = useState<{
@@ -629,7 +630,11 @@ export default function SavedPlacesPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3, ease: 'easeOut' }}
               >
-                <div className="group h-full flex flex-col rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 overflow-hidden relative">
+                <div
+                  className="group h-full flex flex-col rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 overflow-hidden relative"
+                  onMouseEnter={() => setHoveredCardId(place.id)}
+                  onMouseLeave={() => setHoveredCardId(null)}
+                >
                   
                   {/* Subtle background glow from the place's color */}
                   <div className={cn('absolute -top-16 -right-16 w-32 h-32 rounded-full blur-[50px] opacity-20 pointer-events-none bg-gradient-to-br', t.gradient)} />
@@ -639,18 +644,31 @@ export default function SavedPlacesPage() {
                     className={cn('h-1.5 w-full bg-gradient-to-r relative z-10', t.gradient)}
                   />
 
-                  {/* Mini map preview */}
+                  {/* Mini map preview — only renders on hover for performance */}
                   <div className="relative h-36 w-full border-b border-border/40 overflow-hidden bg-muted z-10">
-                    <MiniMap
-                      center={[place.longitude, place.latitude]}
-                      zoom={15}
-                      markers={[{
-                        latitude:  place.latitude,
-                        longitude: place.longitude,
-                        color:     place.color ?? t.color,
-                      }]}
-                      className="absolute inset-0 h-full rounded-none"
-                    />
+                    {hoveredCardId === place.id ? (
+                      <MiniMap
+                        center={[place.longitude, place.latitude]}
+                        zoom={15}
+                        markers={[{
+                          latitude:  place.latitude,
+                          longitude: place.longitude,
+                          color:     place.color ?? t.color,
+                        }]}
+                        className="absolute inset-0 h-full rounded-none"
+                      />
+                    ) : (
+                      // Placeholder when not hovered — lightweight
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                        <div
+                          className="h-10 w-10 rounded-2xl flex items-center justify-center shadow-md bg-gradient-to-br border border-white/10"
+                          style={{ background: `${t.color}33` }}
+                        >
+                          <t.icon size={18} style={{ color: t.color }} />
+                        </div>
+                        <p className="text-[11px] font-semibold text-muted-foreground/60">Hover to preview map</p>
+                      </div>
+                    )}
                     
                     {/* Floating category badge */}
                     <div

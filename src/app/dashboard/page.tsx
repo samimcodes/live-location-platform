@@ -43,8 +43,12 @@ import {
   Loader2,
   Activity,
   TrendingUp,
+  ShieldCheck,
+  Compass,
+  Wifi,
 } from "lucide-react";
 import StatsChart from "@/components/dashboard/StatsChart";
+import { soundFx } from "@/lib/soundFx";
 
 const MiniMap = dynamic(
   () => import("@/components/map/MiniMap").then((m) => m.MiniMap),
@@ -142,12 +146,13 @@ function PersonAvatar({
 }) {
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <div className="relative h-full w-full overflow-hidden rounded-2xl shadow-sm">
+      <div className="relative h-full w-full overflow-hidden rounded-2xl shadow-xs">
         {avatar ? (
           <Image
             src={avatar}
             alt={name}
             fill
+            unoptimized
             sizes={`${size}px`}
             className="object-cover"
           />
@@ -164,7 +169,7 @@ function PersonAvatar({
         )}
       </div>
       {online && (
-        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-chart-5 border-2 border-card ring-1 ring-chart-5/40 animate-pulse" />
+        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card ring-1 ring-emerald-500/40 animate-pulse" />
       )}
     </div>
   );
@@ -269,6 +274,7 @@ export default function DashboardPage() {
     const nextState = !isSharing;
     setTogglingSharing(true);
     setSharing(nextState);
+    soundFx.playPop();
 
     try {
       await api.patch("/location/sharing", { sharing: nextState });
@@ -292,6 +298,7 @@ export default function DashboardPage() {
     if (!myLocation) return;
     const text = `${myLocation.latitude.toFixed(6)}, ${myLocation.longitude.toFixed(6)}`;
     navigator.clipboard.writeText(text);
+    soundFx.playChime();
     setCopiedCoords(true);
     toast.success("Coordinates copied to clipboard");
     setTimeout(() => setCopiedCoords(false), 2000);
@@ -390,24 +397,24 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-12">
       {/* ══════════════════════════════════════════════════════════════════
-          HERO BANNER — Premium SaaS Glassmorphism Card
+          HERO BANNER — Modern SaaS Glassmorphism Card
           ══════════════════════════════════════════════════════════════════ */}
       <motion.div {...fadeUp(0)}>
-        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all duration-300 hover:shadow-md">
+        <div className="relative overflow-hidden rounded-3xl bg-card/90 dark:bg-card/75 border border-border/60 shadow-sm transition-all duration-300 hover:shadow-md backdrop-blur-2xl">
           {/* Ambient Glows */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5 pointer-events-none" />
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[90px] opacity-60 pointer-events-none" />
-          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-chart-3/10 rounded-full blur-[90px] opacity-60 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-chart-3/8 pointer-events-none" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/15 rounded-full blur-[90px] opacity-70 pointer-events-none" />
+          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-chart-3/15 rounded-full blur-[90px] opacity-70 pointer-events-none" />
 
-          <div className="relative z-10 px-6 py-7 sm:px-9 sm:py-9">
+          <div className="relative z-10 px-6 py-7 sm:px-9 sm:py-8">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               {/* Left Welcome Copy */}
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 shadow-sm">
-                    <Sparkles size={11} className="animate-pulse" />
+                <div className="flex items-center gap-2.5 mb-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 shadow-xs">
+                    <Sparkles size={11} className="animate-pulse text-amber-500" />
                     Overview
                   </span>
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/80">
@@ -423,7 +430,7 @@ export default function DashboardPage() {
                   </span>
                 </h1>
 
-                <p className="mt-2.5 text-sm sm:text-base text-muted-foreground/85 max-w-2xl leading-relaxed">
+                <p className="mt-2 text-sm sm:text-base text-muted-foreground/85 max-w-2xl leading-relaxed">
                   {isLoading ? (
                     "Connecting to your real-time tracking network…"
                   ) : onlineFriends.length > 0 ? (
@@ -432,10 +439,10 @@ export default function DashboardPage() {
                       <strong className="font-bold text-foreground">
                         {onlineFriends.length} friend{onlineFriends.length !== 1 ? "s" : ""}
                       </strong>{" "}
-                      active and online. Real-time updates are streaming.
+                      active on radar. Real-time telemetry is streaming.
                     </>
                   ) : (
-                    "Your tracking circle is quiet right now. Add friends to share live coordinates."
+                    "Your tracking circle is quiet right now. Add friends or join circles to share live coordinates."
                   )}
                 </p>
               </div>
@@ -446,7 +453,7 @@ export default function DashboardPage() {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 mb-1">
                     System Time
                   </p>
-                  <div className="inline-flex items-center gap-2 bg-background/60 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-border/50 shadow-sm">
+                  <div className="inline-flex items-center gap-2 bg-background/80 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-border/60 shadow-xs">
                     <Activity size={13} className="text-primary animate-pulse" />
                     <span suppressHydrationWarning className="text-lg sm:text-xl font-bold tabular-nums tracking-tight text-foreground font-mono">
                       {formattedTime}
@@ -455,12 +462,12 @@ export default function DashboardPage() {
                 </div>
 
                 {onlineFriends.length > 0 && (
-                  <div className="flex items-center gap-2.5 bg-background/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border/60 shadow-sm">
+                  <div className="flex items-center gap-2.5 bg-background/80 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-border/60 shadow-xs">
                     <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-chart-5 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-chart-5" />
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                     </span>
-                    <span className="text-xs font-semibold text-foreground mr-1">
+                    <span className="text-xs font-bold text-foreground mr-1">
                       {onlineFriends.length} Online
                     </span>
                     <AvatarStack items={onlineFriends} max={3} size={26} />
@@ -470,23 +477,23 @@ export default function DashboardPage() {
             </div>
 
             {/* Bottom Actions Bar */}
-            <div className="mt-7 pt-6 border-t border-border/40 flex flex-wrap items-center gap-3">
+            <div className="mt-6 pt-5 border-t border-border/40 flex flex-wrap items-center gap-3">
               {/* Interactive Sharing Toggle Pill */}
               <button
                 onClick={handleToggleSharing}
                 disabled={togglingSharing}
                 title={isSharing ? "Click to pause broadcasting" : "Click to start broadcasting"}
                 className={cn(
-                  "inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer select-none active:scale-95",
+                  "inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl text-xs font-bold transition-all duration-200 shadow-xs cursor-pointer select-none active:scale-95",
                   isSharing
-                    ? "bg-chart-5/15 text-chart-5 border border-chart-5/30 hover:bg-chart-5/25"
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25"
                     : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted/90",
                 )}
               >
                 {togglingSharing ? (
-                  <Loader2 size={14} className="animate-spin" />
+                  <Loader2 size={13} className="animate-spin" />
                 ) : (
-                  <Radio size={14} className={cn(isSharing && "animate-pulse")} />
+                  <Radio size={13} className={cn(isSharing && "animate-pulse")} />
                 )}
                 <span>
                   {togglingSharing
@@ -500,40 +507,37 @@ export default function DashboardPage() {
                 </span>
               </button>
 
+              {/* GPS Precision Pill */}
+              {myLocation?.accuracy != null && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-semibold bg-background/80 backdrop-blur-md border border-border/60 text-foreground/85 shadow-2xs">
+                  <Globe size={13} className="text-primary" />
+                  <span>±{Math.round(myLocation.accuracy)}m GPS Precision</span>
+                </div>
+              )}
+
               {/* Network Pill */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-background/60 backdrop-blur-md border border-border/60 text-foreground/85 shadow-sm">
-                <Users size={14} className="text-primary" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-semibold bg-background/80 backdrop-blur-md border border-border/60 text-foreground/85 shadow-2xs">
+                <Users size={13} className="text-primary" />
                 <span>{friends.length} Friends</span>
               </div>
 
               {/* Visible Map Pins Pill */}
               {friendsLocations.size > 0 && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-background/60 backdrop-blur-md border border-border/60 text-foreground/85 shadow-sm">
-                  <MapPin size={14} className="text-chart-3" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-semibold bg-background/80 backdrop-blur-md border border-border/60 text-foreground/85 shadow-2xs">
+                  <MapPin size={13} className="text-chart-3" />
                   <span>{friendsLocations.size} Live Pins</span>
                 </div>
-              )}
-
-              {/* Unread Alerts Pill */}
-              {unreadCount > 0 && (
-                <Link
-                  href="/dashboard/notifications"
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-chart-4/10 border border-chart-4/20 text-chart-4 shadow-sm hover:bg-chart-4/20 transition-colors"
-                >
-                  <Bell size={14} />
-                  <span>{unreadCount} Alerts</span>
-                </Link>
               )}
 
               {/* View Live Map Button */}
               <Button
                 asChild
-                className="ml-auto w-full sm:w-auto gap-2 rounded-xl h-9.5 px-5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-xs font-bold"
+                className="ml-auto w-full sm:w-auto gap-2 rounded-2xl h-9 px-5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-xs font-bold"
               >
                 <Link href="/dashboard/map">
-                  <Map size={15} />
+                  <Compass size={14} />
                   Open Live Map
-                  <ArrowRight size={14} />
+                  <ArrowRight size={13} />
                 </Link>
               </Button>
             </div>
@@ -552,7 +556,7 @@ export default function DashboardPage() {
             className="h-full"
           >
             {isLoading ? (
-              <Skeleton className="h-[148px] w-full rounded-2xl" />
+              <Skeleton className="h-[148px] w-full rounded-3xl" />
             ) : (
               <KpiCard {...k} />
             )}
@@ -570,7 +574,7 @@ export default function DashboardPage() {
           className="lg:col-span-5 flex flex-col gap-5"
         >
           {/* Mini Map & Location Status Widget */}
-          <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all hover:shadow-md">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs transition-all hover:shadow-md">
             {myLocation ? (
               <div className="relative">
                 <MiniMap
@@ -582,9 +586,9 @@ export default function DashboardPage() {
                 <div
                   className={cn(
                     "absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5",
-                    "rounded-xl text-[11px] font-bold backdrop-blur-md border shadow-sm",
+                    "rounded-2xl text-[11px] font-bold backdrop-blur-md border shadow-xs",
                     isSharing
-                      ? "bg-chart-5/90 text-white border-chart-5/50"
+                      ? "bg-emerald-500/90 text-white border-emerald-400/50"
                       : "bg-background/85 text-muted-foreground border-border",
                   )}
                 >
@@ -599,7 +603,7 @@ export default function DashboardPage() {
                   {isSharing ? "Broadcasting GPS" : "Sharing Paused"}
                 </div>
                 {myLocation.accuracy != null && (
-                  <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold backdrop-blur-md bg-background/80 border border-border/50 text-muted-foreground shadow-sm">
+                  <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-semibold backdrop-blur-md bg-background/85 border border-border/50 text-muted-foreground shadow-xs">
                     <Globe size={10} />±{Math.round(myLocation.accuracy)}m accuracy
                   </div>
                 )}
@@ -629,12 +633,12 @@ export default function DashboardPage() {
                 {myLocation && (
                   <button
                     onClick={handleCopyCoords}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline cursor-pointer"
                   >
                     {copiedCoords ? (
                       <>
-                        <Check size={11} className="text-chart-5" />
-                        <span className="text-chart-5">Copied!</span>
+                        <Check size={11} className="text-emerald-500" />
+                        <span className="text-emerald-500">Copied!</span>
                       </>
                     ) : (
                       <>
@@ -666,7 +670,7 @@ export default function DashboardPage() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="flex-1 gap-1.5 rounded-xl h-9 text-xs font-bold"
+                  className="flex-1 gap-1.5 rounded-2xl h-9 text-xs font-bold cursor-pointer"
                   asChild
                 >
                   <Link href="/dashboard/map">
@@ -677,10 +681,10 @@ export default function DashboardPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 rounded-xl h-9 text-xs font-semibold px-3"
+                  className="gap-1.5 rounded-2xl h-9 text-xs font-semibold px-3.5 cursor-pointer"
                   onClick={handleToggleSharing}
                 >
-                  <Radio size={13} className={cn(isSharing && "text-chart-5")} />
+                  <Radio size={13} className={cn(isSharing && "text-emerald-500 animate-pulse")} />
                   {isSharing ? "Pause" : "Resume"}
                 </Button>
               </div>
@@ -688,10 +692,10 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions Card */}
-          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+          <div className="rounded-3xl border border-border/60 bg-card p-5 shadow-xs">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10">
                   <Zap size={13} className="text-primary" />
                 </div>
                 <p className="text-xs font-bold uppercase tracking-wider text-foreground">
@@ -708,7 +712,7 @@ export default function DashboardPage() {
                 <Link
                   key={label}
                   href={href}
-                  className="group flex flex-col items-center gap-2 rounded-xl p-3 border border-border/40 bg-muted/20 hover:bg-muted/60 transition-all duration-200 active:scale-95 shadow-xs"
+                  className="group flex flex-col items-center gap-2 rounded-2xl p-3 border border-border/40 bg-muted/20 hover:bg-muted/60 transition-all duration-200 active:scale-95 shadow-2xs"
                 >
                   <div
                     className={cn(
@@ -733,11 +737,11 @@ export default function DashboardPage() {
           className="lg:col-span-7 flex flex-col gap-5"
         >
           {/* On the Map — Friends Streaming Live Coordinates */}
-          <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs">
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-chart-5/10">
-                  <Navigation size={16} className="text-chart-5" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <Navigation size={16} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-foreground">
@@ -759,8 +763,8 @@ export default function DashboardPage() {
 
             {isLoading ? (
               <div className="space-y-3 p-5">
-                <Skeleton className="h-12 w-full rounded-xl" />
-                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-2xl" />
+                <Skeleton className="h-12 w-full rounded-2xl" />
               </div>
             ) : onMapFriends.length === 0 ? (
               <div className="flex flex-col items-center py-10 px-4 text-center text-muted-foreground">
@@ -776,7 +780,7 @@ export default function DashboardPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-4 gap-1.5 rounded-xl h-8 text-xs font-semibold"
+                  className="mt-4 gap-1.5 rounded-2xl h-8.5 text-xs font-semibold"
                   asChild
                 >
                   <Link href="/dashboard/friends">
@@ -806,7 +810,7 @@ export default function DashboardPage() {
                           <p className="truncate text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                             {friend.name}
                           </p>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-chart-5/10 text-chart-5 border border-chart-5/20">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                             Live
                           </span>
                         </div>
@@ -829,15 +833,15 @@ export default function DashboardPage() {
           </div>
 
           {/* Online Circle Feed */}
-          <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs">
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-chart-5/10">
-                    <Radio size={16} className="text-chart-5" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <Radio size={16} />
                   </div>
                   {onlineFriends.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-chart-5 border-2 border-card" />
+                    <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-card" />
                   )}
                 </div>
                 <div>
@@ -862,8 +866,8 @@ export default function DashboardPage() {
 
             {isLoading ? (
               <div className="space-y-3 p-5">
-                <Skeleton className="h-12 w-full rounded-xl" />
-                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-2xl" />
+                <Skeleton className="h-12 w-full rounded-2xl" />
               </div>
             ) : onlineFriends.length === 0 ? (
               <div className="flex flex-col items-center py-10 px-4 text-center text-muted-foreground">
@@ -879,7 +883,7 @@ export default function DashboardPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-4 gap-1.5 rounded-xl h-8 text-xs font-semibold"
+                  className="mt-4 gap-1.5 rounded-2xl h-8.5 text-xs font-semibold"
                   asChild
                 >
                   <Link href="/dashboard/friends">
@@ -913,7 +917,7 @@ export default function DashboardPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 shrink-0 gap-1.5 rounded-xl px-3 text-xs font-semibold hover:bg-primary/10 hover:text-primary"
+                        className="h-8 shrink-0 gap-1.5 rounded-xl px-3 text-xs font-semibold hover:bg-primary/10 hover:text-primary cursor-pointer"
                         asChild
                       >
                         <Link href={`/dashboard/map?focus=${friend.id}`}>
@@ -942,20 +946,20 @@ export default function DashboardPage() {
           ACTIVITY & GPS TRENDS CHART
           ══════════════════════════════════════════════════════════════════ */}
       <motion.div {...fadeUp(0.2)}>
-        <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm p-6">
+        <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
                 <TrendingUp size={16} />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-foreground">Activity & Telemetry Trends</h3>
-                <p className="text-xs text-muted-foreground">Past 7-day tracking activity and network signals</p>
+                <p className="text-xs text-muted-foreground">Past 7-day tracking signals, contacts, and coverage</p>
               </div>
             </div>
 
             {/* Metric Switcher Tabs */}
-            <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/40 shrink-0">
+            <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-2xl border border-border/40 shrink-0">
               {[
                 { key: 'signals' as const,  label: 'Signals' },
                 { key: 'active' as const,   label: 'Contacts' },
@@ -963,11 +967,14 @@ export default function DashboardPage() {
               ].map((m) => (
                 <button
                   key={m.key}
-                  onClick={() => setChartMetric(m.key)}
+                  onClick={() => {
+                    setChartMetric(m.key);
+                    soundFx.playPop();
+                  }}
                   className={cn(
-                    'px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer',
+                    'px-3 py-1 text-xs font-semibold rounded-xl transition-all cursor-pointer',
                     chartMetric === m.key
-                      ? 'bg-background text-foreground shadow-xs font-bold'
+                      ? 'bg-background text-foreground shadow-2xs font-bold'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -1003,10 +1010,10 @@ export default function DashboardPage() {
           ══════════════════════════════════════════════════════════════════ */}
       {!groupsLoading && groups.length > 0 && (
         <motion.div {...fadeUp(0.22)}>
-          <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs">
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-chart-2/10">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-chart-2/10">
                   <Users2 size={16} className="text-chart-2" />
                 </div>
                 <div>
@@ -1038,7 +1045,7 @@ export default function DashboardPage() {
                   >
                     <div
                       className={cn(
-                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-base font-bold text-white shadow-sm transition-transform duration-200 group-hover:scale-105",
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-base font-bold text-white shadow-xs transition-transform duration-200 group-hover:scale-105",
                         GROUP_GRADIENTS[idx % GROUP_GRADIENTS.length],
                       )}
                     >
@@ -1051,7 +1058,7 @@ export default function DashboardPage() {
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {memberCount} member{memberCount !== 1 ? "s" : ""}
                         {online > 0 && (
-                          <span className="text-chart-5 font-semibold">
+                          <span className="text-emerald-500 font-semibold">
                             {" "}
                             · {online} online now
                           </span>
@@ -1086,7 +1093,7 @@ export default function DashboardPage() {
           ══════════════════════════════════════════════════════════════════ */}
       {!isLoading && friends.length === 0 && groups.length === 0 && (
         <motion.div {...fadeUp(0.2)}>
-          <div className="rounded-3xl border border-dashed border-border/80 bg-card/60 px-8 py-14 text-center shadow-xs">
+          <div className="rounded-3xl border border-dashed border-border/80 bg-card/60 px-8 py-14 text-center shadow-xs backdrop-blur-md">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary shadow-inner">
               <Sparkles size={28} />
             </div>
@@ -1097,12 +1104,12 @@ export default function DashboardPage() {
               Add your friends or create your first circle to start real-time live location sharing, geofencing, and smart tracking.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Button asChild className="gap-2 rounded-xl h-10 px-5 font-bold shadow-md shadow-primary/20">
+              <Button asChild className="gap-2 rounded-2xl h-10 px-5 font-bold shadow-md shadow-primary/20">
                 <Link href="/dashboard/friends">
                   <UserCheck size={15} /> Find Friends
                 </Link>
               </Button>
-              <Button variant="outline" asChild className="gap-2 rounded-xl h-10 px-5 font-semibold">
+              <Button variant="outline" asChild className="gap-2 rounded-2xl h-10 px-5 font-semibold">
                 <Link href="/dashboard/groups">
                   <Users2 size={15} /> Create Group
                 </Link>

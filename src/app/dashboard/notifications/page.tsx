@@ -266,7 +266,7 @@ export default function NotificationsPage() {
                   className={cn(
                     'px-4 py-2 rounded-xl text-[12px] font-bold transition-all border shadow-sm backdrop-blur-md',
                     filterType === key
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-blue-600/30'
+                      ? 'bg-primary text-primary-foreground border-primary shadow-primary/30'
                       : 'bg-card/80 border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   )}
                 >

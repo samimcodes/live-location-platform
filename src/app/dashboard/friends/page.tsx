@@ -331,8 +331,8 @@ export default function FriendsPage() {
             {/* Top row */}
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 shadow-inner border border-primary/20">
-                  <Users size={28} className="text-primary" />
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/30 border border-indigo-400/20">
+                  <Users size={28} className="text-white" />
                 </div>
                 <div>
                   <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
@@ -364,34 +364,35 @@ export default function FriendsPage() {
                   icon: Users,
                   label: "Total Friends",
                   value: friends.length,
-                  tone: "primary" as const,
+                  gradient: "from-indigo-500 to-violet-600",
+                  glow: "shadow-indigo-500/25",
                 },
                 {
                   icon: Radio,
                   label: "Online Now",
                   value: onlineCount,
-                  tone: "live" as const,
+                  gradient: "from-emerald-500 to-teal-600",
+                  glow: "shadow-emerald-500/25",
                 },
                 {
                   icon: MapPin,
                   label: "On The Map",
                   value: onMapCount,
-                  tone: "map" as const,
+                  gradient: "from-sky-500 to-blue-600",
+                  glow: "shadow-sky-500/25",
                 },
-              ].map(({ icon: Icon, label, value, tone }) => (
+              ].map(({ icon: Icon, label, value, gradient, glow }) => (
                 <div
                   key={label}
-                  className="flex items-center gap-4 rounded-2xl border border-border/60 bg-background/60 backdrop-blur-md px-5 py-4 shadow-sm hover:shadow transition-shadow"
+                  className="flex items-center gap-4 rounded-2xl border border-border/60 bg-background/60 backdrop-blur-md px-5 py-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
                 >
                   <div
                     className={cn(
-                      "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-                      tone === "primary" && "bg-primary/10 text-primary border border-primary/20",
-                      tone === "live" && "bg-chart-5/15 text-chart-5 border border-chart-5/20",
-                      tone === "map" && "bg-chart-3/15 text-chart-3 border border-chart-3/20",
+                      "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br border border-white/10",
+                      gradient, glow,
                     )}
                   >
-                    <Icon size={20} />
+                    <Icon size={20} className="text-white" />
                   </div>
                   <div>
                     <p className="text-2xl font-extrabold tabular-nums leading-none text-foreground/90">
