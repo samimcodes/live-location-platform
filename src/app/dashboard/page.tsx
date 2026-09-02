@@ -448,7 +448,7 @@ export default function DashboardPage() {
                   </p>
                   <div className="inline-flex items-center gap-2 bg-background/60 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-border/50 shadow-sm">
                     <Activity size={13} className="text-primary animate-pulse" />
-                    <span className="text-lg sm:text-xl font-bold tabular-nums tracking-tight text-foreground font-mono">
+                    <span suppressHydrationWarning className="text-lg sm:text-xl font-bold tabular-nums tracking-tight text-foreground font-mono">
                       {formattedTime}
                     </span>
                   </div>

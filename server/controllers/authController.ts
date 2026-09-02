@@ -74,11 +74,13 @@ export class AuthController {
   static me = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user?.userId;
     if (!userId) {
+      clearAuthCookies(res);
       sendResponse(res, { statusCode: 401, message: 'Unauthorized' });
       return;
     }
     const user = await AuthService.getMe(userId);
     if (!user) {
+      clearAuthCookies(res);
       sendResponse(res, { statusCode: 404, message: 'User not found' });
       return;
     }

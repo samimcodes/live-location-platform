@@ -147,10 +147,12 @@ export class AuthService {
     newPassword: string
   ) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.password) throw new Error('User not found');
+    if (!user) throw new Error('User not found');
 
-    const valid = await bcrypt.compare(currentPassword, user.password);
-    if (!valid) throw new Error('Current password is incorrect');
+    if (user.password) {
+      const valid = await bcrypt.compare(currentPassword, user.password);
+      if (!valid) throw new Error('Current password is incorrect');
+    }
 
     const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
     await prisma.user.update({ where: { id: userId }, data: { password: hashed } });

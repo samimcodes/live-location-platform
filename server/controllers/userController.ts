@@ -16,6 +16,11 @@ export class UserController {
     sendResponse(res, { statusCode: 200, data: user });
   });
 
+  static getProfile = catchAsync(async (req: AuthRequest, res: Response) => {
+    const user = await UserService.getById(req.user!.userId);
+    sendResponse(res, { statusCode: 200, data: user });
+  });
+
   static updateProfile = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.userId;
     const user = await UserService.updateProfile(userId, req.body);

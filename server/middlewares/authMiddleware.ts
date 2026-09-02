@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Server as SocketIOServer } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import { clearAuthCookies } from '../utils/authCookies';
 
 export interface JwtPayload {
   userId: number;
@@ -43,6 +44,7 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
     req.user = decoded;
     next();
   } catch (err) {
+    clearAuthCookies(res);
     // Expired tokens must be 401 so the Axios interceptor can refresh.
     if (err instanceof jwt.TokenExpiredError) {
       res.status(401).json({ success: false, message: 'Token expired.' });

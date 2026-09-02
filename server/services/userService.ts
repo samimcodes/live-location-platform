@@ -41,6 +41,7 @@ export class UserService {
         id: true, name: true, email: true, phone: true,
         avatar: true, bio: true, role: true,
         isOnline: true, lastSeen: true, sharingLocation: true,
+        createdAt: true,
         updatedAt: true,
       },
     });
