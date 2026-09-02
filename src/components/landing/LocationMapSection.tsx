@@ -13,21 +13,25 @@ const mapFeatures = [
     icon: Navigation,
     title: 'Pinpoint 15s Refresh',
     description: 'Ultra-low latency coordinates update continuously so you always see precise movements in real time.',
+    gradient: 'from-[#7C3AED] to-[#6366F1]',
   },
   {
     icon: Bell,
     title: 'Custom Geofence Zones',
     description: 'Create safe perimeters around Home, School, or Work. Get notified the second a family member enters or exits.',
+    gradient: 'from-[#EC4899] to-[#F43F5E]',
   },
   {
     icon: Compass,
     title: 'Speed & Route Tracking',
     description: 'Monitor movement speed, heading direction, and elevation during road trips or daily commutes.',
+    gradient: 'from-[#3B82F6] to-[#06B6D4]',
   },
   {
     icon: ShieldCheck,
     title: 'End-to-End Privacy',
     description: 'Location data is encrypted in transit and at rest. You retain full control over who gets access to your map.',
+    gradient: 'from-[#10B981] to-[#059669]',
   },
 ];
 
@@ -68,13 +72,14 @@ export function LocationMapSection() {
                 return (
                   <div
                     key={feat.title}
-                    className="p-5 rounded-2xl bg-[#F8F9FD] dark:bg-card border border-slate-100 dark:border-border/80 shadow-sm hover:border-purple-200 hover:shadow-md transition-all duration-300 group text-left"
+                    className="p-5 rounded-2xl bg-[#F8F9FD] dark:bg-card border border-slate-100 dark:border-border/80 shadow-sm hover:border-purple-200 hover:shadow-md transition-all duration-300 group text-left relative overflow-hidden"
                   >
-                    <div className="h-10 w-10 rounded-xl bg-[#EDE9FE] text-[#7C3AED] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      <Icon size={20} />
+                    <div className={cn('h-10 w-10 rounded-xl bg-gradient-to-br text-white flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300', feat.gradient)}>
+                      <Icon size={18} />
                     </div>
                     <h3 className="font-bold text-[#0F172A] dark:text-foreground text-base mb-1">{feat.title}</h3>
                     <p className="text-xs text-[#64748B] dark:text-muted-foreground leading-relaxed">{feat.description}</p>
+                    <div className={cn('absolute -bottom-8 -right-8 w-20 h-20 rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-400 pointer-events-none bg-gradient-to-br', feat.gradient)} />
                   </div>
                 );
               })}

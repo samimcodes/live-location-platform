@@ -152,18 +152,38 @@ export function FriendsRealtimeSection() {
 
             <div className="space-y-4">
               {[
-                { title: 'Invite-Only Private Circles', desc: 'Nobody outside your explicit circle can view your map coordinates.' },
-                { title: 'Granular Ghost Mode', desc: 'Choose to share precise GPS, fuzzy city-level location, or freeze your marker entirely.' },
-                { title: 'Real-time Battery & Signal Alerts', desc: 'Know when a family member’s phone battery is running dangerously low.' },
-              ].map((point) => (
-                <div key={point.title} className="flex items-start gap-3">
-                  <CheckCircle2 size={20} className="text-[#7C3AED] shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-bold text-[#0F172A] dark:text-foreground text-sm">{point.title}</h4>
-                    <p className="text-xs text-[#64748B] dark:text-muted-foreground leading-relaxed">{point.desc}</p>
+                {
+                  icon: Users,
+                  title: 'Invite-Only Private Circles',
+                  desc: 'Nobody outside your explicit circle can view your map coordinates.',
+                  gradient: 'from-[#7C3AED] to-[#6366F1]',
+                },
+                {
+                  icon: EyeOff,
+                  title: 'Granular Ghost Mode',
+                  desc: 'Choose to share precise GPS, fuzzy city-level location, or freeze your marker entirely.',
+                  gradient: 'from-[#EC4899] to-[#F43F5E]',
+                },
+                {
+                  icon: Battery,
+                  title: 'Real-time Battery & Signal Alerts',
+                  desc: 'Know when a family member\'s phone battery is running dangerously low.',
+                  gradient: 'from-[#10B981] to-[#059669]',
+                },
+              ].map((point) => {
+                const Icon = point.icon;
+                return (
+                  <div key={point.title} className="flex items-start gap-4 p-4 rounded-2xl bg-[#F8F9FD] dark:bg-card/60 border border-slate-100 dark:border-border/60 hover:border-purple-200/60 dark:hover:border-purple-800/40 hover:shadow-sm transition-all duration-200 group">
+                    <div className={`h-10 w-10 rounded-xl bg-gradient-to-br text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-300 ${point.gradient}`}>
+                      <Icon size={18} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-[#0F172A] dark:text-foreground text-sm">{point.title}</h4>
+                      <p className="text-xs text-[#64748B] dark:text-muted-foreground leading-relaxed mt-0.5">{point.desc}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="pt-2 flex flex-wrap gap-4">
