@@ -2,12 +2,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { motion, useMotionValue, useTransform, useSpring, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, RefreshCw, Home, Radio, Activity, ShieldAlert, WifiOff, Navigation, Sparkles, Map, ChevronRight } from 'lucide-react';
+import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { AlertTriangle, RefreshCw, Home, Radio, Activity, WifiOff, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { soundFx } from '@/lib/soundFx';
 
-export default function GlobalError({
+export default function Error({
   error,
   reset,
 }: {

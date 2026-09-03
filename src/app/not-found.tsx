@@ -3,9 +3,25 @@
 import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { Compass, Home, Map, Radio, ArrowRight, ShieldCheck, Navigation, Sparkles, Satellite } from 'lucide-react';
+import { Compass, Home, Map, Radio, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { soundFx } from '@/lib/soundFx';
+
+// Deterministic particle positions for SSR hydration safety (no Math.random())
+const staticParticles = [
+  { id: 1, x: -450, y: -220, delay: 0.1, duration: 5.5 },
+  { id: 2, x: 380, y: -180, delay: 0.4, duration: 6.2 },
+  { id: 3, x: -280, y: 150, delay: 0.8, duration: 4.8 },
+  { id: 4, x: 520, y: 220, delay: 0.2, duration: 5.8 },
+  { id: 5, x: -150, y: -320, delay: 0.6, duration: 6.5 },
+  { id: 6, x: 210, y: 310, delay: 0.9, duration: 5.2 },
+  { id: 7, x: -520, y: 80, delay: 0.3, duration: 7.1 },
+  { id: 8, x: 120, y: -240, delay: 0.7, duration: 4.9 },
+  { id: 9, x: -340, y: -90, delay: 0.5, duration: 6.0 },
+  { id: 10, x: 440, y: -80, delay: 1.1, duration: 5.7 },
+  { id: 11, x: -80, y: 260, delay: 0.35, duration: 6.8 },
+  { id: 12, x: 310, y: 140, delay: 0.75, duration: 5.4 },
+];
 
 export default function NotFound() {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -64,25 +80,24 @@ export default function NotFound() {
           className="absolute bottom-1/4 right-1/3 w-[500px] h-[500px] bg-indigo-600 rounded-full blur-[180px]"
         />
 
-        {/* Floating 3D Cyber Particles */}
-        {Array.from({ length: 20 }).map((_, i) => (
+        {/* Floating 3D Cyber Particles (Hydration-safe) */}
+        {staticParticles.map((p) => (
           <motion.div
-            key={i}
+            key={p.id}
             initial={{
-              x: Math.random() * 1200 - 600,
-              y: Math.random() * 800 - 400,
-              opacity: Math.random() * 0.5 + 0.2,
-              scale: Math.random() * 0.8 + 0.5,
+              x: p.x,
+              y: p.y,
+              opacity: 0.3,
             }}
             animate={{
-              y: [0, -120, 0],
+              y: [p.y, p.y - 80, p.y],
               opacity: [0.2, 0.7, 0.2],
             }}
             transition={{
-              duration: Math.random() * 4 + 4,
+              duration: p.duration,
               repeat: Infinity,
               ease: 'easeInOut',
-              delay: i * 0.18,
+              delay: p.delay,
             }}
             className="absolute top-1/2 left-1/2 h-1.5 w-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_#A855F7]"
           />
