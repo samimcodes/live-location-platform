@@ -1,0 +1,16 @@
+{
+  "name": "LocaLink — Real-Time Family Location Platform",
+  "short_name": "LocaLink",
+  "description": "Real-time family & friends GPS tracking platform with geofencing, trip history, and emergency alerts.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#7C3AED",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -108,6 +108,35 @@ class SoundEffects {
       // ignore
     }
   }
+
+  /** Emergency siren pulse for SOS alerts */
+  playAlert() {
+    if (!this.isEnabled()) return;
+    try {
+      const ctx = this.getContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      [880, 1174.66, 880, 1174.66].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + i * 0.12);
+
+        gain.gain.setValueAtTime(0.15, now + i * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.11);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now + i * 0.12);
+        osc.stop(now + i * 0.12 + 0.11);
+      });
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export const soundFx = new SoundEffects();

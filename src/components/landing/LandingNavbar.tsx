@@ -13,6 +13,8 @@ const navLinks = [
   { label: 'Features', href: '#features', id: 'features' },
   { label: 'How It Works', href: '#how-it-works', id: 'how-it-works' },
   { label: 'Circles & Safety', href: '#circles-safety', id: 'circles-safety' },
+  { label: 'Pricing', href: '#pricing', id: 'pricing' },
+  { label: 'Reviews', href: '#testimonials', id: 'testimonials' },
   { label: 'FAQ', href: '#faq', id: 'faq' },
 ];
 
@@ -107,7 +109,7 @@ export function LandingNavbar() {
 
           {/* Desktop Nav Links */}
           <nav
-            className="hidden lg:flex items-center gap-1.5"
+            className="hidden xl:flex items-center gap-1"
             onMouseLeave={() => setHoveredLink(null)}
           >
             {navLinks.map((l) => {
@@ -120,7 +122,7 @@ export function LandingNavbar() {
                   href={l.href}
                   onMouseEnter={() => setHoveredLink(l.id)}
                   className={cn(
-                    'relative px-3.5 py-2 text-sm font-semibold transition-colors duration-200 rounded-xl',
+                    'relative px-3 py-1.5 text-xs lg:text-sm font-semibold transition-colors duration-200 rounded-xl',
                     isActive
                       ? 'text-slate-900 dark:text-foreground font-bold'
                       : 'text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground'
@@ -181,7 +183,7 @@ export function LandingNavbar() {
           </div>
 
           {/* Mobile menu toggle & theme */}
-          <div className="md:hidden flex items-center gap-1">
+          <div className="xl:hidden flex items-center gap-1">
             <button
               onClick={cycleTheme}
               aria-label={mounted ? `Theme: ${theme ?? 'system'}` : 'Toggle theme'}
@@ -208,7 +210,7 @@ export function LandingNavbar() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="md:hidden absolute top-[calc(100%+0.5rem)] left-4 right-4 bg-white/95 dark:bg-card/95 backdrop-blur-2xl border border-slate-100 dark:border-border rounded-2xl shadow-2xl p-4 space-y-2 z-50"
+            className="xl:hidden absolute top-[calc(100%+0.5rem)] left-4 right-4 bg-white/95 dark:bg-card/95 backdrop-blur-2xl border border-slate-100 dark:border-border rounded-2xl shadow-2xl p-4 space-y-2 z-50 max-h-[80vh] overflow-y-auto"
           >
             {navLinks.map((l) => {
               const isActive = activeSection === l.id;
