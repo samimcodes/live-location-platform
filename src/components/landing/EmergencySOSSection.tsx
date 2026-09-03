@@ -27,7 +27,7 @@ export function EmergencySOSSection() {
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
+
           {/* Left Column: SOS Value Proposition */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -88,7 +88,7 @@ export function EmergencySOSSection() {
             className="lg:col-span-6"
           >
             <div className="rounded-3xl border border-slate-200/90 dark:border-border/90 bg-white dark:bg-card shadow-[0_20px_60px_rgba(239,68,68,0.12)] p-6 sm:p-8 space-y-6 relative overflow-hidden">
-              
+
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-border pb-4">
                 <div className="flex items-center gap-2.5">
@@ -115,14 +115,13 @@ export function EmergencySOSSection() {
                       <span className="animate-pulse absolute -inset-8 rounded-full bg-red-400/30 pointer-events-none" />
                     </>
                   )}
-                  
+
                   <button
                     onClick={handleSosClick}
-                    className={`relative h-28 w-28 sm:h-32 sm:w-32 rounded-full font-black text-white text-xl sm:text-2xl shadow-2xl transition-all duration-300 cursor-pointer flex flex-col items-center justify-center gap-1 active:scale-95 ${
-                      sosTriggered
+                    className={`relative h-28 w-28 sm:h-32 sm:w-32 rounded-full font-black text-white text-xl sm:text-2xl shadow-2xl transition-all duration-300 cursor-pointer flex flex-col items-center justify-center gap-1 active:scale-95 ${sosTriggered
                         ? 'bg-gradient-to-br from-red-600 to-rose-700 shadow-red-600/50 ring-4 ring-red-400 scale-105'
                         : 'bg-gradient-to-br from-red-500 via-rose-600 to-red-700 shadow-red-500/40 hover:scale-105 hover:shadow-red-500/60'
-                    }`}
+                      }`}
                   >
                     <ShieldAlert size={32} />
                     <span>{sosTriggered ? 'CANCEL' : 'SOS'}</span>

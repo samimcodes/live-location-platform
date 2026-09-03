@@ -98,19 +98,19 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-[92dvh] flex flex-col justify-center overflow-hidden pt-28 pb-20 bg-gradient-to-b from-[#F8FAFF] via-[#F3F6FC] to-[#ECF0F9] dark:from-background dark:via-background dark:to-card/30">
-      
+    <section className="relative min-h-[92dvh] flex flex-col justify-center overflow-hidden pt-28 pb-20 bg-background">
+
       {/* ── AMBIENT BACKGROUND ── */}
       <div className="absolute inset-0 -z-10 pointer-events-none select-none overflow-hidden">
-        <div className="absolute top-0 left-[8%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] bg-purple-300/20 dark:bg-purple-900/15 rounded-full blur-[160px]" />
-        <div className="absolute top-[10%] right-[5%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] bg-indigo-300/20 dark:bg-indigo-900/15 rounded-full blur-[150px]" />
-        <div className="absolute bottom-0 left-[25%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] bg-blue-300/15 dark:bg-blue-900/10 rounded-full blur-[140px]" />
+        <div className="absolute top-0 left-[8%] w-[50vw] h-[50vw] max-w-[700px] max-h-[700px] bg-primary/15 rounded-full blur-[160px]" />
+        <div className="absolute top-[10%] right-[5%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] bg-chart-3/15 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 left-[25%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] bg-chart-5/10 rounded-full blur-[140px]" />
         <div className="absolute inset-0 bg-[radial-gradient(#80808010_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          
+
           {/* ════════════════════════════════════════════════════
               LEFT COLUMN: VALUE PROPOSITION
           ════════════════════════════════════════════════════ */}
@@ -121,26 +121,26 @@ export function HeroSection() {
             className="space-y-7"
           >
             {/* Live Status Chip */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-card/90 border border-purple-200/80 dark:border-purple-800/60 text-xs font-semibold shadow-xs backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card/90 border border-border/60 text-xs font-semibold shadow-xs backdrop-blur-md">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="text-[#7C3AED] dark:text-purple-300 font-bold tracking-wide">Real-Time GPS Engine</span>
-              <span className="h-3.5 w-px bg-slate-200 dark:bg-slate-700" />
-              <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">15s Live Sync</span>
+              <span className="text-primary font-bold tracking-wide">Real-Time GPS Engine</span>
+              <span className="h-3.5 w-px bg-border" />
+              <span className="text-chart-5 font-mono text-[11px]">15s Live Sync</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold tracking-tight leading-[1.1] text-slate-900 dark:text-foreground">
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold tracking-tight leading-[1.1] text-foreground">
               Live Location &<br className="hidden sm:block" /> Safety for{' '}
-              <span className="bg-gradient-to-r from-[#7C3AED] via-[#6366F1] to-[#4F46E5] bg-clip-text text-transparent">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-600 to-chart-3 dark:from-primary dark:via-indigo-400 dark:to-chart-3">
                 Every Family
               </span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg text-slate-500 dark:text-muted-foreground leading-relaxed max-w-md">
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-md">
               Know when loved ones arrive safely, get automatic geofence alerts, and track live — with instant Ghost Mode privacy anytime.
             </p>
 
@@ -148,7 +148,7 @@ export function HeroSection() {
             <div className="flex flex-wrap items-center gap-3.5">
               <Button
                 size="lg"
-                className="h-12 px-7 font-bold text-sm rounded-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/35 transition-all hover:-translate-y-0.5 active:translate-y-0 group gap-2"
+                className="h-12 px-7 font-bold text-sm rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 transition-all hover:-translate-y-0.5 active:translate-y-0 group gap-2"
                 onClick={() => soundFx.playPop()}
                 asChild
               >
@@ -160,24 +160,24 @@ export function HeroSection() {
               <Button
                 variant="outline"
                 size="lg"
-                className="h-12 px-6 font-bold text-sm rounded-full bg-white/90 dark:bg-card/90 backdrop-blur-md border-slate-200 dark:border-border text-slate-800 dark:text-foreground shadow-xs hover:bg-white dark:hover:bg-muted transition-all hover:-translate-y-0.5 active:translate-y-0 gap-2"
+                className="h-12 px-6 font-bold text-sm rounded-full bg-card backdrop-blur-md border border-border text-foreground shadow-xs hover:bg-muted transition-all hover:-translate-y-0.5 active:translate-y-0 gap-2"
                 onClick={() => soundFx.playPop()}
                 asChild
               >
                 <Link href="/login">
-                  <Send size={15} className="text-[#7C3AED]" />
+                  <Send size={15} className="text-primary" />
                   Live Dashboard
                 </Link>
               </Button>
             </div>
 
             {/* Inline Trust Line */}
-            <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-muted-foreground pt-1 flex-wrap">
-              <span className="flex items-center gap-1.5 font-medium"><ShieldCheck size={14} className="text-emerald-500" /> E2E Encrypted</span>
-              <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" />
-              <span className="flex items-center gap-1.5 font-medium"><Zap size={14} className="text-purple-500" /> Sub-20ms Latency</span>
-              <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" />
-              <span className="flex items-center gap-1.5 font-medium"><Battery size={14} className="text-blue-500" /> &lt;3% Battery Use</span>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1 flex-wrap">
+              <span className="flex items-center gap-1.5 font-medium"><ShieldCheck size={14} className="text-chart-5" /> E2E Encrypted</span>
+              <span className="h-3 w-px bg-border" />
+              <span className="flex items-center gap-1.5 font-medium"><Zap size={14} className="text-primary" /> Sub-20ms Latency</span>
+              <span className="h-3 w-px bg-border" />
+              <span className="flex items-center gap-1.5 font-medium"><Battery size={14} className="text-chart-3" /> &lt;3% Battery Use</span>
             </div>
 
             {/* Social Proof */}
@@ -189,7 +189,7 @@ export function HeroSection() {
                   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
                   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
                 ].map((src, i) => (
-                  <div key={i} className="h-8 w-8 rounded-full border-[2.5px] border-white dark:border-background overflow-hidden shadow-xs">
+                  <div key={i} className="h-8 w-8 rounded-full border-[2.5px] border-card overflow-hidden shadow-xs">
                     <Image src={src} alt="User" width={32} height={32} unoptimized className="h-full w-full object-cover" />
                   </div>
                 ))}
@@ -197,9 +197,9 @@ export function HeroSection() {
               <div>
                 <div className="flex items-center gap-0.5 text-amber-400">
                   {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={13} className="fill-amber-400" />)}
-                  <span className="text-xs font-bold text-slate-700 dark:text-foreground ml-1.5">4.9/5</span>
+                  <span className="text-xs font-bold text-foreground ml-1.5">4.9/5</span>
                 </div>
-                <div className="text-[11px] text-slate-400 font-medium">Trusted by 2,000+ families</div>
+                <div className="text-[11px] text-muted-foreground font-medium">Trusted by 2,000+ families</div>
               </div>
             </div>
           </motion.div>
@@ -214,26 +214,26 @@ export function HeroSection() {
             className="relative flex items-center justify-center"
           >
             {/* Ambient Glow Behind Card */}
-            <div className="absolute w-[85%] h-[85%] rounded-[40px] bg-gradient-to-tr from-[#7C3AED]/25 via-[#6366F1]/15 to-[#3B82F6]/20 blur-3xl pointer-events-none" />
+            <div className="absolute w-[85%] h-[85%] rounded-[40px] bg-gradient-to-tr from-primary/20 via-chart-3/10 to-chart-5/15 blur-3xl pointer-events-none" />
 
             {/* Main App Preview Card */}
-            <div className="relative w-full max-w-[560px] rounded-[28px] bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.3)] overflow-hidden">
-              
+            <div className="relative w-full max-w-[560px] rounded-[28px] bg-card border border-border/60 shadow-sm overflow-hidden">
+
               {/* ── App Header Bar ── */}
-              <div className="px-5 py-3.5 bg-white dark:bg-card border-b border-slate-100 dark:border-border flex items-center justify-between">
+              <div className="px-5 py-3.5 bg-card border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#6366F1] flex items-center justify-center text-white shadow-md shadow-purple-500/20">
+                  <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/20">
                     <MapPin size={15} />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-slate-800 dark:text-foreground">Family Circle</div>
-                    <div className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1">
+                    <div className="text-sm font-bold text-foreground">Family Circle</div>
+                    <div className="text-[10px] text-chart-5 font-semibold flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       3 members online
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-muted px-2.5 py-1 rounded-lg border border-slate-100 dark:border-border">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground bg-muted px-2.5 py-1 rounded-lg border border-border">
                   <Clock size={11} /> Live
                 </div>
               </div>
@@ -295,19 +295,17 @@ export function HeroSection() {
                         <span className="animate-ping absolute -inset-1.5 rounded-full opacity-60" style={{ backgroundColor: m.color }} />
                       )}
                       <div
-                        className={`relative h-10 w-10 sm:h-11 sm:w-11 rounded-full border-2 overflow-hidden shadow-lg transition-transform duration-200 group-hover:scale-110 ${
-                          isActive ? 'border-white ring-[3px] scale-110' : 'border-white/80'
-                        }`}
+                        className={`relative h-10 w-10 sm:h-11 sm:w-11 rounded-full border-2 overflow-hidden shadow-lg transition-transform duration-200 group-hover:scale-110 ${isActive ? 'border-white ring-[3px] scale-110' : 'border-white/80'
+                          }`}
                         style={isActive ? { boxShadow: `0 0 0 3px ${m.color}40` } : undefined}
                       >
                         <Image src={m.avatar} alt={m.name} width={44} height={44} unoptimized className="h-full w-full object-cover" />
                       </div>
                       <div
-                        className={`mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap shadow-md border backdrop-blur-sm ${
-                          isActive
-                            ? 'bg-[#7C3AED] text-white border-purple-300/50'
+                        className={`mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap shadow-md border backdrop-blur-sm ${isActive
+                            ? 'bg-primary text-primary-foreground border-primary/50'
                             : 'bg-slate-900/85 text-slate-200 border-white/10'
-                        }`}
+                          }`}
                       >
                         {m.shortName}
                       </div>
@@ -318,47 +316,47 @@ export function HeroSection() {
                 {/* Bottom GPS Coordinates Bar */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950/90 to-transparent px-4 py-2 flex items-center justify-between text-[10px] text-slate-400 font-mono">
                   <span>23.8103°N, 90.4125°E</span>
-                  <span className="text-purple-300 bg-purple-500/15 px-2 py-0.5 rounded-md border border-purple-500/20">±2.5m Accuracy</span>
+                  <span className="text-primary bg-primary/15 px-2 py-0.5 rounded-md border border-primary/20">±2.5m Accuracy</span>
                 </div>
               </div>
 
               {/* ── SELECTED MEMBER DETAIL PANEL ── */}
-              <div className="p-4 bg-white dark:bg-card border-t border-slate-100 dark:border-border">
+              <div className="p-4 bg-card border-t border-border">
                 <div className="flex items-center gap-3">
                   <div className="h-11 w-11 rounded-xl overflow-hidden border-2 shrink-0 shadow-md" style={{ borderColor: selected.color }}>
                     <Image src={selected.avatar} alt={selected.name} width={44} height={44} unoptimized className="h-full w-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-slate-800 dark:text-foreground truncate">{selected.name}</span>
+                      <span className="text-sm font-bold text-foreground truncate">{selected.name}</span>
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" style={{ backgroundColor: `${selected.color}15`, color: selected.color, border: `1px solid ${selected.color}30` }}>
                         {selected.tag}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">{selected.statusText}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{selected.statusText}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {selected.activity === 'driving' && (
-                      <div className="flex items-center gap-1 text-xs font-mono font-bold bg-purple-50 dark:bg-purple-950/50 text-[#7C3AED] px-2.5 py-1.5 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center gap-1 text-xs font-mono font-bold bg-primary/10 text-primary px-2.5 py-1.5 rounded-lg border border-primary/20">
                         <Car size={13} />
                         <span>{liveSpeed}</span>
-                        <span className="text-[9px] text-purple-400 font-normal">km/h</span>
+                        <span className="text-[9px] text-primary/60 font-normal">km/h</span>
                       </div>
                     )}
                     {selected.activity === 'home' && (
-                      <div className="flex items-center gap-1 text-xs font-mono font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center gap-1 text-xs font-mono font-bold bg-chart-5/10 text-chart-5 px-2.5 py-1.5 rounded-lg border border-chart-5/20">
                         <Wifi size={13} />
                         <span>Home</span>
                       </div>
                     )}
                     {selected.activity === 'school' && (
-                      <div className="flex items-center gap-1 text-xs font-mono font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-600 px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800">
+                      <div className="flex items-center gap-1 text-xs font-mono font-bold bg-chart-4/10 text-chart-4 px-2.5 py-1.5 rounded-lg border border-chart-4/20">
                         <CheckCircle2 size={13} />
                         <span>Safe</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-1 text-xs font-mono text-slate-500 bg-slate-50 dark:bg-muted px-2 py-1.5 rounded-lg border border-slate-100 dark:border-border">
-                      <Battery size={13} className="text-emerald-500" />
+                    <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground bg-muted px-2 py-1.5 rounded-lg border border-border">
+                      <Battery size={13} className="text-chart-5" />
                       <span>{selected.battery}%</span>
                     </div>
                   </div>
@@ -366,18 +364,17 @@ export function HeroSection() {
               </div>
 
               {/* ── BOTTOM MEMBER QUICK SELECT TABS ── */}
-              <div className="px-4 py-3 bg-slate-50/80 dark:bg-muted/40 border-t border-slate-100 dark:border-border flex items-center justify-between gap-2">
+              <div className="px-4 py-3 bg-muted/40 border-t border-border flex items-center justify-between gap-2">
                 {familyMembers.map((m) => {
                   const isActive = selectedId === m.id;
                   return (
                     <button
                       key={m.id}
                       onClick={() => { soundFx.playPop(); setSelectedId(m.id); }}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold flex-1 transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-white dark:bg-card shadow-md border border-slate-200 dark:border-border text-slate-800 dark:text-foreground'
-                          : 'text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-card/40'
-                      }`}
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold flex-1 transition-all cursor-pointer ${isActive
+                          ? 'bg-card shadow-md border border-border text-foreground'
+                          : 'text-muted-foreground hover:bg-card/40'
+                        }`}
                     >
                       <div className="h-7 w-7 rounded-full overflow-hidden border-2 shrink-0" style={{ borderColor: isActive ? m.color : 'transparent' }}>
                         <Image src={m.avatar} alt={m.shortName} width={28} height={28} unoptimized className="h-full w-full object-cover" />
@@ -391,8 +388,6 @@ export function HeroSection() {
                 })}
               </div>
             </div>
-
-
 
           </motion.div>
         </div>
