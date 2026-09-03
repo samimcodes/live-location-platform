@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, EyeOff, UserPlus, Battery, CheckCircle2, Wifi, Send, ShieldAlert, Sparkles, Navigation } from 'lucide-react';
+import { Users, EyeOff, Eye, UserPlus, Battery, CheckCircle2, Wifi, Send, ShieldAlert, Sparkles, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { soundFx } from '@/lib/soundFx';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -59,8 +60,28 @@ export function FriendsRealtimeSection() {
   const [checkedIn, setCheckedIn] = useState(false);
 
   const triggerCheckIn = () => {
+    soundFx.playChime();
     setCheckedIn(true);
     setTimeout(() => setCheckedIn(false), 3000);
+  };
+
+  const toggleMemberGhost = (id: number) => {
+    soundFx.playPop();
+    setFriends((prev) =>
+      prev.map((f) => {
+        if (f.id === id) {
+          const newOnline = !f.online;
+          return {
+            ...f,
+            online: newOnline,
+            status: newOnline ? 'Active Online • Live GPS' : 'Offline (Ghost Mode)',
+            distance: newOnline ? '2.4 km away' : 'Location Hidden',
+            color: newOnline ? 'bg-emerald-500' : 'bg-slate-400',
+          };
+        }
+        return f;
+      })
+    );
   };
 
   return (
@@ -126,9 +147,19 @@ export function FriendsRealtimeSection() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 font-mono bg-white dark:bg-card px-2.5 py-1 rounded-xl border border-slate-200/70 dark:border-border shadow-2xs">
-                      <Battery size={13} className={parseInt(item.battery) < 50 ? 'text-amber-500' : 'text-emerald-500'} />
-                      <span>{item.battery}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleMemberGhost(item.id)}
+                        className="p-1.5 rounded-lg bg-slate-100 dark:bg-muted text-slate-500 hover:text-[#7C3AED] transition-colors cursor-pointer"
+                        title="Toggle Ghost Mode"
+                      >
+                        {item.online ? <Eye size={13} /> : <EyeOff size={13} className="text-purple-600" />}
+                      </button>
+
+                      <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-mono bg-white dark:bg-card px-2 py-1 rounded-xl border border-slate-200/70 dark:border-border shadow-2xs">
+                        <Battery size={13} className={parseInt(item.battery) < 50 ? 'text-amber-500' : 'text-emerald-500'} />
+                        <span>{item.battery}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -149,7 +180,7 @@ export function FriendsRealtimeSection() {
               <div className="p-3.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/50 dark:border-purple-800/40 flex items-center gap-3 text-xs text-slate-700 dark:text-muted-foreground text-left">
                 <EyeOff size={18} className="text-[#7C3AED] shrink-0" />
                 <span>
-                  <strong className="text-[#7C3AED] dark:text-purple-400">Ghost Mode Active:</strong> Pause location sharing anytime for individual circles with a single toggle.
+                  <strong className="text-[#7C3AED] dark:text-purple-400">Interactive Ghost Mode:</strong> Click the eye icon beside any member to test visibility toggling.
                 </span>
               </div>
             </div>
@@ -218,7 +249,7 @@ export function FriendsRealtimeSection() {
             <div className="pt-2 flex flex-wrap gap-4">
               <Button
                 size="lg"
-                className="h-12 px-7 font-bold text-sm rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-purple-500/25 hover:shadow-xl transition-all group gap-2"
+                className="h-12 px-7 font-bold text-sm rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-purple-500/25 hover:shadow-xl transition-all group gap-2 cursor-pointer"
                 asChild
               >
                 <Link href="/register">

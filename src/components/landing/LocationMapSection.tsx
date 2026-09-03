@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Navigation, Compass, ShieldCheck, Layers, Bell, Smartphone, Radio, History, Play, Pause, MapPin, CheckCircle2, Zap } from 'lucide-react';
+import { Navigation, Compass, ShieldCheck, Layers, Bell, Smartphone, Radio, History, Play, Pause, MapPin, CheckCircle2, Zap, Sliders } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { soundFx } from '@/lib/soundFx';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -38,6 +39,13 @@ const mapFeatures = [
 export function LocationMapSection() {
   const [activeTab, setActiveTab] = useState<'live' | 'geofence' | 'history'>('live');
   const [geofenceRadius, setGeofenceRadius] = useState(350);
+  const [isPlayingRoute, setIsPlayingRoute] = useState(false);
+  const [routeProgress, setRouteProgress] = useState(50);
+
+  const handleTabChange = (tab: 'live' | 'geofence' | 'history') => {
+    soundFx.playPop();
+    setActiveTab(tab);
+  };
 
   return (
     <section id="map-preview" className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden bg-white dark:bg-background border-y border-slate-100 dark:border-border/60 scroll-mt-20">
@@ -115,13 +123,13 @@ export function LocationMapSection() {
               <div className="p-4 border-b border-slate-100 dark:border-border bg-slate-50/80 dark:bg-muted/30 flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-muted-foreground">
                   <Layers size={15} className="text-[#7C3AED]" />
-                  Map Layer Control
+                  Interactive Map Mode
                 </div>
                 <div className="flex bg-white dark:bg-card rounded-xl p-1 border border-slate-200/80 dark:border-border gap-1 text-xs shadow-2xs">
                   {(['live', 'geofence', 'history'] as const).map((tab) => (
                     <button
                       key={tab}
-                      onClick={() => setActiveTab(tab)}
+                      onClick={() => handleTabChange(tab)}
                       className={cn(
                         "px-3 py-1.5 rounded-lg font-bold capitalize transition-all cursor-pointer",
                         activeTab === tab
@@ -129,7 +137,7 @@ export function LocationMapSection() {
                           : "text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground"
                       )}
                     >
-                      {tab === 'live' ? 'Live GPS' : tab === 'geofence' ? 'Geofence' : 'Trip Replay'}
+                      {tab === 'live' ? 'Live GPS' : tab === 'geofence' ? 'Geofence Radius' : 'Trip Replay'}
                     </button>
                   ))}
                 </div>
@@ -150,16 +158,16 @@ export function LocationMapSection() {
                   <path d="M 120 260 Q 220 260, 320 180 T 480 120" stroke="#7C3AED" strokeWidth="4" strokeLinecap="round" className="drop-shadow-[0_0_8px_rgba(124,58,237,0.7)]" />
                 </svg>
 
-                {/* Center Pulse Geofence Circle or History Overlay based on tab */}
+                {/* Center Dynamic Geofence Radius Circle */}
                 {activeTab === 'geofence' && (
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="absolute rounded-full border-2 border-dashed border-[#10B981] bg-[#10B981]/15 animate-pulse flex items-center justify-center z-10"
-                    style={{ width: `${geofenceRadius / 1.6}px`, height: `${geofenceRadius / 1.6}px` }}
+                    className="absolute rounded-full border-2 border-dashed border-[#10B981] bg-[#10B981]/15 animate-pulse flex items-center justify-center z-10 transition-all duration-300"
+                    style={{ width: `${Math.min(260, geofenceRadius / 1.5)}px`, height: `${Math.min(260, geofenceRadius / 1.5)}px` }}
                   >
                     <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-card px-2.5 py-0.5 rounded-full border border-emerald-300 shadow-xs">
-                      School Zone ({geofenceRadius}m)
+                      School Zone ({geofenceRadius}m radius)
                     </span>
                   </motion.div>
                 )}
@@ -223,13 +231,34 @@ export function LocationMapSection() {
                   </div>
                 </div>
 
-                {/* Status Bar */}
-                <div className="absolute bottom-4 left-4 right-4 bg-white/95 dark:bg-card/95 backdrop-blur-md border border-slate-100 dark:border-border rounded-xl p-3 flex items-center justify-between text-xs shadow-lg z-20">
-                  <div className="flex items-center gap-2 text-slate-800 dark:text-foreground font-medium">
-                    <Smartphone size={14} className="text-[#7C3AED]" />
-                    GPS Signal: <span className="font-bold text-[#10B981]">Active (±2.5m accuracy)</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 dark:text-muted-foreground font-mono">Updated 1s ago</span>
+                {/* Bottom Dynamic Interactive Controls Bar */}
+                <div className="absolute bottom-3 left-3 right-3 bg-white/95 dark:bg-card/95 backdrop-blur-md border border-slate-100 dark:border-border rounded-xl p-2.5 flex items-center justify-between text-xs shadow-lg z-20">
+                  {activeTab === 'geofence' ? (
+                    <div className="flex items-center justify-between w-full gap-3">
+                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shrink-0">
+                        <Sliders size={13} className="text-[#7C3AED]" /> Radius: {geofenceRadius}m
+                      </span>
+                      <input
+                        type="range"
+                        min="150"
+                        max="600"
+                        step="50"
+                        value={geofenceRadius}
+                        onChange={(e) => {
+                          setGeofenceRadius(Number(e.target.value));
+                        }}
+                        className="w-full h-1.5 bg-slate-200 dark:bg-muted rounded-lg appearance-none cursor-pointer accent-[#7C3AED]"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-slate-800 dark:text-foreground font-medium">
+                        <Smartphone size={14} className="text-[#7C3AED]" />
+                        GPS Signal: <span className="font-bold text-[#10B981]">Active (±2.5m accuracy)</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 dark:text-muted-foreground font-mono">15s Live Sync</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
