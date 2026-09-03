@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { AlertTriangle, RefreshCw, Home, Radio, Activity, WifiOff, Navigation } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Home, RefreshCw, Shield, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { soundFx } from '@/lib/soundFx';
 
@@ -14,289 +14,221 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [reconnectStep, setReconnectStep] = useState<'idle' | 'searching' | 'synced'>('idle');
-
-  // Mouse position values for smooth 3D tilt
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [16, -16]), {
-    stiffness: 160,
-    damping: 20,
-  });
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-20, 20]), {
-    stiffness: 160,
-    damping: 20,
-  });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const xPct = (e.clientX - rect.left) / rect.width - 0.5;
-    const yPct = (e.clientY - rect.top) / rect.height - 0.5;
-    mouseX.set(xPct);
-    mouseY.set(yPct);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
-  useEffect(() => {
-    console.error('LocaLink Runtime Crash:', error);
-  }, [error]);
 
   const handleRetry = () => {
     setIsRetrying(true);
-    setReconnectStep('searching');
     soundFx.playAlert();
-
     setTimeout(() => {
-      setReconnectStep('synced');
-      soundFx.playChime();
-      setTimeout(() => {
-        reset();
-        setIsRetrying(false);
-        setReconnectStep('idle');
-      }, 500);
-    }, 1200);
+      reset();
+      setIsRetrying(false);
+    }, 1000);
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-[#F6F8FD] via-[#F4F6FC] to-[#EEF2FB] dark:from-background dark:via-background dark:to-card/30 text-slate-900 dark:text-foreground px-4 sm:px-6 relative overflow-hidden selection:bg-purple-500 selection:text-white [perspective:1200px]">
+    <div className="min-h-screen w-full flex flex-col items-center justify-between bg-[#080B16] text-white px-4 sm:px-6 relative overflow-hidden selection:bg-purple-500 selection:text-white font-sans py-8">
       
-      {/* ── AMBIENT AURORA GLOWS & GRID MESH ── */}
+      {/* ── ISOMETRIC MAP TERRAIN & GLOWING PATHS BACKGROUND ── */}
       <div className="absolute inset-0 pointer-events-none select-none overflow-hidden -z-10">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.2, 0.35, 0.2],
+        
+        {/* Ambient Glows */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[550px] bg-gradient-to-br from-purple-600/25 via-indigo-600/20 to-pink-600/20 rounded-full blur-[160px]" />
+        <div className="absolute bottom-10 left-10 w-96 h-96 bg-cyan-500/15 rounded-full blur-[140px]" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-pink-500/15 rounded-full blur-[140px]" />
+
+        {/* Isometric Grid Floor Projection */}
+        <div 
+          className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#3B82F6_1px,transparent_1px),linear-gradient(to_bottom,#3B82F6_1px,transparent_1px)] bg-[size:50px_50px]"
+          style={{
+            transform: 'perspective(600px) rotateX(60deg) translateY(-40px) scale(2.2)',
+            transformOrigin: 'top center',
           }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-1/4 left-1/3 w-[500px] h-[500px] bg-purple-400/30 dark:bg-purple-900/25 rounded-full blur-[160px]"
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.15, 0.3, 0.15],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute bottom-1/4 right-1/3 w-[500px] h-[500px] bg-indigo-400/25 dark:bg-indigo-900/20 rounded-full blur-[170px]"
         />
 
-        {/* Floating Micro Particles */}
-        {Array.from({ length: 16 }).map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{
-              x: (i * 75) - 600,
-              y: (i * 45) - 300,
-              opacity: 0.3,
-            }}
-            animate={{
-              y: [0, -80, 0],
-              opacity: [0.2, 0.6, 0.2],
-            }}
-            transition={{
-              duration: 5 + (i % 4),
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: i * 0.25,
-            }}
-            className="absolute top-1/2 left-1/2 h-1.5 w-1.5 rounded-full bg-purple-400/50 dark:bg-purple-400/70 shadow-xs"
+        {/* Soft Fluffy Dark Clouds Background */}
+        <svg className="absolute inset-0 w-full h-full opacity-40" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="20%" cy="30%" rx="180" ry="90" fill="#1E1642" filter="blur(40px)" />
+          <ellipse cx="80%" cy="32%" rx="200" ry="100" fill="#181745" filter="blur(40px)" />
+          <ellipse cx="50%" cy="25%" rx="240" ry="110" fill="#201140" filter="blur(45px)" />
+        </svg>
+
+        {/* Glowing GPS Pins & Dashed Road Lines in 3D Space */}
+        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M 120 720 Q 180 560, 110 380"
+            fill="none"
+            stroke="#06B6D4"
+            strokeWidth="3"
+            strokeDasharray="8 8"
+            className="opacity-75 drop-shadow-[0_0_10px_#06B6D4]"
           />
-        ))}
+          <path
+            d="M 900 750 Q 880 580, 930 450"
+            fill="none"
+            stroke="#EC4899"
+            strokeWidth="3"
+            strokeDasharray="8 8"
+            className="opacity-75 drop-shadow-[0_0_10px_#EC4899]"
+          />
+        </svg>
 
-        {/* Clean Mesh Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800c_1px,transparent_1px),linear-gradient(to_bottom,#8080800c_1px,transparent_1px)] bg-[size:36px_36px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+        {/* GPS Pin Left (Cyan) */}
+        <div className="absolute bottom-[20%] left-[8%] sm:left-[12%] flex flex-col items-center">
+          <div className="relative flex items-center justify-center">
+            <span className="animate-ping absolute w-24 h-12 rounded-full border border-cyan-400 opacity-60 pointer-events-none" style={{ transform: 'rotateX(65deg)' }} />
+            <div className="w-20 h-10 rounded-full border-2 border-cyan-500/40 bg-cyan-500/10 pointer-events-none" style={{ transform: 'rotateX(65deg)' }} />
+            <motion.div
+              animate={{ y: [-4, 4, -4] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -top-7 h-10 w-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-t-full flex items-center justify-center shadow-[0_0_20px_#06B6D4]"
+              style={{ clipPath: 'path("M 16 0 C 7 0 0 7 0 16 C 0 26 16 40 16 40 C 16 40 32 26 32 16 C 32 7 25 0 16 0 Z")' }}
+            >
+              <div className="h-3 w-3 rounded-full bg-white -mt-2" />
+            </motion.div>
+          </div>
+        </div>
+
+        {/* GPS Pin Right (Pink) */}
+        <div className="absolute bottom-[28%] right-[8%] sm:right-[12%] flex flex-col items-center">
+          <div className="relative flex items-center justify-center">
+            <span className="animate-ping absolute w-24 h-12 rounded-full border border-pink-500 opacity-60 pointer-events-none" style={{ transform: 'rotateX(65deg)' }} />
+            <div className="w-20 h-10 rounded-full border-2 border-pink-500/40 bg-pink-500/10 pointer-events-none" style={{ transform: 'rotateX(65deg)' }} />
+            <motion.div
+              animate={{ y: [-4, 4, -4] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -top-7 h-10 w-8 bg-gradient-to-br from-pink-400 to-rose-600 flex items-center justify-center shadow-[0_0_20px_#EC4899]"
+              style={{ clipPath: 'path("M 16 0 C 7 0 0 7 0 16 C 0 26 16 40 16 40 C 16 40 32 26 32 16 C 32 7 25 0 16 0 Z")' }}
+            >
+              <div className="h-3 w-3 rounded-full bg-white -mt-2" />
+            </motion.div>
+          </div>
+        </div>
+
       </div>
 
-      <div className="max-w-xl w-full text-center relative z-10 py-10 flex flex-col items-center">
-        
-        {/* ── TOP BRAND BAR ── */}
-        <Link href="/" className="inline-flex items-center gap-2.5 group mb-6">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] flex items-center justify-center text-white shadow-md shadow-purple-500/25 group-hover:scale-105 transition-transform">
-            <Navigation size={17} className="-rotate-45 text-white" />
-          </div>
-          <span className="text-lg font-black tracking-tight text-slate-900 dark:text-foreground">
-            LocaLink
-          </span>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 text-[#7C3AED] dark:bg-purple-950/60 dark:text-purple-300">
-            System Telemetry
-          </span>
+      {/* ── TOP BRAND PILL ── */}
+      <div className="w-full flex justify-center pt-2">
+        <Link href="/" className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors text-xs font-semibold px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+          <div className="h-2 w-2 rounded-full bg-rose-400 animate-pulse" />
+          <span>LocaLink System Status</span>
         </Link>
+      </div>
 
-        {/* ── 3D INTERACTIVE TILT BEACON STAGE ── */}
-        <div
-          ref={cardRef}
-          onMouseMove={handleMouseMove}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={handleMouseLeave}
-          className="relative cursor-pointer py-4 select-none"
-          style={{ transformStyle: 'preserve-3d' }}
-        >
-          <motion.div
-            style={{
-              rotateX,
-              rotateY,
-              transformStyle: 'preserve-3d',
-            }}
-            className="relative flex items-center justify-center"
-          >
-            {/* 3D Ground Shadow */}
-            <div
-              className="absolute -bottom-10 w-48 h-12 bg-purple-500/20 dark:bg-purple-500/30 rounded-full blur-xl pointer-events-none"
-              style={{ transform: 'translateZ(-50px) rotateX(90deg)' }}
-            />
+      {/* ── MAIN ERROR ARTWORK & CONTENT ── */}
+      <div className="max-w-xl w-full flex flex-col items-center text-center my-auto py-6 relative z-10">
+        
+        {/* ── 3D ARTWORK WITH FLOATING ASTRONAUT & SIGNAL SATELLITE ── */}
+        <div className="relative flex items-center justify-center mb-6 select-none">
+          
+          <div className="absolute -bottom-6 w-72 h-16 bg-purple-600/35 rounded-full blur-2xl pointer-events-none" />
 
-            {/* Orbiting Satellite Hologram Rings */}
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
-              className="absolute w-56 h-56 rounded-full border border-purple-300/40 dark:border-purple-700/40 border-dashed pointer-events-none flex items-center justify-center"
-              style={{ transform: 'translateZ(15px)' }}
-            >
-              <span className="h-3 w-3 rounded-full bg-[#7C3AED] shadow-md absolute -top-1.5" />
-            </motion.div>
-
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-              className="absolute w-72 h-72 rounded-full border border-indigo-200/40 dark:border-indigo-800/30 pointer-events-none flex items-center justify-center"
-              style={{ transform: 'translateZ(-10px)' }}
-            >
-              <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 shadow-md absolute -bottom-1" />
-            </motion.div>
-
-            {/* Pulsing Alert Waves */}
-            <motion.span
-              animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 2.8, repeat: Infinity, ease: 'easeOut' }}
-              className="absolute -inset-6 rounded-full bg-purple-500/20 dark:bg-purple-500/30 pointer-events-none"
-            />
-
-            {/* 3D Glass Warning Cube */}
-            <motion.div
-              animate={{
-                y: [-5, 5, -5],
-              }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="relative h-32 w-32 sm:h-36 sm:w-36 rounded-3xl bg-gradient-to-br from-[#7C3AED] via-[#6366F1] to-[#4338CA] text-white shadow-[0_20px_60px_rgba(124,58,237,0.35)] flex items-center justify-center border-2 border-white/40"
-              style={{
-                transform: 'translateZ(45px)',
-                boxShadow: isHovered
-                  ? '0 30px 70px rgba(124, 58, 237, 0.5), inset 0 2px 10px rgba(255,255,255,0.4)'
-                  : '0 20px 60px rgba(124, 58, 237, 0.35), inset 0 2px 6px rgba(255,255,255,0.25)',
-              }}
-            >
-              {/* Subtle holographic sheen */}
+          <div className="relative flex items-center justify-center gap-2 sm:gap-4 font-black">
+            
+            {/* 3D Map Pin with Astronaut */}
+            <div className="relative flex flex-col items-center justify-center">
+              
+              {/* Astronaut speech bubble */}
               <motion.div
-                animate={{ x: [-50, 50, -50] }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1, y: [-2, 2, -2] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none rounded-3xl"
-              />
-
-              <motion.div
-                animate={{ scale: [1, 1.08, 1] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                style={{ transform: 'translateZ(55px)' }}
+                className="absolute -top-12 -right-8 sm:-right-12 z-20 px-3 py-1 rounded-full bg-slate-900/90 border border-purple-400/50 text-white text-[11px] font-bold shadow-lg backdrop-blur-md"
               >
-                <AlertTriangle size={62} className="text-white drop-shadow-[0_8px_16px_rgba(0,0,0,0.3)]" />
+                Oops... Signal Lost
+                <div className="absolute -bottom-1 left-3 w-2 h-2 bg-slate-900 rotate-45 border-r border-b border-purple-400/50" />
               </motion.div>
-            </motion.div>
 
-            {/* 3D Floating Hologram Badge Left */}
-            <motion.div
-              animate={{ y: [-3, 3, -3] }}
-              transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -bottom-3 -left-6 px-3 py-1 rounded-xl bg-white/95 dark:bg-card/95 text-slate-700 dark:text-slate-200 text-[11px] font-mono font-bold shadow-md border border-slate-200/80 dark:border-border flex items-center gap-1.5 backdrop-blur-md"
-              style={{ transform: 'translateZ(80px)' }}
-            >
-              <WifiOff size={12} className="text-purple-600 animate-pulse" />
-              <span>STREAM PAUSED</span>
-            </motion.div>
+              {/* Vector 3D Astronaut */}
+              <motion.div
+                animate={{ y: [-4, 2, -4] }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -top-16 z-10 flex flex-col items-center"
+              >
+                <svg width="68" height="68" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]">
+                  <rect x="24" y="32" width="14" height="28" rx="6" fill="#8B5CF6" stroke="#C4B5FD" strokeWidth="2" />
+                  <rect x="62" y="32" width="14" height="28" rx="6" fill="#8B5CF6" stroke="#C4B5FD" strokeWidth="2" />
+                  <circle cx="50" cy="36" r="26" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="3" />
+                  <ellipse cx="50" cy="36" rx="19" ry="16" fill="#0F172A" stroke="#818CF8" strokeWidth="2.5" />
+                  <path d="M 40 26 Q 54 24 58 32" stroke="#60A5FA" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx="43" cy="28" r="2" fill="white" />
+                  <path d="M 32 58 C 32 50 68 50 68 58 L 66 74 C 66 76 34 76 34 74 Z" fill="#F1F5F9" stroke="#CBD5E1" strokeWidth="2.5" />
+                  <rect x="42" y="58" width="16" height="8" rx="2" fill="#818CF8" />
+                  <path d="M 34 72 C 34 82 46 84 50 78" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M 66 72 C 66 82 54 84 50 78" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" />
+                  <ellipse cx="38" cy="80" rx="6" ry="4" fill="#64748B" />
+                  <ellipse cx="62" cy="80" rx="6" ry="4" fill="#64748B" />
+                  <path d="M 32 58 Q 28 66 38 68" stroke="#E2E8F0" strokeWidth="4" strokeLinecap="round" fill="none" />
+                  <path d="M 68 58 Q 72 66 62 68" stroke="#E2E8F0" strokeWidth="4" strokeLinecap="round" fill="none" />
+                </svg>
+              </motion.div>
 
-            {/* 3D Floating Alert Chip Right */}
-            <motion.div
-              animate={{ y: [3, -3, 3] }}
-              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -top-3 -right-6 px-3 py-1 rounded-xl bg-[#7C3AED] text-white text-[11px] font-mono font-bold shadow-md border border-white/30 backdrop-blur-md flex items-center gap-1.5"
-              style={{ transform: 'translateZ(90px)' }}
-            >
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>AUTO RECONNECT</span>
-            </motion.div>
-          </motion.div>
+              {/* 3D Map Pin Body */}
+              <motion.div
+                animate={{ y: [-3, 3, -3] }}
+                transition={{ duration: 4, delay: 0.1, repeat: Infinity, ease: 'easeInOut' }}
+                className="relative h-28 w-24 sm:h-36 sm:w-32 lg:h-44 lg:w-36 rounded-t-full bg-gradient-to-b from-[#A855F7] via-[#EC4899] to-[#8B5CF6] flex items-center justify-center shadow-[0_15px_40px_rgba(236,72,153,0.5)] border-2 border-white/40"
+                style={{
+                  clipPath: 'path("M 72 0 C 32 0 0 32 0 72 C 0 115 72 176 72 176 C 72 176 144 115 144 72 C 144 32 112 0 72 0 Z")',
+                  filter: 'drop-shadow(0 15px 30px rgba(217, 70, 239, 0.5))',
+                }}
+              >
+                <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-white shadow-inner flex items-center justify-center -mt-6">
+                  <WifiOff size={16} className="text-pink-600" />
+                </div>
+              </motion.div>
+            </div>
+
+          </div>
+
         </div>
 
-        {/* ── ANIMATED TELEMETRY HEARTBEAT MONITOR ── */}
-        <div className="w-full max-w-xs my-3 py-2 px-4 rounded-2xl bg-white/90 dark:bg-card/90 border border-slate-200/80 dark:border-border shadow-xs backdrop-blur-md flex items-center justify-between text-xs font-mono text-slate-700 dark:text-slate-300">
-          <div className="flex items-center gap-2">
-            <Activity size={14} className="animate-pulse text-[#7C3AED]" />
-            <span className="text-[11px] font-semibold">
-              {reconnectStep === 'searching' ? 'Re-establishing socket stream...' : reconnectStep === 'synced' ? 'GPS Signal Restored!' : 'GPS Stream: Standby Mode'}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#7C3AED] animate-ping" />
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          </div>
-        </div>
-
-        {/* ── HEADLINE & USER-FRIENDLY COPY ── */}
-        <div className="space-y-3 pt-2">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EDE9FE] border border-purple-200/70 text-[#7C3AED] dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/60 text-xs font-bold shadow-2xs">
-            <Radio size={13} className="animate-pulse text-[#7C3AED]" />
-            <span>GPS STREAM DISRUPTED • 100% RECOVERABLE</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 dark:text-foreground leading-tight">
-            Signal Disrupted
+        {/* ── HEADING & DESCRIPTION ── */}
+        <div className="space-y-3 px-4">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
+            Signal <span className="bg-gradient-to-r from-[#A78BFA] via-[#60A5FA] to-[#F472B6] bg-clip-text text-transparent">Disrupted</span>
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-600 dark:text-muted-foreground leading-relaxed max-w-md mx-auto font-normal">
-            A temporary connection hiccup paused your location stream. Your private circles and safe zone configurations are safe and intact.
+          <p className="text-sm sm:text-base text-slate-300/85 max-w-md mx-auto leading-relaxed font-normal">
+            A temporary connection hiccup paused your location telemetry. Click below to reconnect your live stream.
           </p>
         </div>
 
         {/* ── ACTION BUTTONS ── */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-7 w-full max-w-md">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-8 w-full max-w-md px-4">
+          
           <Button
+            size="lg"
             onClick={handleRetry}
             disabled={isRetrying}
-            size="lg"
-            className="w-full sm:w-auto h-12 px-8 font-bold text-sm rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-purple-500/25 hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0 group gap-2 cursor-pointer disabled:opacity-75"
+            className="w-full sm:w-auto h-12 px-7 font-bold text-sm rounded-full bg-gradient-to-r from-[#8B5CF6] via-[#7C3AED] to-[#6366F1] hover:from-[#7C3AED] hover:to-[#4F46E5] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)] hover:shadow-[0_14px_35px_rgba(124,58,237,0.6)] transition-all hover:-translate-y-0.5 active:translate-y-0 gap-2 cursor-pointer border border-white/20 disabled:opacity-75"
           >
-            <RefreshCw size={16} className={isRetrying ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'} />
-            {isRetrying ? 'Reconnecting Socket...' : 'Reconnect & Retry'}
+            <RefreshCw size={16} className={isRetrying ? 'animate-spin' : ''} />
+            {isRetrying ? 'Reconnecting...' : 'Reconnect Signal'}
           </Button>
 
           <Button
             variant="outline"
             size="lg"
-            className="w-full sm:w-auto h-12 px-6 font-bold text-sm rounded-xl bg-white/90 dark:bg-card/90 hover:bg-white dark:hover:bg-muted border-slate-200/90 dark:border-border text-slate-800 dark:text-foreground shadow-xs transition-all hover:-translate-y-0.5 active:translate-y-0 gap-2 cursor-pointer"
+            className="w-full sm:w-auto h-12 px-7 font-bold text-sm rounded-full bg-slate-900/40 hover:bg-white/10 border-white/20 text-white shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 active:translate-y-0 gap-2 cursor-pointer"
             onClick={() => soundFx.playPop()}
             asChild
           >
             <Link href="/">
-              <Home size={16} className="text-[#7C3AED]" />
-              Return Home
+              <Home size={16} className="text-purple-300" />
+              Go Back Home
             </Link>
           </Button>
+
         </div>
 
-        {error?.digest && (
-          <div className="pt-6 text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100/80 dark:bg-muted/40 px-3 py-1.5 rounded-lg border border-slate-200/60 dark:border-border mt-4">
-            Diagnostic Digest: {error.digest}
-          </div>
-        )}
-
       </div>
+
+      {/* ── FOOTER TRUST BADGE ── */}
+      <div className="w-full max-w-md pt-4 pb-2 border-t border-white/10 flex items-center justify-center gap-2 text-xs text-white/50 font-medium">
+        <Shield size={13} className="text-purple-400" />
+        <span>Your Safety • Our Priority</span>
+      </div>
+
     </div>
   );
 }
