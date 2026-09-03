@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Navigation, Compass, ShieldCheck, Layers, Bell, Smartphone, Radio, History } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Navigation, Compass, ShieldCheck, Layers, Bell, Smartphone, Radio, History, Play, Pause, MapPin, CheckCircle2, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -12,31 +12,32 @@ const mapFeatures = [
   {
     icon: Navigation,
     title: 'Pinpoint 15s Refresh',
-    description: 'Ultra-low latency coordinates update continuously so you always see precise movements in real time.',
+    description: 'Ultra-low latency GPS coordinates sync continuously via WebSockets so you always see fluid real-time movement.',
     gradient: 'from-[#7C3AED] to-[#6366F1]',
   },
   {
     icon: Bell,
-    title: 'Custom Geofence Zones',
-    description: 'Create safe perimeters around Home, School, or Work. Get notified the second a family member enters or exits.',
+    title: 'Smart Geofence Zones',
+    description: 'Create safe perimeters around Home, School, or Work. Receive instant push notifications on every arrival and departure.',
     gradient: 'from-[#EC4899] to-[#F43F5E]',
   },
   {
     icon: Compass,
     title: 'Speed & Route Tracking',
-    description: 'Monitor movement speed, heading direction, and elevation during road trips or daily commutes.',
+    description: 'Live speed telemetry, motion state detection (driving, walking, stationary), and heading compass directions.',
     gradient: 'from-[#3B82F6] to-[#06B6D4]',
   },
   {
     icon: ShieldCheck,
-    title: 'End-to-End Privacy',
-    description: 'Location data is encrypted in transit and at rest. You retain full control over who gets access to your map.',
+    title: 'End-to-End Privacy Shield',
+    description: 'Location data is encrypted end-to-end. You retain absolute control with instant Ghost Mode privacy toggles.',
     gradient: 'from-[#10B981] to-[#059669]',
   },
 ];
 
 export function LocationMapSection() {
   const [activeTab, setActiveTab] = useState<'live' | 'geofence' | 'history'>('live');
+  const [geofenceRadius, setGeofenceRadius] = useState(350);
 
   return (
     <section id="map-preview" className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden bg-white dark:bg-background border-y border-slate-100 dark:border-border/60 scroll-mt-20">
@@ -51,18 +52,20 @@ export function LocationMapSection() {
             transition={{ duration: 0.7, ease: 'easeOut' }}
             className="lg:col-span-6 space-y-8 text-left"
           >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EDE9FE] border border-purple-200/60 text-[#7C3AED] text-xs font-bold shadow-sm">
-              <Radio size={14} className="animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EDE9FE] border border-purple-200/60 text-[#7C3AED] dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/60 text-xs font-bold shadow-2xs">
+              <Radio size={14} className="animate-pulse text-[#7C3AED]" />
               Live Map Intelligence
             </div>
 
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F172A] dark:text-foreground tracking-tight leading-[1.15]">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-foreground tracking-tight leading-[1.15]">
               Real-time map tracking designed for{' '}
-              <span className="text-[#7C3AED] dark:text-purple-400">instant clarity</span>
+              <span className="bg-gradient-to-r from-[#7C3AED] to-[#6366F1] bg-clip-text text-transparent">
+                instant clarity
+              </span>
             </h2>
 
-            <p className="text-[#64748B] dark:text-muted-foreground text-base sm:text-lg leading-relaxed font-normal">
-              LocaLink turns raw GPS data into a smooth, interactive live map experience. Keep tabs on family members, monitor speed, and set automated alerts effortlessly.
+            <p className="text-slate-600 dark:text-muted-foreground text-base sm:text-lg leading-relaxed font-normal">
+              LocaLink turns raw GPS data into a smooth, interactive live map experience. Keep tabs on family members, monitor speed, and set automated safe perimeter alerts effortlessly.
             </p>
 
             {/* Interactive Feature List */}
@@ -72,13 +75,13 @@ export function LocationMapSection() {
                 return (
                   <div
                     key={feat.title}
-                    className="p-5 rounded-2xl bg-[#F8F9FD] dark:bg-card border border-slate-100 dark:border-border/80 shadow-sm hover:border-purple-200 hover:shadow-md transition-all duration-300 group text-left relative overflow-hidden"
+                    className="p-5 rounded-2xl bg-[#F8F9FD] dark:bg-card border border-slate-100 dark:border-border/80 shadow-xs hover:border-purple-200 dark:hover:border-purple-800 hover:shadow-md transition-all duration-300 group text-left relative overflow-hidden"
                   >
-                    <div className={cn('h-10 w-10 rounded-xl bg-gradient-to-br text-white flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300', feat.gradient)}>
+                    <div className={cn('h-10 w-10 rounded-xl bg-gradient-to-br text-white flex items-center justify-center mb-3 shadow-xs group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300', feat.gradient)}>
                       <Icon size={18} />
                     </div>
-                    <h3 className="font-bold text-[#0F172A] dark:text-foreground text-base mb-1">{feat.title}</h3>
-                    <p className="text-xs text-[#64748B] dark:text-muted-foreground leading-relaxed">{feat.description}</p>
+                    <h3 className="font-bold text-slate-900 dark:text-foreground text-base mb-1">{feat.title}</h3>
+                    <p className="text-xs text-slate-600 dark:text-muted-foreground leading-relaxed">{feat.description}</p>
                     <div className={cn('absolute -bottom-8 -right-8 w-20 h-20 rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-400 pointer-events-none bg-gradient-to-br', feat.gradient)} />
                   </div>
                 );
@@ -88,7 +91,7 @@ export function LocationMapSection() {
             <div className="pt-2">
               <Button
                 size="lg"
-                className="h-13 px-7 font-bold text-sm rounded-2xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-purple-500/30 hover:shadow-xl transition-all group gap-2"
+                className="h-12 px-7 font-bold text-sm rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-purple-500/25 hover:shadow-xl transition-all group gap-2"
                 asChild
               >
                 <Link href="/register">
@@ -107,33 +110,33 @@ export function LocationMapSection() {
             transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
             className="lg:col-span-6 relative"
           >
-            <div className="relative rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-border bg-white dark:bg-card shadow-[0_20px_60px_rgba(124,58,237,0.08)]">
+            <div className="relative rounded-3xl overflow-hidden border border-slate-200/90 dark:border-border/90 bg-white dark:bg-card shadow-[0_20px_60px_rgba(124,58,237,0.08)]">
               {/* Card Header Switcher */}
-              <div className="p-4 border-b border-slate-100 dark:border-border bg-slate-50/70 dark:bg-muted/30 flex items-center justify-between flex-wrap gap-2">
+              <div className="p-4 border-b border-slate-100 dark:border-border bg-slate-50/80 dark:bg-muted/30 flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-muted-foreground">
-                  <Layers size={14} className="text-[#7C3AED]" />
+                  <Layers size={15} className="text-[#7C3AED]" />
                   Map Layer Control
                 </div>
-                <div className="flex bg-white dark:bg-card rounded-xl p-1 border border-slate-200/60 dark:border-border gap-1 text-xs shadow-sm">
+                <div className="flex bg-white dark:bg-card rounded-xl p-1 border border-slate-200/80 dark:border-border gap-1 text-xs shadow-2xs">
                   {(['live', 'geofence', 'history'] as const).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
                       className={cn(
-                        "px-3 py-1 rounded-lg font-bold capitalize transition-all",
+                        "px-3 py-1.5 rounded-lg font-bold capitalize transition-all cursor-pointer",
                         activeTab === tab
-                          ? "bg-[#7C3AED] text-white shadow-sm"
-                          : "text-slate-600 dark:text-muted-foreground hover:text-slate-900"
+                          ? "bg-[#7C3AED] text-white shadow-xs"
+                          : "text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground"
                       )}
                     >
-                      {tab}
+                      {tab === 'live' ? 'Live GPS' : tab === 'geofence' ? 'Geofence' : 'Trip Replay'}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Map Preview Display */}
-              <div className="relative aspect-[4/3] bg-[#EEF2F7] dark:bg-slate-900 overflow-hidden flex items-center justify-center">
+              <div className="relative aspect-[4/3] bg-[#EEF2F7] dark:bg-slate-900 overflow-hidden flex items-center justify-center select-none">
                 {/* Simulated Road Lines */}
                 <svg className="absolute inset-0 w-full h-full fill-none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="5%" y="10%" width="35%" height="30%" rx="14" fill="#F8FAFC" className="dark:fill-slate-800/40" />
@@ -152,17 +155,18 @@ export function LocationMapSection() {
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="absolute w-52 h-52 rounded-full border-2 border-dashed border-[#10B981] bg-[#10B981]/15 animate-pulse flex items-center justify-center z-10"
+                    className="absolute rounded-full border-2 border-dashed border-[#10B981] bg-[#10B981]/15 animate-pulse flex items-center justify-center z-10"
+                    style={{ width: `${geofenceRadius / 1.6}px`, height: `${geofenceRadius / 1.6}px` }}
                   >
-                    <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-card px-2.5 py-0.5 rounded-full border border-emerald-300 shadow-sm">
-                      School Zone (Active Perimeter)
+                    <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-card px-2.5 py-0.5 rounded-full border border-emerald-300 shadow-xs">
+                      School Zone ({geofenceRadius}m)
                     </span>
                   </motion.div>
                 )}
 
                 {activeTab === 'live' && (
                   <div className="absolute w-44 h-44 rounded-full border-2 border-[#7C3AED]/40 bg-[#7C3AED]/10 animate-pulse flex items-center justify-center">
-                    <span className="text-[10px] font-mono font-bold text-[#7C3AED] bg-white dark:bg-card px-2.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-800 shadow-sm">
+                    <span className="text-[10px] font-mono font-bold text-[#7C3AED] bg-white dark:bg-card px-2.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-800 shadow-xs">
                       Home Safe Zone (500m)
                     </span>
                   </div>
@@ -176,7 +180,7 @@ export function LocationMapSection() {
                   >
                     <div className="bg-white/95 dark:bg-card px-4 py-2 rounded-2xl shadow-xl border border-purple-200 dark:border-border flex items-center gap-2 text-xs font-bold text-purple-700 dark:text-purple-300">
                       <History size={16} />
-                      Route Replay: 8.4 km travelled today
+                      Route Replay: 8.4 km traveled today • 38 km/h avg
                     </div>
                   </motion.div>
                 )}
@@ -188,7 +192,7 @@ export function LocationMapSection() {
                     <div className="relative h-10 w-10 rounded-full bg-[#10B981] text-white font-bold flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-lg text-sm overflow-hidden">
                       <Image
                         src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
-                        alt="Sarah"
+                        alt="Mim"
                         width={40}
                         height={40}
                         unoptimized
@@ -198,7 +202,7 @@ export function LocationMapSection() {
                   </div>
                   <div className="mt-1 bg-white dark:bg-card px-2.5 py-1 rounded-full text-[11px] font-bold shadow-md border border-slate-100 dark:border-border flex items-center gap-1.5 text-slate-800 dark:text-foreground">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-                    Sarah • 42 km/h
+                    Mim • Safe at Home
                   </div>
                 </div>
 
@@ -206,7 +210,7 @@ export function LocationMapSection() {
                   <div className="h-10 w-10 rounded-full bg-[#7C3AED] text-white font-bold flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-lg text-sm overflow-hidden">
                     <Image
                       src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
-                      alt="Alex"
+                      alt="Rasel"
                       width={40}
                       height={40}
                       unoptimized
@@ -215,7 +219,7 @@ export function LocationMapSection() {
                   </div>
                   <div className="mt-1 bg-white dark:bg-card px-2.5 py-1 rounded-full text-[11px] font-bold shadow-md border border-slate-100 dark:border-border flex items-center gap-1.5 text-slate-800 dark:text-foreground">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#7C3AED]" />
-                    Alex • Arrived Home
+                    Rasel • 48 km/h In Transit
                   </div>
                 </div>
 
@@ -223,9 +227,9 @@ export function LocationMapSection() {
                 <div className="absolute bottom-4 left-4 right-4 bg-white/95 dark:bg-card/95 backdrop-blur-md border border-slate-100 dark:border-border rounded-xl p-3 flex items-center justify-between text-xs shadow-lg z-20">
                   <div className="flex items-center gap-2 text-slate-800 dark:text-foreground font-medium">
                     <Smartphone size={14} className="text-[#7C3AED]" />
-                    GPS Signal: <span className="font-bold text-[#10B981]">Excellent (±3m)</span>
+                    GPS Signal: <span className="font-bold text-[#10B981]">Active (±2.5m accuracy)</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 dark:text-muted-foreground font-mono">Updated 2s ago</span>
+                  <span className="text-[10px] text-slate-400 dark:text-muted-foreground font-mono">Updated 1s ago</span>
                 </div>
               </div>
             </div>
