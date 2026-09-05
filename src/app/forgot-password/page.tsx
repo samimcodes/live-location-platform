@@ -8,10 +8,11 @@ import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Mail, CheckCircle2, Navigation, Send, Sparkles, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Mail, CheckCircle2, Navigation, Send, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/axios';
 import { toast } from '@/lib/toast';
+import { soundFx } from '@/lib/soundFx';
 
 const schema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -28,10 +29,13 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
+    soundFx?.playPop?.();
     try {
       await api.post('/auth/forgot-password', { email: data.email });
+      soundFx?.playChime?.();
       setSubmitted(true);
     } catch (err: unknown) {
+      soundFx?.playAlert?.();
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? 'Failed to send reset email. Please try again.';
@@ -43,37 +47,30 @@ export default function ForgotPasswordPage() {
 
   return (
     <div
-      className="min-h-screen w-full flex items-center justify-center relative overflow-hidden p-4"
+      className="min-h-screen w-full flex items-center justify-center relative overflow-hidden p-4 bg-slate-950"
       style={{
-        background: 'linear-gradient(145deg, #0f1033 0%, #1a1060 50%, #0d1535 100%)',
-        fontFamily: 'Inter, sans-serif',
+        background: 'linear-gradient(145deg, #090E1F 0%, #151145 50%, #080D1D 100%)',
       }}
     >
       {/* Ambient glow blobs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[55%] h-[55%] rounded-full opacity-30 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #4f46e5 0%, transparent 70%)' }} />
+      <div className="absolute top-[-20%] left-[-10%] w-[55%] h-[55%] rounded-full opacity-35 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }} />
       <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-25 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(circle, #8b5cf6 0%, transparent 70%)' }} />
+      <div className="absolute top-[35%] right-[10%] w-[40%] h-[40%] rounded-full opacity-20 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)' }} />
 
       {/* Dot grid */}
-      <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+      <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-
-      {/* Sparkle decoration */}
-      <div className="absolute top-20 right-[25%] text-indigo-200 opacity-60 animate-pulse pointer-events-none">
-        <Sparkles size={18} />
-      </div>
-      <div className="absolute bottom-24 left-[22%] text-purple-200 opacity-50 animate-pulse pointer-events-none">
-        <Sparkles size={12} />
-      </div>
 
       {/* Back to sign in — top left */}
       <Link
         href="/login"
-        className="absolute top-6 left-6 z-20 inline-flex items-center gap-2 text-xs font-semibold text-white/70 hover:text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md px-4 py-2 rounded-full transition-all"
+        className="absolute top-6 left-6 z-20 inline-flex items-center gap-2 text-xs font-bold text-white/80 hover:text-white bg-white/10 hover:bg-white/15 border border-white/20 backdrop-blur-md px-4 py-2 rounded-full transition-all shadow-md"
       >
         <ArrowLeft size={13} />
-        Back to Sign In
+        <span>Back to Sign In</span>
       </Link>
 
       {/* Central Card */}
@@ -81,20 +78,19 @@ export default function ForgotPasswordPage() {
         initial={{ opacity: 0, scale: 0.96, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="w-full max-w-[420px] relative z-10"
+        className="w-full max-w-[430px] relative z-10"
       >
-        <div className="bg-white rounded-3xl shadow-2xl border border-white/20 px-8 py-10"
-          style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.35), 0 8px 32px rgba(99,102,241,0.15)' }}
-        >
+        <div className="bg-white dark:bg-[#0E1528] rounded-[32px] shadow-2xl border border-slate-200/90 dark:border-slate-800 px-7 sm:px-9 py-9 sm:py-10">
           {/* Logo & Heading */}
-          <div className="flex flex-col items-center text-center mb-8">
+          <div className="flex flex-col items-center text-center mb-7">
             <div
-              className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg mb-4"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 8px 24px rgba(99,102,241,0.35)' }}
+              className="h-13 w-13 rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-violet-500/25 mb-4"
             >
               <Send size={22} className="text-white" style={{ transform: 'rotate(-15deg)' }} />
             </div>
-            <p className="text-xs font-bold text-indigo-600 tracking-wider uppercase mb-1">LocaLink</p>
+            <p className="text-[10px] font-mono font-bold text-violet-600 dark:text-violet-400 tracking-widest uppercase mb-1">
+              LocaLink Security
+            </p>
 
             <AnimatePresence mode="wait">
               {submitted ? (
@@ -105,9 +101,11 @@ export default function ForgotPasswordPage() {
                   exit={{ opacity: 0, y: -8 }}
                   className="flex flex-col items-center"
                 >
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">Email Sent!</h1>
-                  <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">
-                    Check your inbox for the reset link
+                  <h1 className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Check Your Email
+                  </h1>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">
+                    We&apos;ve sent password recovery instructions
                   </p>
                 </motion.div>
               ) : (
@@ -118,9 +116,11 @@ export default function ForgotPasswordPage() {
                   exit={{ opacity: 0, y: -8 }}
                   className="flex flex-col items-center"
                 >
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">Forgot Password?</h1>
-                  <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">
-                    Enter your email and we&apos;ll send you a reset link
+                  <h1 className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Forgot Password?
+                  </h1>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-medium leading-relaxed">
+                    Enter your email to receive a secure password reset link
                   </p>
                 </motion.div>
               )}
@@ -137,45 +137,45 @@ export default function ForgotPasswordPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
-                className="space-y-5"
+                className="space-y-5 text-left"
               >
                 {/* Success card */}
-                <div
-                  className="flex flex-col items-center gap-3 py-7 px-4 rounded-2xl text-center"
-                  style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', border: '1px solid #bbf7d0' }}
-                >
-                  <div className="h-14 w-14 rounded-full flex items-center justify-center"
-                    style={{ background: '#dcfce7' }}>
-                    <CheckCircle2 size={28} className="text-emerald-500" />
+                <div className="flex flex-col items-center gap-3 py-6 px-4 rounded-2xl text-center bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60">
+                  <div className="h-12 w-12 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/60">
+                    <CheckCircle2 size={26} className="text-emerald-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-800">Reset link sent!</p>
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      We sent a password reset link to<br />
-                      <span className="font-bold text-slate-700">{getValues('email')}</span>
+                    <p className="text-sm font-black text-slate-900 dark:text-white">Reset link dispatched!</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                      We sent an email to<br />
+                      <strong className="text-violet-600 dark:text-violet-400 font-mono">{getValues('email')}</strong>
                     </p>
                   </div>
                 </div>
 
-                <p className="text-xs text-center text-slate-500">
-                  Didn&apos;t receive it?{' '}
+                <p className="text-xs text-center text-slate-500 dark:text-slate-400">
+                  Didn&apos;t receive the email?{' '}
                   <button
-                    onClick={() => setSubmitted(false)}
-                    className="text-indigo-600 hover:underline font-bold cursor-pointer"
+                    onClick={() => {
+                      soundFx?.playPop?.();
+                      setSubmitted(false);
+                    }}
+                    className="text-violet-600 dark:text-violet-400 hover:underline font-bold cursor-pointer"
                   >
                     Try again
                   </button>
                 </p>
 
-                <Link
-                  href="/login"
-                  className="flex items-center justify-center gap-2 w-full h-12 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98]"
-                  style={{ background: 'linear-gradient(90deg, #5b5fc7 0%, #7c3aed 100%)', boxShadow: '0 6px 20px rgba(99,102,241,0.3)' }}
+                <Button
+                  className="w-full h-12 rounded-xl text-white text-sm font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-500/25 flex items-center justify-center gap-2 cursor-pointer"
+                  asChild
                 >
-                  <Navigation size={15} style={{ transform: 'rotate(-30deg)' }} />
-                  Back to Sign In
-                  <ArrowRight size={14} />
-                </Link>
+                  <Link href="/login">
+                    <Navigation size={15} style={{ transform: 'rotate(-30deg)' }} />
+                    <span>Back to Sign In</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </Button>
               </motion.div>
             ) : (
               /* ── Form State ── */
@@ -186,14 +186,14 @@ export default function ForgotPasswordPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.3 }}
-                className="space-y-4"
+                className="space-y-4 text-left"
               >
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs font-bold text-slate-700">
+                  <Label htmlFor="email" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Email address
                   </Label>
                   <div className="relative">
-                    <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                     <Input
                       id="email"
                       type="email"
@@ -202,40 +202,36 @@ export default function ForgotPasswordPage() {
                       autoFocus
                       {...register('email')}
                       aria-invalid={!!errors.email}
-                      className="h-12 pl-10 rounded-xl border-slate-200 bg-[#f0f4fd] focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-400 text-sm font-medium text-slate-800 placeholder:text-slate-400 transition-all shadow-none"
+                      className="h-12 pl-10 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/90 dark:bg-[#121B33] focus-visible:ring-2 focus-visible:ring-violet-500 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-2xs"
                     />
                   </div>
                   {errors.email && (
-                    <p className="text-xs text-red-500 font-medium">{errors.email.message}</p>
+                    <p className="text-xs text-rose-500 font-medium mt-1">{errors.email.message}</p>
                   )}
                 </div>
 
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-12 rounded-xl text-white text-sm font-bold shadow-lg flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer border-0"
-                  style={{
-                    background: 'linear-gradient(90deg, #5b5fc7 0%, #7c3aed 100%)',
-                    boxShadow: '0 6px 20px rgba(99,102,241,0.35)',
-                  }}
+                  className="w-full h-12 rounded-xl text-white text-sm font-bold bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-500/25 transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2 border border-white/20"
                 >
                   {isLoading ? (
                     <>
                       <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                      Sending reset link…
+                      <span>Sending link…</span>
                     </>
                   ) : (
                     <>
                       <Mail size={15} />
-                      Send Reset Link
+                      <span>Send Recovery Link</span>
                       <ArrowRight size={15} />
                     </>
                   )}
                 </Button>
 
-                <p className="text-center text-xs text-slate-500 font-medium pt-1">
+                <p className="text-center text-xs text-slate-500 dark:text-slate-400 font-medium pt-1">
                   Remember your password?{' '}
-                  <Link href="/login" className="text-indigo-600 hover:underline font-bold">
+                  <Link href="/login" className="text-violet-600 dark:text-violet-400 hover:underline font-bold">
                     Sign in
                   </Link>
                 </p>
@@ -246,9 +242,9 @@ export default function ForgotPasswordPage() {
 
         {/* Card bottom brand link */}
         <div className="flex justify-center mt-5">
-          <Link href="/" className="inline-flex items-center gap-2 text-white/50 hover:text-white/80 text-xs font-medium transition-colors">
+          <Link href="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white text-xs font-semibold transition-colors">
             <Navigation size={12} style={{ transform: 'rotate(-30deg)' }} />
-            LocaLink Home
+            <span>LocaLink Home</span>
           </Link>
         </div>
       </motion.div>
