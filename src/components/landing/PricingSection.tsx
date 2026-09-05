@@ -2,8 +2,20 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Sparkles, Zap, Shield, Users, Crown, ArrowRight, HelpCircle } from 'lucide-react';
+import {
+  Check,
+  Sparkles,
+  Zap,
+  Shield,
+  Users,
+  Crown,
+  ArrowRight,
+  HelpCircle,
+  ShieldCheck,
+  CheckCircle2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { soundFx } from '@/lib/soundFx';
 import Link from 'next/link';
 
 const tiers = [
@@ -16,7 +28,7 @@ const tiers = [
     badge: 'FREE FOREVER',
     features: [
       'Up to 5 Circle Members',
-      '1 Private Circle',
+      '1 Private Circle Hub',
       'Real-time 15s GPS Map Tracking',
       '2 Custom Geofence Safe Zones',
       '7-Day Location Route History',
@@ -74,55 +86,62 @@ const tiers = [
 export function PricingSection() {
   const [isYearly, setIsYearly] = useState(true);
 
+  const handleToggleBilling = (yearly: boolean) => {
+    soundFx.playPop();
+    setIsYearly(yearly);
+  };
+
   return (
-    <section id="pricing" className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden bg-[#F8F9FD] dark:bg-background scroll-mt-16">
+    <section
+      id="pricing"
+      className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden bg-[#F6F8FD] dark:bg-background scroll-mt-16"
+    >
       {/* Background ambient lighting */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-purple-200/20 dark:bg-purple-950/20 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-violet-500/10 dark:bg-violet-950/20 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
-        
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="text-center mb-16"
+          className="text-center mb-16 sm:mb-20"
         >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EDE9FE] border border-purple-200/60 text-[#7C3AED] dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/60 text-xs font-bold shadow-2xs mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 text-xs font-bold shadow-2xs mb-5">
             <Crown size={14} />
-            Transparent & Fair Pricing
+            <span>Transparent & Fair Pricing</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-foreground mb-6 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-950 dark:text-white mb-6 tracking-tight leading-[1.1]">
             Simple plans for{' '}
-            <span className="bg-gradient-to-r from-[#7C3AED] via-[#6366F1] to-[#4F46E5] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">
               every size circle
             </span>
           </h2>
 
-          <p className="text-slate-600 dark:text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+          <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
             Start for free with no credit card required. Upgrade anytime your family or team needs extended history and emergency features.
           </p>
 
           {/* Billing Switcher */}
-          <div className="mt-8 inline-flex items-center gap-3 p-1.5 bg-white dark:bg-card rounded-2xl border border-slate-200/80 dark:border-border shadow-2xs">
+          <div className="mt-8 inline-flex items-center gap-2 p-1.5 bg-white dark:bg-[#0E1528] rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm">
             <button
-              onClick={() => setIsYearly(false)}
+              onClick={() => handleToggleBilling(false)}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 !isYearly
-                  ? 'bg-[#7C3AED] text-white shadow-xs'
-                  : 'text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground'
+                  ? 'bg-violet-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Monthly Billing
             </button>
             <button
-              onClick={() => setIsYearly(true)}
+              onClick={() => handleToggleBilling(true)}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
                 isYearly
-                  ? 'bg-[#7C3AED] text-white shadow-xs'
-                  : 'text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground'
+                  ? 'bg-violet-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <span>Annual Billing</span>
@@ -142,72 +161,76 @@ export function PricingSection() {
                 key={tier.name}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
+                viewport={{ once: true, margin: '-50px' }}
                 transition={{ duration: 0.5, delay: idx * 0.1, ease: 'easeOut' }}
-                className={`relative rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 ${
+                className={`relative rounded-[30px] p-8 sm:p-9 flex flex-col justify-between transition-all duration-300 text-left ${
                   tier.highlight
-                    ? 'bg-white dark:bg-card border-2 border-[#7C3AED] shadow-[0_20px_60px_rgba(124,58,237,0.15)] lg:-translate-y-2'
-                    : 'bg-white/90 dark:bg-card/90 border border-slate-200/80 dark:border-border/80 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:border-purple-200 dark:hover:border-purple-800'
+                    ? 'bg-white dark:bg-[#0E1528] border-2 border-violet-600 shadow-[0_20px_60px_rgba(124,58,237,0.18)] lg:-translate-y-2'
+                    : 'bg-white/95 dark:bg-[#0E1528]/80 border border-slate-200/90 dark:border-slate-800/80 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:border-violet-300 dark:hover:border-violet-700'
                 }`}
               >
                 {/* Popular Pill */}
                 {tier.popular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#6366F1] text-white text-[11px] font-black tracking-widest shadow-md">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[10px] font-black tracking-widest shadow-md">
                     {tier.badge}
                   </div>
                 )}
 
                 <div>
                   <div className="flex items-center justify-between pb-2">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-foreground">{tier.name}</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-foreground">
+                      {tier.name}
+                    </h3>
                     {!tier.popular && (
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-muted text-slate-600 dark:text-slate-400">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                         {tier.badge}
                       </span>
                     )}
                   </div>
 
-                  <p className="text-xs text-slate-500 dark:text-muted-foreground leading-relaxed min-h-[36px]">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[36px]">
                     {tier.tagline}
                   </p>
 
                   {/* Price */}
                   <div className="my-6 flex items-baseline gap-1.5">
-                    <span className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-foreground">
+                    <span className="text-4xl sm:text-5xl font-black text-slate-950 dark:text-white">
                       ${price}
                     </span>
-                    <span className="text-xs text-slate-500 font-medium">
-                      / user {price > 0 ? '/ month' : ''}
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      / user {price > 0 ? (isYearly ? '/ month (billed yearly)' : '/ month') : ''}
                     </span>
                   </div>
 
                   {/* Feature Checklist */}
-                  <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-border">
-                    {tier.features.map((feat) => (
-                      <div key={feat} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-                        <div className="h-4 w-4 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                          <Check size={11} strokeWidth={3} />
-                        </div>
-                        <span className="leading-snug">{feat}</span>
+                  <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-3">
+                      Included Capabilities:
+                    </span>
+                    {tier.features.map((f) => (
+                      <div key={f} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                        <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
+                        <span>{f}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* CTA Button */}
-                <div className="pt-8">
+                {/* Action CTA Button */}
+                <div className="pt-8 mt-6 border-t border-slate-100 dark:border-slate-800">
                   <Button
                     size="lg"
-                    className={`w-full h-12 font-bold text-sm rounded-xl transition-all ${
+                    className={`w-full h-12 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
                       tier.highlight
-                        ? 'bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-purple-500/25'
-                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-muted dark:hover:bg-muted/80 text-slate-900 dark:text-foreground'
+                        ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/25'
+                        : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-foreground'
                     }`}
+                    onClick={() => soundFx.playPop()}
                     asChild
                   >
                     <Link href={tier.href}>
-                      {tier.cta}
-                      <ArrowRight size={15} className="ml-1" />
+                      <span>{tier.cta}</span>
+                      <ArrowRight size={15} />
                     </Link>
                   </Button>
                 </div>
@@ -216,6 +239,20 @@ export function PricingSection() {
           })}
         </div>
 
+        {/* Guarantee Banner */}
+        <div className="mt-12 flex items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+          <span className="flex items-center gap-1.5 font-medium">
+            <CheckCircle2 size={14} className="text-emerald-500" /> 14-day free trial on Pro
+          </span>
+          <span className="h-3 w-px bg-slate-200 dark:bg-border hidden sm:block" />
+          <span className="flex items-center gap-1.5 font-medium">
+            <ShieldCheck size={14} className="text-violet-500" /> Cancel anytime with 1 click
+          </span>
+          <span className="h-3 w-px bg-slate-200 dark:bg-border hidden sm:block" />
+          <span className="flex items-center gap-1.5 font-medium">
+            <Zap size={14} className="text-amber-500" /> No credit card required for Free Circle
+          </span>
+        </div>
       </div>
     </section>
   );

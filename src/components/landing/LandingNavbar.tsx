@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/ThemeProvider';
+import { soundFx } from '@/lib/soundFx';
 
 const navLinks = [
   { label: 'Live Map', href: '#map-preview', id: 'map-preview' },
   { label: 'Features', href: '#features', id: 'features' },
+  { label: 'Emergency SOS', href: '#emergency-sos', id: 'emergency-sos' },
   { label: 'How It Works', href: '#how-it-works', id: 'how-it-works' },
   { label: 'Circles & Safety', href: '#circles-safety', id: 'circles-safety' },
   { label: 'Pricing', href: '#pricing', id: 'pricing' },
@@ -39,6 +41,7 @@ export function LandingNavbar() {
     Monitor;
 
   const cycleTheme = () => {
+    soundFx.playPop();
     if (theme === 'light') setTheme('dark');
     else if (theme === 'dark') setTheme('system');
     else setTheme('light');
@@ -77,15 +80,19 @@ export function LandingNavbar() {
           className={cn(
             'transition-all duration-300 ease-out flex items-center justify-between',
             scrolled
-              ? 'bg-white/85 dark:bg-card/90 backdrop-blur-2xl border border-slate-200/80 dark:border-border/80 shadow-[0_12px_36px_rgba(0,0,0,0.06)] rounded-2xl px-5 sm:px-6 h-16'
-              : 'bg-white/95 dark:bg-card/95 backdrop-blur-xl border border-slate-100 dark:border-border rounded-2xl px-5 sm:px-6 h-16 shadow-[0_4px_25px_rgba(0,0,0,0.03)]'
+              ? 'bg-white/85 dark:bg-[#0E1528]/90 backdrop-blur-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-[0_12px_36px_rgba(0,0,0,0.06)] rounded-2xl px-5 sm:px-6 h-16'
+              : 'bg-white/95 dark:bg-[#0E1528]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-2xl px-5 sm:px-6 h-16 shadow-[0_4px_25px_rgba(0,0,0,0.03)]'
           )}
         >
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link
+            href="/"
+            onClick={() => soundFx.playPop()}
+            className="flex items-center gap-3 group cursor-pointer"
+          >
             <div className="relative">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#7C3AED] to-[#6366F1] opacity-60 blur-xs group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] flex items-center justify-center text-white shadow-md shadow-purple-500/25 group-hover:scale-105 transition-transform duration-300">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 opacity-60 blur-xs group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-violet-500/25 group-hover:scale-105 transition-transform duration-300">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" fill="white" fillOpacity="0.25" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
                   <path d="M12 11.5C13.3807 11.5 14.5 10.3807 14.5 9C14.5 7.61929 13.3807 6.5 12 6.5C10.6193 6.5 9.5 7.61929 9.5 9C9.5 10.3807 10.6193 11.5 12 11.5Z" fill="white"/>
@@ -94,14 +101,14 @@ export function LandingNavbar() {
             </div>
             <div className="flex flex-col text-left">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg font-black tracking-tight text-slate-900 dark:text-foreground leading-none">
+                <span className="text-lg font-black tracking-tight text-slate-950 dark:text-white leading-none">
                   LocaLink
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-purple-100 text-[#7C3AED] dark:bg-purple-950/60 dark:text-purple-300">
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-violet-100 text-violet-700 dark:bg-violet-950/70 dark:text-violet-300">
                   v2.0
                 </span>
               </div>
-              <span className="text-[9px] font-black tracking-widest text-[#7C3AED] uppercase mt-0.5">
+              <span className="text-[9px] font-black tracking-widest text-violet-600 dark:text-violet-400 uppercase mt-0.5">
                 REALTIME GPS
               </span>
             </div>
@@ -122,28 +129,28 @@ export function LandingNavbar() {
                   href={l.href}
                   onMouseEnter={() => setHoveredLink(l.id)}
                   className={cn(
-                    'relative px-3 py-1.5 text-xs lg:text-sm font-semibold transition-colors duration-200 rounded-xl',
+                    'relative px-3 py-1.5 text-xs lg:text-sm font-bold transition-colors duration-200 rounded-xl',
                     isActive
-                      ? 'text-slate-900 dark:text-foreground font-bold'
-                      : 'text-slate-600 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground'
+                      ? 'text-slate-950 dark:text-white font-extrabold'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white'
                   )}
                 >
                   {/* Subtle hover background highlight */}
                   {isHovered && (
                     <motion.div
                       layoutId="nav-hover-pill"
-                      className="absolute inset-0 bg-slate-100/80 dark:bg-muted/60 rounded-xl -z-10"
+                      className="absolute inset-0 bg-slate-100/90 dark:bg-[#15203A] rounded-xl -z-10"
                       transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                     />
                   )}
 
                   {l.label}
 
-                  {/* Active purple indicator dot */}
+                  {/* Active violet indicator dot */}
                   {isActive && (
                     <motion.span
                       layoutId="active-indicator-dot"
-                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#7C3AED]"
+                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-violet-600"
                       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                     />
                   )}
@@ -157,22 +164,24 @@ export function LandingNavbar() {
             <button
               onClick={cycleTheme}
               aria-label={mounted ? `Theme: ${theme ?? 'system'}` : 'Toggle theme'}
-              className="p-2.5 rounded-xl text-slate-600 dark:text-muted-foreground hover:text-[#7C3AED] hover:bg-slate-100 dark:hover:bg-muted transition-colors cursor-pointer"
+              className="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-violet-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <ThemeIcon size={18} />
             </button>
 
             <Link
               href="/login"
-              className="text-sm font-bold text-slate-700 dark:text-foreground hover:text-[#7C3AED] flex items-center gap-1.5 transition-colors px-3.5 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-muted/50"
+              onClick={() => soundFx.playPop()}
+              className="text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-violet-600 flex items-center gap-1.5 transition-colors px-3.5 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800"
             >
-              <LogIn size={16} className="text-slate-500 dark:text-muted-foreground" />
+              <LogIn size={16} className="text-slate-500 dark:text-slate-400" />
               Sign In
             </Link>
 
             <Button
               size="sm"
-              className="h-10 px-5 font-bold text-sm rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-md shadow-purple-500/25 hover:shadow-lg hover:shadow-purple-500/30 transition-all hover:-translate-y-0.5 group gap-1.5"
+              className="h-10 px-5 font-bold text-sm rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-500/25 hover:shadow-lg transition-all hover:-translate-y-0.5 group gap-1.5 cursor-pointer"
+              onClick={() => soundFx.playPop()}
               asChild
             >
               <Link href="/register">
@@ -187,13 +196,16 @@ export function LandingNavbar() {
             <button
               onClick={cycleTheme}
               aria-label={mounted ? `Theme: ${theme ?? 'system'}` : 'Toggle theme'}
-              className="p-2 rounded-xl text-slate-700 dark:text-foreground hover:bg-slate-100 dark:hover:bg-muted transition-colors cursor-pointer"
+              className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <ThemeIcon size={18} />
             </button>
             <button
-              className="p-2 rounded-xl text-slate-700 dark:text-foreground hover:bg-slate-100 dark:hover:bg-muted transition-colors cursor-pointer"
-              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              onClick={() => {
+                soundFx.playPop();
+                setMobileOpen(!mobileOpen);
+              }}
               aria-label="Toggle menu"
             >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -210,7 +222,7 @@ export function LandingNavbar() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="xl:hidden absolute top-[calc(100%+0.5rem)] left-4 right-4 bg-white/95 dark:bg-card/95 backdrop-blur-2xl border border-slate-100 dark:border-border rounded-2xl shadow-2xl p-4 space-y-2 z-50 max-h-[80vh] overflow-y-auto"
+            className="xl:hidden absolute top-[calc(100%+0.5rem)] left-4 right-4 bg-white/95 dark:bg-[#0E1528]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-2xl p-4 space-y-2 z-50 max-h-[80vh] overflow-y-auto"
           >
             {navLinks.map((l) => {
               const isActive = activeSection === l.id;
@@ -220,22 +232,33 @@ export function LandingNavbar() {
                   href={l.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    'block text-sm font-semibold py-2.5 px-3.5 rounded-xl transition-colors',
+                    'block text-sm font-bold py-2.5 px-3.5 rounded-xl transition-colors',
                     isActive
-                      ? 'bg-purple-50 dark:bg-purple-950/40 text-[#7C3AED] font-bold'
-                      : 'text-slate-700 dark:text-foreground hover:bg-slate-50 dark:hover:bg-muted'
+                      ? 'bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 font-extrabold'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
                   )}
                 >
                   {l.label}
                 </a>
               );
             })}
-            <div className="pt-3 border-t border-slate-100 dark:border-border grid grid-cols-2 gap-2">
-              <Button variant="outline" className="w-full h-11 font-bold text-sm rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-800 dark:text-foreground shadow-xs" asChild>
-                <Link href="/login" onClick={() => setMobileOpen(false)}>Sign In</Link>
+            <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                className="w-full h-11 font-bold text-sm rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-800 dark:text-foreground shadow-xs"
+                asChild
+              >
+                <Link href="/login" onClick={() => setMobileOpen(false)}>
+                  Sign In
+                </Link>
               </Button>
-              <Button className="w-full h-11 font-bold text-sm rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-md shadow-purple-500/25" asChild>
-                <Link href="/register" onClick={() => setMobileOpen(false)}>Get Started</Link>
+              <Button
+                className="w-full h-11 font-bold text-sm rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-500/25"
+                asChild
+              >
+                <Link href="/register" onClick={() => setMobileOpen(false)}>
+                  Get Started
+                </Link>
               </Button>
             </div>
           </motion.div>
