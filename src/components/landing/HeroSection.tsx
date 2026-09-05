@@ -30,6 +30,7 @@ import {
 import { soundFx } from '@/lib/soundFx';
 import Link from 'next/link';
 import Image from 'next/image';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 
 interface FamilyMember {
   id: string;
@@ -367,10 +368,16 @@ export function HeroSection() {
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} size={13} className="fill-amber-400 text-amber-400" />
                   ))}
-                  <span className="text-xs font-black text-slate-900 dark:text-foreground ml-1.5">4.9 / 5.0</span>
+                  <span className="text-xs font-black text-slate-900 dark:text-foreground ml-1.5">
+                    <AnimatedCounter value={4.9} decimals={1} duration={2} /> / 5.0
+                  </span>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                  Trusted by over 2,400+ families &amp; teams
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
+                  <span>Trusted by over</span>
+                  <strong className="text-slate-800 dark:text-slate-200">
+                    <AnimatedCounter value={2400} suffix="+" duration={2.2} />
+                  </strong>
+                  <span>families &amp; teams</span>
                 </div>
               </div>
             </div>

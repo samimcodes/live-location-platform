@@ -17,12 +17,12 @@ import {
 } from 'lucide-react';
 import { soundFx } from '@/lib/soundFx';
 import Link from 'next/link';
-import Image from 'next/image';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 
 const stats = [
-  { value: '2,400+', label: 'Active Families', icon: Users },
-  { value: '99.99%', label: 'Uptime SLA', icon: Zap },
-  { value: '4.9 / 5', label: 'App Store Rating', icon: Star },
+  { value: 2400, suffix: '+', label: 'Active Families', icon: Users, decimals: 0 },
+  { value: 99.99, suffix: '%', label: 'Uptime SLA', icon: Zap, decimals: 2 },
+  { value: 4.9, suffix: ' / 5', label: 'App Store Rating', icon: Star, decimals: 1 },
 ];
 
 export function CTASection() {
@@ -135,7 +135,7 @@ export function CTASection() {
                     </span>
                   </div>
 
-                  {/* Stats Counter List */}
+                  {/* Stats Counter List with Smooth Count-Up Animation */}
                   <div className="space-y-3">
                     {stats.map((s) => {
                       const Icon = s.icon;
@@ -149,7 +149,12 @@ export function CTASection() {
                             <span>{s.label}</span>
                           </div>
                           <span className="font-mono font-black text-base text-white">
-                            {s.value}
+                            <AnimatedCounter
+                              value={s.value}
+                              suffix={s.suffix}
+                              decimals={s.decimals}
+                              duration={2.2}
+                            />
                           </span>
                         </div>
                       );

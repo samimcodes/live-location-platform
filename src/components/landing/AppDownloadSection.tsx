@@ -85,15 +85,24 @@ export function AppDownloadSection() {
                   </p>
                 </div>
 
-                {/* Stylized QR Code SVG graphic */}
-                <div className="p-4 bg-white rounded-2xl inline-block shadow-lg">
+                {/* Stylized QR Code SVG graphic with Laser Scanner Beam */}
+                <div className="p-4 bg-white rounded-2xl inline-block shadow-lg relative overflow-hidden group">
+                  {/* Glowing Laser Scan Line */}
+                  <motion.div
+                    animate={{ y: [0, 130, 0] }}
+                    transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent shadow-[0_0_12px_#06B6D4] z-20 pointer-events-none"
+                  >
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-3 bg-cyan-400/20 blur-xs -translate-y-1/2" />
+                  </motion.div>
+
                   <svg
                     width="140"
                     height="140"
                     viewBox="0 0 140 140"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    className="mx-auto"
+                    className="mx-auto relative z-10"
                   >
                     {/* Corner 1 */}
                     <rect x="10" y="10" width="36" height="36" rx="6" stroke="#0F172A" strokeWidth="6" />

@@ -97,21 +97,21 @@ export function HowItWorksSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-50px' }}
                 transition={{ duration: 0.5, delay: i * 0.1, ease: 'easeOut' }}
-                onMouseEnter={() => soundFx.playPop()}
-                className="group relative flex flex-col justify-between rounded-3xl bg-white dark:bg-[#0E1528] border border-slate-200/80 dark:border-slate-800/80 p-7 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_45px_rgba(124,58,237,0.1)] hover:-translate-y-1.5 transition-all duration-300 text-left overflow-hidden"
+                onMouseEnter={() => soundFx?.playPop?.()}
+                className="group relative flex flex-col justify-between rounded-3xl bg-white dark:bg-[#0E1528] border border-slate-200/80 dark:border-slate-800/80 p-7 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.3)] hover:shadow-[0_20px_45px_rgba(124,58,237,0.12)] hover:border-violet-400/50 dark:hover:border-violet-600/50 hover:-translate-y-1.5 transition-all duration-300 text-left overflow-hidden"
               >
                 {/* Step indicator header */}
                 <div className="flex items-center justify-between mb-6">
                   <div
                     className={cn(
-                      'h-14 w-14 rounded-2xl bg-gradient-to-br text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300',
+                      'h-14 w-14 rounded-2xl bg-gradient-to-br text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300',
                       s.gradient
                     )}
                   >
                     <Icon size={24} />
                   </div>
 
-                  <span className="text-2xl font-black font-mono text-slate-200 dark:text-slate-800 group-hover:text-violet-500/40 transition-colors">
+                  <span className="text-3xl font-black font-mono text-slate-200 dark:text-slate-800/80 group-hover:text-violet-500/50 transition-colors">
                     {s.step}
                   </span>
                 </div>
@@ -124,15 +124,20 @@ export function HowItWorksSection() {
                   <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
                     {s.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
                     {s.description}
                   </p>
                 </div>
 
                 {/* Bottom decorative subtle indicator */}
-                <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-400">
-                  <CheckCircle2 size={13} className="text-emerald-500" />
-                  <span>Instant Activation</span>
+                <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 size={13} className="text-emerald-500" />
+                    <span>Instant Activation</span>
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-violet-600 dark:text-violet-400">
+                    Step {s.step} of 04
+                  </span>
                 </div>
               </motion.div>
             );
