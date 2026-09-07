@@ -92,7 +92,7 @@ function MapPageInner() {
   }, [allPoints]);
 
   // Auto-focus from ?focus=ID
-  const focusParam = searchParams.get('focus');
+  const focusParam = searchParams?.get('focus');
   const [prevFocusParam, setPrevFocusParam] = useState<string | null>(null);
   if (focusParam && focusParam !== prevFocusParam) {
     setPrevFocusParam(focusParam);

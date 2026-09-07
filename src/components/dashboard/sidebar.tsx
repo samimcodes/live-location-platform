@@ -144,7 +144,7 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
 
             <div className="space-y-1">
               {section.items.map((item) => {
-                const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+                const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
                 const Icon = item.icon;
 
                 return (

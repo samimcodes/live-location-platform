@@ -30,7 +30,7 @@ export function ResetPasswordForm() {
   const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
   const params = useSearchParams();
-  const token = params.get('token');
+  const token = params?.get('token');
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
