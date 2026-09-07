@@ -7,6 +7,8 @@ import { Home, RefreshCw, Shield, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { soundFx } from '@/lib/soundFx';
 
+export const dynamic = 'force-dynamic';
+
 export default function Error({
   error,
   reset,
