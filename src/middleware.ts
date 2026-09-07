@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
+import { jwtVerify } from 'jose/jwt/verify';
 
 // Routes where authenticated users should be redirected away to /dashboard
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password'];
