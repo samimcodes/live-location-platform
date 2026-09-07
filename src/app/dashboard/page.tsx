@@ -43,9 +43,7 @@ import {
   Loader2,
   Activity,
   TrendingUp,
-  ShieldCheck,
   Compass,
-  Wifi,
 } from "lucide-react";
 import StatsChart from "@/components/dashboard/StatsChart";
 import { soundFx } from "@/lib/soundFx";

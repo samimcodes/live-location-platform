@@ -18,7 +18,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePendingRequestCount } from '@/hooks/useFriends';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 
 interface SidebarProps {
   isCollapsed: boolean;

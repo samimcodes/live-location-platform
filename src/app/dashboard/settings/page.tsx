@@ -14,8 +14,8 @@ import {
   Camera, Loader2, AlertTriangle, Check, X,
   Settings as SettingsIcon, Save, Eye, EyeOff,
   LogOut, CheckCircle2, Download, Bell, Volume2, VolumeX,
-  Shield, KeyRound, Globe, Undo2, Trash2, Radio,
-  Sparkles, History, HardDrive, Smartphone,
+  Shield, KeyRound, Globe, Undo2, Trash2,
+  Sparkles, History, HardDrive,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { motion, AnimatePresence } from 'framer-motion';
