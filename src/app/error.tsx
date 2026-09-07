@@ -7,10 +7,10 @@ import { Home, RefreshCw, Shield, WifiOff } from 'lucide-react';
 import { soundFx } from '@/lib/soundFx';
 
 export default function Error({
-  error,
+  _error,
   reset,
 }: {
-  error: Error & { digest?: string };
+  _error?: Error & { digest?: string };
   reset: () => void;
 }) {
   const [isRetrying, setIsRetrying] = useState(false);
