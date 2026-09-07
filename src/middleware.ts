@@ -7,7 +7,7 @@ const AUTH_ROUTES = ['/login', '/register', '/forgot-password'];
 
 const DASHBOARD_PREFIX = '/dashboard';
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip API calls, Next.js internals, static files, and socket path

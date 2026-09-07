@@ -4,7 +4,6 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Home, Map, ArrowRight, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { soundFx } from '@/lib/soundFx';
 
 export default function NotFound() {
@@ -237,36 +236,29 @@ export default function NotFound() {
           </p>
         </div>
 
-        {/* ── ACTION BUTTONS (MATCHING REFERENCE) ── */}
+        {/* ── ACTION BUTTONS ── */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-8 w-full max-w-md px-4">
           
           {/* Primary Pill Button */}
-          <Button
-            size="lg"
-            className="w-full sm:w-auto h-12 px-7 font-bold text-sm rounded-full bg-gradient-to-r from-[#8B5CF6] via-[#7C3AED] to-[#6366F1] hover:from-[#7C3AED] hover:to-[#4F46E5] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)] hover:shadow-[0_14px_35px_rgba(124,58,237,0.6)] transition-all hover:-translate-y-0.5 active:translate-y-0 gap-2 cursor-pointer border border-white/20"
-            onClick={() => soundFx.playPop()}
-            asChild
+          <Link
+            href="/"
+            onClick={() => soundFx?.playPop?.()}
+            className="w-full sm:w-auto h-12 px-7 font-bold text-sm rounded-full bg-gradient-to-r from-[#8B5CF6] via-[#7C3AED] to-[#6366F1] hover:from-[#7C3AED] hover:to-[#4F46E5] text-white shadow-[0_10px_25px_rgba(124,58,237,0.45)] hover:shadow-[0_14px_35px_rgba(124,58,237,0.6)] transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer border border-white/20"
           >
-            <Link href="/">
-              <Home size={16} />
-              Go Back Home
-              <ArrowRight size={15} />
-            </Link>
-          </Button>
+            <Home size={16} />
+            Go Back Home
+            <ArrowRight size={15} />
+          </Link>
 
           {/* Secondary Outline Pill Button */}
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full sm:w-auto h-12 px-7 font-bold text-sm rounded-full bg-slate-900/40 hover:bg-white/10 border-white/20 text-white shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 active:translate-y-0 gap-2 cursor-pointer"
-            onClick={() => soundFx.playPop()}
-            asChild
+          <Link
+            href="/dashboard/map"
+            onClick={() => soundFx?.playPop?.()}
+            className="w-full sm:w-auto h-12 px-7 font-bold text-sm rounded-full bg-slate-900/40 hover:bg-white/10 border border-white/20 text-white shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <Link href="/dashboard/map">
-              <Map size={16} className="text-purple-300" />
-              View Live Map
-            </Link>
-          </Button>
+            <Map size={16} className="text-purple-300" />
+            View Live Map
+          </Link>
 
         </div>
 
