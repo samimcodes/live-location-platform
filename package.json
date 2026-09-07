@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "nodemon --watch server --watch tsconfig.server.json --ext ts --exec ts-node --project tsconfig.server.json server/index.ts",
-    "build": "next build && tsc --project tsconfig.server.json",
+    "build": "next build --webpack && tsc --project tsconfig.server.json",
     "start": "cross-env NODE_ENV=production node dist/server/index.js",
     "lint": "eslint",
     "db:generate": "prisma generate",

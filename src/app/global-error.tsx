@@ -1,11 +1,6 @@
 'use client';
 
-import React from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
 export default function GlobalError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -13,37 +8,104 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen w-full flex flex-col items-center justify-center bg-[#0F172A] text-white px-4">
-        <div className="max-w-md w-full text-center space-y-6">
-          <div className="h-20 w-20 rounded-2xl bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center mx-auto shadow-xl">
-            <AlertTriangle size={42} />
+      <body
+        style={{
+          margin: 0,
+          padding: '24px',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#0f172a',
+          color: '#ffffff',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ maxWidth: '420px', width: '100%' }}>
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+              color: '#f87171',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+              fontSize: '28px',
+            }}
+          >
+            ⚠️
           </div>
 
-          <div className="space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-black text-white">
-              System Critical Crash
-            </h1>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              A root layout error occurred. You can attempt to reload the application.
-            </p>
-          </div>
+          <h1
+            style={{
+              fontSize: '24px',
+              fontWeight: 800,
+              marginBottom: '8px',
+              color: '#ffffff',
+            }}
+          >
+            Something went wrong
+          </h1>
 
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <Button
+          <p
+            style={{
+              fontSize: '14px',
+              color: '#94a3b8',
+              lineHeight: 1.6,
+              marginBottom: '24px',
+            }}
+          >
+            A critical error occurred. Please try reloading the application.
+          </p>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center',
+            }}
+          >
+            <button
+              type="button"
               onClick={() => reset()}
-              className="h-11 px-6 font-bold text-sm rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg"
+              style={{
+                height: '44px',
+                padding: '0 24px',
+                fontSize: '14px',
+                fontWeight: 600,
+                borderRadius: '12px',
+                backgroundColor: '#7c3aed',
+                color: '#ffffff',
+                border: 'none',
+                cursor: 'pointer',
+              }}
             >
-              <RefreshCw size={15} className="mr-2" />
-              Reload App
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => window.location.href = '/'}
-              className="h-11 px-6 font-bold text-sm rounded-xl border-white/20 text-white hover:bg-white/10"
+              Try Again
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = '/';
+              }}
+              style={{
+                height: '44px',
+                padding: '0 24px',
+                fontSize: '14px',
+                fontWeight: 600,
+                borderRadius: '12px',
+                backgroundColor: 'transparent',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                cursor: 'pointer',
+              }}
             >
-              <Home size={15} className="mr-2" />
               Go Home
-            </Button>
+            </button>
           </div>
         </div>
       </body>
