@@ -16,12 +16,6 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Turbopack is the default bundler in Next.js 16.
-  // maplibre-gl SSR safety is handled via:
-  //  - dynamic(() => import('…'), { ssr: false }) on all map components
-  //  - typeof window === 'undefined' guard in useMapLibre + MiniMap
-  // No webpack alias needed.
-  turbopack: {},
 };
 
 export default nextConfig;
