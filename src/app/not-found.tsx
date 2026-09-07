@@ -7,8 +7,6 @@ import { Home, Map, ArrowRight, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { soundFx } from '@/lib/soundFx';
 
-export const dynamic = 'force-dynamic';
-
 export default function NotFound() {
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-between bg-[#080B16] text-white px-4 sm:px-6 relative overflow-hidden selection:bg-purple-500 selection:text-white font-sans py-8">
