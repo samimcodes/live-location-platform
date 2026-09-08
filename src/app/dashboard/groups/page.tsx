@@ -268,9 +268,10 @@ export default function GroupsPage() {
                 </div>
               </div>
 
-              <Button onClick={() => setShowCreate(true)} className="gap-2 rounded-xl h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold shrink-0">
+              <Button onClick={() => setShowCreate(true)} className="relative gap-2 rounded-2xl h-10 px-6 bg-gradient-to-r from-primary via-indigo-600 to-primary hover:from-primary/95 hover:to-indigo-600/95 text-primary-foreground shadow-md shadow-primary/25 transition-all active:scale-[0.98] text-[13px] font-extrabold shrink-0 overflow-hidden group cursor-pointer">
+                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
                 <Plus size={16} />
-                New Group
+                <span>New Group</span>
               </Button>
             </div>
 

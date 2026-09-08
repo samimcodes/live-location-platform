@@ -527,17 +527,32 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* View Live Map Button */}
-              <Button
-                asChild
-                className="ml-auto w-full sm:w-auto gap-2 rounded-2xl h-9 px-5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-xs font-bold"
-              >
-                <Link href="/dashboard/map">
-                  <Compass size={14} />
-                  Open Live Map
-                  <ArrowRight size={13} />
-                </Link>
-              </Button>
+              {/* Action Buttons: SOS & Live Map */}
+              <div className="ml-auto flex items-center gap-2.5 w-full sm:w-auto">
+                <Button
+                  asChild
+                  variant="destructive"
+                  className="relative gap-1.5 rounded-2xl h-9 px-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white shadow-md shadow-red-500/25 transition-all active:scale-[0.98] text-xs font-extrabold overflow-hidden group/sos cursor-pointer border border-red-400/30"
+                >
+                  <Link href="/dashboard/map">
+                    <span className="absolute inset-0 -translate-x-full group-hover/sos:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                    <span className="h-2 w-2 rounded-full bg-white animate-ping" />
+                    <span>SOS Dispatch</span>
+                  </Link>
+                </Button>
+
+                <Button
+                  asChild
+                  className="relative flex-1 sm:flex-initial gap-2 rounded-2xl h-9 px-5 bg-gradient-to-r from-primary via-indigo-600 to-primary hover:from-primary/95 hover:to-indigo-600/95 text-primary-foreground shadow-md shadow-primary/30 transition-all active:scale-[0.98] text-xs font-extrabold overflow-hidden group cursor-pointer"
+                >
+                  <Link href="/dashboard/map">
+                    <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                    <Compass size={14} className="group-hover:rotate-45 transition-transform duration-500" />
+                    <span>Open Live Map</span>
+                    <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -668,10 +683,11 @@ export default function DashboardPage() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="flex-1 gap-1.5 rounded-2xl h-9 text-xs font-bold cursor-pointer"
+                  className="relative flex-1 gap-1.5 rounded-2xl h-9 text-xs font-bold bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-primary-foreground shadow-md shadow-primary/20 transition-all active:scale-[0.98] overflow-hidden group cursor-pointer"
                   asChild
                 >
                   <Link href="/dashboard/map">
+                    <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
                     <Navigation size={13} />
                     Open Full Map View
                   </Link>
@@ -1102,12 +1118,13 @@ export default function DashboardPage() {
               Add your friends or create your first circle to start real-time live location sharing, geofencing, and smart tracking.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Button asChild className="gap-2 rounded-2xl h-10 px-5 font-bold shadow-md shadow-primary/20">
+              <Button asChild className="relative gap-2 rounded-2xl h-10 px-6 font-bold bg-gradient-to-r from-primary via-indigo-600 to-primary hover:from-primary/95 hover:to-indigo-600/95 text-primary-foreground shadow-lg shadow-primary/25 transition-all active:scale-[0.98] overflow-hidden group cursor-pointer">
                 <Link href="/dashboard/friends">
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
                   <UserCheck size={15} /> Find Friends
                 </Link>
               </Button>
-              <Button variant="outline" asChild className="gap-2 rounded-2xl h-10 px-5 font-semibold">
+              <Button variant="outline" asChild className="gap-2 rounded-2xl h-10 px-6 font-semibold border-border/80 hover:bg-muted/80 transition-all active:scale-[0.98] cursor-pointer">
                 <Link href="/dashboard/groups">
                   <Users2 size={15} /> Create Group
                 </Link>

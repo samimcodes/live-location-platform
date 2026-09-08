@@ -12,6 +12,7 @@ import {
   Shield,
   CheckCircle2,
   Sparkles,
+  Globe,
 } from 'lucide-react';
 import { navSections, NavItem } from '@/data/navdata';
 import { useAuth } from '@/hooks/useAuth';
@@ -80,7 +81,8 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
         isCollapsed ? 'justify-center' : 'justify-between'
       )}>
         <Link
-          href="/dashboard"
+          href="/"
+          title="LocaLink Home Website"
           className={cn(
             'flex items-center gap-3 group focus-visible:outline-none',
             isCollapsed && 'justify-center'
@@ -240,11 +242,20 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
             {/* Quick action bar inside user card */}
             <div className="pt-2 border-t border-border/30 flex items-center justify-between">
               <Link
+                href="/"
+                className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                title="Go to Home Page"
+              >
+                <Globe size={11} />
+                <span>Home</span>
+              </Link>
+
+              <Link
                 href="/dashboard/settings"
                 className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
               >
                 <Shield size={11} />
-                <span>Preferences</span>
+                <span>Settings</span>
               </Link>
 
               <button
@@ -259,6 +270,14 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
+            <Link
+              href="/"
+              title="Go to Home Website"
+              className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-muted/70 transition-colors"
+            >
+              <Globe size={15} />
+            </Link>
+
             <Link
               href="/dashboard/settings"
               title={user?.name ? `${user.name} (Settings)` : 'Account Settings'}

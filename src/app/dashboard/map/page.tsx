@@ -25,6 +25,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/lib/toast';
 
+import { MapSOSButton } from '@/components/map/EmergencySOSModal';
+
 // LiveMap is WebGL — client only
 const LiveMap = dynamic(
   () => import('@/components/map/LiveMap').then((m) => m.LiveMap),
@@ -289,6 +291,9 @@ function MapPageInner() {
             </div>
           </div>
         )}
+
+        {/* ── Floating 1-Click Emergency SOS Dispatch Button ──── */}
+        <MapSOSButton />
 
         {/* ── Mobile FAB: open friends drawer ─────────────────── */}
         <AnimatePresence>

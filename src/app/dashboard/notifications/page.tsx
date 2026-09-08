@@ -219,11 +219,12 @@ export default function NotificationsPage() {
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-3 shrink-0 flex-wrap">
                 {readCount > 0 && (
                   <Button
-                    variant="outline" size="sm"
-                    className="text-muted-foreground hover:text-destructive border-border/60 hover:bg-destructive/10 rounded-xl h-11 px-5 transition-all text-[13px] font-bold"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-2xl h-11 border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 px-4 font-bold text-[13px] transition-all active:scale-[0.98] cursor-pointer"
                     onClick={() => setConfirmDeleteAll(true)}
                     disabled={deletingAll}
                   >
@@ -231,16 +232,17 @@ export default function NotificationsPage() {
                       ? <Loader2 size={16} className="mr-2 animate-spin" />
                       : <Trash2 size={16} className="mr-2" />
                     }
-                    Clear read
+                    <span>Clear read</span>
                   </Button>
                 )}
                 {unread > 0 && (
                   <Button
                     size="sm"
-                    className="rounded-xl h-11 shadow-sm shadow-primary/25 px-5 font-bold gap-2 text-[13px] transition-all active:scale-95 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="relative rounded-2xl h-11 shadow-md shadow-primary/25 px-5 font-bold gap-2 text-[13px] transition-all active:scale-[0.98] bg-gradient-to-r from-primary via-indigo-600 to-primary text-primary-foreground overflow-hidden group cursor-pointer"
                     onClick={() => markAllRead()}
                     disabled={markingAll}
                   >
+                    <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
                     {markingAll
                       ? <Loader2 size={16} className="mr-2 animate-spin" />
                       : <CheckCheck size={16} className="mr-2" />

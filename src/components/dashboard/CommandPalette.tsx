@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Map, Users, Users2, Bookmark, History,
   Settings, Bell, Radio, LayoutDashboard,
-  UserCheck, CornerDownLeft, Sparkles,
+  UserCheck, CornerDownLeft, Sparkles, Globe,
 } from 'lucide-react';
 import { useFriends } from '@/hooks/useFriends';
 import { useGroups } from '@/hooks/useGroups';
@@ -71,6 +71,15 @@ export default function CommandPalette({ open, onOpenChange }: CommandPalettePro
   const allItems = useMemo<CommandItem[]>(() => {
     const list: CommandItem[] = [
       // Navigation
+      {
+        id: 'nav-home',
+        title: 'Home / Landing Page',
+        subtitle: 'Visit public landing page and features',
+        category: 'Navigation',
+        icon: Globe,
+        iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+        onSelect: () => { router.push('/'); handleClose(); },
+      },
       {
         id: 'nav-dashboard',
         title: 'Overview Dashboard',

@@ -200,8 +200,9 @@ export function SignInForm() {
       <Button
         type="submit"
         disabled={isLoading}
-        className="w-full h-11 rounded-xl text-white text-sm font-bold bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-500/25 hover:shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer flex items-center justify-center gap-2 border border-white/20"
+        className="relative w-full h-11 rounded-2xl text-white text-sm font-bold bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-500/25 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 cursor-pointer flex items-center justify-center gap-2 border border-white/20 overflow-hidden group/sub"
       >
+        <span className="absolute inset-0 -translate-x-full group-hover/sub:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
         {isLoading ? (
           <>
             <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -211,7 +212,7 @@ export function SignInForm() {
           <>
             <Navigation size={14} className="text-white" style={{ transform: 'rotate(-30deg)' }} />
             <span>Sign In to LocaLink</span>
-            <ArrowRight size={14} />
+            <ArrowRight size={14} className="group-hover/sub:translate-x-0.5 transition-transform" />
           </>
         )}
       </Button>

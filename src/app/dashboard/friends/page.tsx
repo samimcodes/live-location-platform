@@ -345,12 +345,13 @@ export default function FriendsPage() {
                 </div>
               </div>
 
-              <Button asChild className="gap-2 rounded-xl h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold relative">
+              <Button asChild className="relative gap-2 rounded-2xl h-10 px-6 bg-gradient-to-r from-primary via-indigo-600 to-primary hover:from-primary/95 hover:to-indigo-600/95 text-primary-foreground shadow-md shadow-primary/25 transition-all active:scale-[0.98] text-[13px] font-extrabold overflow-hidden group cursor-pointer">
                 <Link href="/dashboard/friends/requests">
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
                   <UserPlus size={16} />
-                  Requests
+                  <span>Friend Requests</span>
                   {pendingCount > 0 && (
-                    <span className="absolute -top-2 -right-2 h-5 min-w-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1 animate-pulse shadow-md">
+                    <span className="ml-1.5 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold animate-pulse shadow-xs">
                       {pendingCount}
                     </span>
                   )}

@@ -481,9 +481,10 @@ export default function SavedPlacesPage() {
                 </div>
               </div>
 
-              <Button onClick={() => setShowCreate(true)} className="gap-2 rounded-xl h-11 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold shrink-0">
+              <Button onClick={() => setShowCreate(true)} className="relative gap-2 rounded-2xl h-11 px-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-500/25 transition-all active:scale-[0.98] text-[13px] font-extrabold shrink-0 overflow-hidden group cursor-pointer border border-emerald-400/30">
+                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
                 <Plus size={16} />
-                Add Place
+                <span>Add Place</span>
               </Button>
             </div>
 

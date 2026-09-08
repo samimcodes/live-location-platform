@@ -21,6 +21,7 @@ import {
   Shield,
   ExternalLink,
   ChevronRight,
+  Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppSelector, useAppDispatch } from '@/store/store';
@@ -424,6 +425,18 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false, onOpenCo
                       <span>Live Radar Map</span>
                     </div>
                     <ChevronRight size={13} className="text-muted-foreground/40 group-hover:text-foreground transition-colors" />
+                  </Link>
+
+                  <Link
+                    href="/"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all select-none group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Globe size={15} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span>Back to Home Website</span>
+                    </div>
+                    <ExternalLink size={13} className="text-muted-foreground/40 group-hover:text-foreground transition-colors" />
                   </Link>
 
                   <Link
