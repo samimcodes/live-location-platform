@@ -54,16 +54,19 @@ export function AppDownloadSection() {
               <div className="flex flex-wrap items-center gap-3.5 pt-4">
                 <Button
                   size="lg"
-                  className="h-12 px-7 font-bold text-sm rounded-xl bg-white text-slate-950 hover:bg-white/90 shadow-xl transition-all hover:-translate-y-0.5 cursor-pointer"
+                  className="relative h-12 px-7 font-bold text-sm rounded-2xl bg-white text-slate-950 hover:bg-white/95 shadow-[0_10px_25px_rgba(255,255,255,0.2)] hover:shadow-[0_15px_35px_rgba(255,255,255,0.3)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer overflow-hidden group border border-white"
                   onClick={() => soundFx.playPop()}
                   asChild
                 >
-                  <Link href="/register">Open Instant Web App</Link>
+                  <Link href="/register">
+                    <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-violet-200/50 to-transparent pointer-events-none" />
+                    <span className="relative z-10">Open Instant Web App</span>
+                  </Link>
                 </Button>
                 <Button
                   variant="outline"
                   size="lg"
-                  className="h-12 px-6 font-bold text-sm rounded-xl border border-white/30 text-white hover:bg-white/10 transition-all backdrop-blur-sm cursor-pointer"
+                  className="relative h-12 px-6 font-bold text-sm rounded-2xl border border-white/30 text-white bg-white/10 hover:bg-white/20 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] backdrop-blur-md cursor-pointer shadow-xs"
                   onClick={() => soundFx.playPop()}
                   asChild
                 >

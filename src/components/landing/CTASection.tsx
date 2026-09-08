@@ -75,20 +75,21 @@ export function CTASection() {
                 <div className="flex flex-wrap gap-3.5 items-center">
                   <Button
                     size="lg"
-                    className="h-13 px-8 font-bold text-sm rounded-2xl bg-white text-violet-700 hover:bg-white/95 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5 active:translate-y-0 group gap-2.5 cursor-pointer"
+                    className="relative h-13 px-8 font-bold text-sm rounded-2xl bg-white text-violet-700 hover:bg-white/95 shadow-[0_12px_30px_rgba(0,0,0,0.25)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] group gap-2.5 cursor-pointer overflow-hidden border border-white/80"
                     onClick={() => soundFx.playPop()}
                     asChild
                   >
                     <Link href="/register">
-                      <span>Start Tracking Free</span>
-                      <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
+                      <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-violet-300/40 to-transparent pointer-events-none" />
+                      <span className="relative z-10">Start Tracking Free</span>
+                      <ArrowRight size={17} className="relative z-10 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   </Button>
 
                   <Button
                     variant="outline"
                     size="lg"
-                    className="h-13 px-7 font-bold text-sm rounded-2xl border border-white/30 text-white hover:bg-white/10 hover:border-white/50 transition-all backdrop-blur-sm gap-2 cursor-pointer"
+                    className="relative h-13 px-7 font-bold text-sm rounded-2xl border border-white/40 text-white bg-white/10 hover:bg-white/20 hover:border-white/60 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] backdrop-blur-md gap-2 cursor-pointer shadow-lg"
                     onClick={() => soundFx.playPop()}
                     asChild
                   >

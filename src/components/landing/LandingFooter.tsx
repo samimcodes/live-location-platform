@@ -112,10 +112,10 @@ export function LandingFooter() {
             </h4>
             <ul className="space-y-2.5 text-sm text-slate-600 dark:text-slate-400 font-medium">
               {[
-                { label: 'Privacy Policy', href: '#' },
-                { label: 'Terms of Service', href: '#' },
-                { label: 'Security Architecture', href: '#' },
-                { label: 'Data Zero-Knowledge', href: '#' },
+                { label: 'Privacy Policy', href: '#faq' },
+                { label: 'Terms of Service', href: '#faq' },
+                { label: 'Security Architecture', href: '#features' },
+                { label: 'Data Zero-Knowledge', href: '#features' },
                 { label: 'Customer Reviews', href: '#testimonials' },
                 { label: 'FAQ', href: '#faq' },
               ].map((l) => (

@@ -288,25 +288,26 @@ export function HeroSection() {
             <div className="flex flex-wrap items-center gap-4 pt-1">
               <Button
                 size="lg"
-                className="h-13 px-8 font-bold text-sm rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 hover:from-violet-700 hover:to-indigo-700 text-white shadow-[0_8px_25px_rgba(124,58,237,0.35)] hover:shadow-[0_14px_35px_rgba(124,58,237,0.5)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 group gap-2.5 cursor-pointer border border-white/20"
+                className="relative h-13 px-8 font-bold text-sm rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-700 hover:via-indigo-700 hover:to-violet-700 text-white shadow-[0_10px_30px_rgba(124,58,237,0.4)] hover:shadow-[0_16px_45px_rgba(124,58,237,0.6)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] group gap-2.5 cursor-pointer border border-white/25 overflow-hidden"
                 onClick={() => soundFx.playPop()}
                 asChild
               >
                 <Link href="/register">
-                  <span>Start Tracking Free</span>
-                  <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                  <span className="relative z-10">Start Tracking Free</span>
+                  <ArrowRight size={17} className="relative z-10 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
 
               <Button
                 variant="outline"
                 size="lg"
-                className="h-13 px-7 font-bold text-sm rounded-2xl bg-white/80 dark:bg-[#10172C]/80 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-foreground shadow-xs hover:bg-slate-100/90 dark:hover:bg-slate-800 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 gap-2 cursor-pointer"
+                className="relative h-13 px-7 font-bold text-sm rounded-2xl bg-white/90 dark:bg-[#10172C]/90 backdrop-blur-xl border border-slate-200/90 dark:border-white/10 text-slate-800 dark:text-white shadow-[0_4px_15px_rgba(0,0,0,0.05)] hover:bg-slate-50 dark:hover:bg-white/[0.12] hover:border-violet-300 dark:hover:border-violet-500/40 hover:shadow-[0_8px_25px_rgba(124,58,237,0.15)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] gap-2 cursor-pointer overflow-hidden group"
                 onClick={() => soundFx.playPop()}
                 asChild
               >
                 <Link href="/login">
-                  <Navigation2 size={16} className="text-violet-600 dark:text-violet-400" />
+                  <Navigation2 size={16} className="text-violet-600 dark:text-violet-400 group-hover:rotate-12 transition-transform duration-300" />
                   <span>Live Dashboard</span>
                 </Link>
               </Button>
@@ -484,7 +485,7 @@ export function HeroSection() {
                 />
 
                 {/* 3D Rotating Isometric Radar Globe & Orbital Rings */}
-                <div className="relative w-[340px] h-[340px] flex items-center justify-center">
+                <div className="relative w-[min(340px,85vw)] h-[min(340px,85vw)] flex items-center justify-center">
                   
                   {/* Outer Orbit Ring 1 (Tilted & Rotating) */}
                   <motion.div

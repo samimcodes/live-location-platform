@@ -133,13 +133,14 @@ export function EmergencySOSSection() {
             <div className="pt-2">
               <Button
                 size="lg"
-                className="h-12 px-7 font-bold text-sm rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/25 transition-all group gap-2 cursor-pointer border border-red-500/30"
+                className="relative h-12 px-7 font-bold text-sm rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:via-rose-700 hover:to-red-700 text-white shadow-[0_8px_25px_rgba(239,68,68,0.35)] hover:shadow-[0_14px_35px_rgba(239,68,68,0.55)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] group gap-2 cursor-pointer border border-white/25 overflow-hidden"
                 onClick={() => soundFx.playPop()}
                 asChild
               >
                 <Link href="/register">
-                  <span>Enable Family Safety Free</span>
-                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                  <span className="relative z-10">Enable Family Safety Free</span>
+                  <ArrowRight size={16} className="relative z-10 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
             </div>

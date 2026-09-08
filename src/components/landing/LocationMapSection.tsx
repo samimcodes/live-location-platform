@@ -20,6 +20,7 @@ import {
   Sparkles,
   ArrowRight,
   Eye,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,9 @@ export function LocationMapSection() {
   const handleTabChange = (tab: 'live' | 'geofence' | 'history') => {
     soundFx.playPop();
     setActiveTab(tab);
+    if (tab === 'geofence') {
+      setShowGeofenceToast(true);
+    }
   };
 
   // Route playback simulation loop
@@ -158,13 +162,14 @@ export function LocationMapSection() {
             <div className="pt-2 flex items-center gap-4">
               <Button
                 size="lg"
-                className="h-12 px-7 font-bold text-sm rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/25 hover:shadow-xl transition-all group gap-2 cursor-pointer border border-violet-400/30"
+                className="relative h-12 px-7 font-bold text-sm rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-[0_8px_25px_rgba(124,58,237,0.35)] hover:shadow-[0_12px_35px_rgba(124,58,237,0.55)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] group gap-2 cursor-pointer border border-white/25 overflow-hidden"
                 onClick={() => soundFx.playPop()}
                 asChild
               >
-                <Link href="/register">
-                  <span>Explore Live Map</span>
-                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                <Link href="/dashboard/map">
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                  <span className="relative z-10">Explore Live Map</span>
+                  <ArrowRight size={16} className="relative z-10 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
             </div>
@@ -212,8 +217,13 @@ export function LocationMapSection() {
 
               {/* Map Preview Canvas */}
               <div className="relative aspect-[4/3] bg-[#0C1224] overflow-hidden flex items-center justify-center select-none">
-                {/* SVG Roads & Blocks */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                {/* SVG Roads & Blocks with responsive viewBox scaling */}
+                <svg
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 700 500"
+                  preserveAspectRatio="none"
+                >
                   <rect x="5%" y="8%" width="38%" height="34%" rx="12" fill="#131C35" />
                   <rect x="50%" y="8%" width="44%" height="34%" rx="12" fill="#131C35" />
                   <rect x="8%" y="50%" width="38%" height="42%" rx="12" fill="#131C35" />
@@ -325,21 +335,36 @@ export function LocationMapSection() {
                 </div>
 
                 {/* Simulated Geofence Entry Notification Pill */}
-                {activeTab === 'geofence' && showGeofenceToast && (
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    className="absolute top-3 left-4 right-4 bg-emerald-950/90 border border-emerald-500/50 text-emerald-200 px-3 py-2 rounded-xl text-xs font-medium backdrop-blur-md shadow-lg flex items-center justify-between z-30"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Bell size={14} className="text-emerald-400 animate-bounce" />
-                      <span>
-                        <strong>Geofence Alert:</strong> Emma arrived safely at Home.
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-mono text-emerald-400">Just now</span>
-                  </motion.div>
-                )}
+                <AnimatePresence>
+                  {activeTab === 'geofence' && showGeofenceToast && (
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -10, opacity: 0 }}
+                      className="absolute top-3 left-4 right-4 bg-emerald-950/90 border border-emerald-500/50 text-emerald-200 px-3 py-2 rounded-xl text-xs font-medium backdrop-blur-md shadow-lg flex items-center justify-between z-30"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Bell size={14} className="text-emerald-400 animate-bounce" />
+                        <span>
+                          <strong>Geofence Alert:</strong> Emma arrived safely at Home.
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-emerald-400">Just now</span>
+                        <button
+                          onClick={() => {
+                            soundFx.playPop();
+                            setShowGeofenceToast(false);
+                          }}
+                          className="p-1 rounded-md text-emerald-300 hover:text-white hover:bg-emerald-900/50 transition-colors cursor-pointer"
+                          aria-label="Dismiss alert"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Bottom Interactive Controls Strip */}
                 <div className="absolute bottom-3 left-3 right-3 bg-slate-950/90 backdrop-blur-md border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs text-slate-200 shadow-xl z-20">
@@ -370,7 +395,16 @@ export function LocationMapSection() {
                         {isPlayingRoute ? <Pause size={13} /> : <Play size={13} />}
                         <span>{isPlayingRoute ? 'Pause' : 'Play'}</span>
                       </button>
-                      <div className="flex-1">
+                      <div
+                        className="flex-1 cursor-pointer py-1"
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const clickX = e.clientX - rect.left;
+                          const pct = Math.max(5, Math.min(98, Math.round((clickX / rect.width) * 100)));
+                          setRouteProgress(pct);
+                        }}
+                        title="Click to seek route position"
+                      >
                         <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                           <div
                             className="bg-gradient-to-r from-violet-500 to-cyan-400 h-full rounded-full transition-all duration-300"

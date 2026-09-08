@@ -36,7 +36,7 @@ const tiers = [
       'Standard Web & Mobile Access',
     ],
     cta: 'Get Started Free',
-    href: '/register',
+    href: '/register?plan=free',
     highlight: false,
   },
   {
@@ -57,7 +57,7 @@ const tiers = [
       'Individual Ghost Mode Granularity',
     ],
     cta: 'Start 14-Day Free Trial',
-    href: '/register',
+    href: '/register?plan=family-pro',
     highlight: true,
   },
   {
@@ -78,7 +78,7 @@ const tiers = [
       '24/7 Dedicated Support Specialist',
     ],
     cta: 'Get Team Access',
-    href: '/register',
+    href: '/register?plan=fleet-teams',
     highlight: false,
   },
 ];
@@ -220,17 +220,20 @@ export function PricingSection() {
                 <div className="pt-8 mt-6 border-t border-slate-100 dark:border-slate-800">
                   <Button
                     size="lg"
-                    className={`w-full h-12 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    className={`relative w-full h-12 font-bold text-xs sm:text-sm rounded-2xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 overflow-hidden group active:scale-[0.98] ${
                       tier.highlight
-                        ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/25'
-                        : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-foreground'
+                        ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-[0_8px_25px_rgba(124,58,237,0.35)] hover:shadow-[0_14px_35px_rgba(124,58,237,0.55)] border border-white/25 hover:-translate-y-0.5'
+                        : 'bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 hover:-translate-y-0.5 shadow-xs'
                     }`}
                     onClick={() => soundFx.playPop()}
                     asChild
                   >
                     <Link href={tier.href}>
-                      <span>{tier.cta}</span>
-                      <ArrowRight size={15} />
+                      {tier.highlight && (
+                        <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                      )}
+                      <span className="relative z-10">{tier.cta}</span>
+                      <ArrowRight size={15} className="relative z-10 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   </Button>
                 </div>

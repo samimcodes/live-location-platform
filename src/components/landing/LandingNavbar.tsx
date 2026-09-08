@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Menu, X, LogIn, Sun, Moon, Monitor, Shield, Navigation, MapPin, Zap, ShieldAlert, Users, CreditCard, Star, HelpCircle } from 'lucide-react';
+import { ArrowRight, Menu, X, LogIn, Sun, Moon, Monitor, Shield, Navigation, MapPin, Zap, ShieldAlert, Users, CreditCard, Star, HelpCircle, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/ThemeProvider';
 import { soundFx } from '@/lib/soundFx';
+import { useAuth } from '@/hooks/useAuth';
 
 const navLinks = [
   { label: 'Radar Map', href: '#map-preview', id: 'map-preview', icon: MapPin },
@@ -22,6 +23,7 @@ const navLinks = [
 
 export function LandingNavbar() {
   const { theme, setTheme } = useTheme();
+  const { isAuthenticated } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('map-preview');
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
@@ -170,26 +172,45 @@ export function LandingNavbar() {
               <ThemeIcon size={17} />
             </button>
 
-            <Link
-              href="/login"
-              onClick={() => soundFx?.playPop?.()}
-              className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-violet-600 flex items-center gap-1.5 transition-colors px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800"
-            >
-              <LogIn size={15} className="text-slate-500 dark:text-slate-400" />
-              <span>Sign In</span>
-            </Link>
+            {isAuthenticated ? (
+              <Button
+                size="sm"
+                className="relative h-10 px-5 font-bold text-xs sm:text-sm rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-[0_4px_15px_rgba(124,58,237,0.35)] hover:shadow-[0_6px_22px_rgba(124,58,237,0.5)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] group gap-1.5 cursor-pointer border border-white/25 overflow-hidden"
+                onClick={() => soundFx?.playPop?.()}
+                asChild
+              >
+                <Link href="/dashboard">
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                  <LayoutDashboard size={14} className="relative z-10" />
+                  <span className="relative z-10">Dashboard</span>
+                  <ArrowRight size={13} className="relative z-10 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => soundFx?.playPop?.()}
+                  className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-violet-600 flex items-center gap-1.5 transition-colors px-3.5 py-2 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800"
+                >
+                  <LogIn size={15} className="text-slate-500 dark:text-slate-400" />
+                  <span>Sign In</span>
+                </Link>
 
-            <Button
-              size="sm"
-              className="h-9 sm:h-10 px-4 sm:px-5 font-bold text-xs sm:text-sm rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-violet-500/25 hover:shadow-lg transition-all hover:-translate-y-0.5 group gap-1.5 cursor-pointer"
-              onClick={() => soundFx?.playPop?.()}
-              asChild
-            >
-              <Link href="/register">
-                <span>Get Started</span>
-                <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            </Button>
+                <Button
+                  size="sm"
+                  className="relative h-10 px-5 font-bold text-xs sm:text-sm rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-[0_4px_15px_rgba(124,58,237,0.35)] hover:shadow-[0_6px_22px_rgba(124,58,237,0.5)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] group gap-1.5 cursor-pointer border border-white/25 overflow-hidden"
+                  onClick={() => soundFx?.playPop?.()}
+                  asChild
+                >
+                  <Link href="/register">
+                    <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                    <span className="relative z-10">Get Started</span>
+                    <ArrowRight size={14} className="relative z-10 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu toggle & theme */}
@@ -259,23 +280,47 @@ export function LandingNavbar() {
                 );
               })}
               <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  className="w-full h-11 font-bold text-sm rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-800 dark:text-foreground shadow-xs"
-                  asChild
-                >
-                  <Link href="/login" onClick={() => setMobileOpen(false)}>
-                    Sign In
-                  </Link>
-                </Button>
-                <Button
-                  className="w-full h-11 font-bold text-sm rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-500/25"
-                  asChild
-                >
-                  <Link href="/register" onClick={() => setMobileOpen(false)}>
-                    Get Started
-                  </Link>
-                </Button>
+                {isAuthenticated ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 font-bold text-sm rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-800 dark:text-foreground shadow-xs"
+                      asChild
+                    >
+                      <Link href="/dashboard/map" onClick={() => setMobileOpen(false)}>
+                        Live Map
+                      </Link>
+                    </Button>
+                    <Button
+                      className="w-full h-11 font-bold text-sm rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-500/25"
+                      asChild
+                    >
+                      <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
+                        Dashboard
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 font-bold text-sm rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-800 dark:text-foreground shadow-xs"
+                      asChild
+                    >
+                      <Link href="/login" onClick={() => setMobileOpen(false)}>
+                        Sign In
+                      </Link>
+                    </Button>
+                    <Button
+                      className="w-full h-11 font-bold text-sm rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-md shadow-violet-500/25"
+                      asChild
+                    >
+                      <Link href="/register" onClick={() => setMobileOpen(false)}>
+                        Get Started
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </motion.div>
           </>

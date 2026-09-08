@@ -229,17 +229,18 @@ export function FriendsRealtimeSection() {
               <div className="pt-1">
                 <Button
                   onClick={triggerCheckIn}
-                  className="w-full h-12 font-black text-xs rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:hover:bg-violet-900/60 dark:text-violet-300 border border-violet-200 dark:border-violet-800 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  className="relative w-full h-12 font-bold text-xs sm:text-sm rounded-2xl bg-gradient-to-r from-violet-500/15 via-indigo-500/15 to-violet-500/15 hover:from-violet-500/25 hover:to-indigo-500/25 text-violet-700 dark:text-violet-300 border border-violet-300/60 dark:border-violet-700/60 flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] shadow-xs hover:shadow-md overflow-hidden group"
                 >
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-violet-400/20 to-transparent pointer-events-none" />
                   {checkedIn ? (
                     <>
-                      <CheckCircle2 size={16} className="text-emerald-500 animate-bounce" />
-                      <span>Check-in Broadcasted to All Members!</span>
+                      <CheckCircle2 size={16} className="text-emerald-500 animate-bounce relative z-10" />
+                      <span className="relative z-10">Check-in Broadcasted to All Members!</span>
                     </>
                   ) : (
                     <>
-                      <Navigation size={15} className="text-violet-600 dark:text-violet-400" />
-                      <span>Simulate 1-Click Family Check-in</span>
+                      <Navigation size={15} className="text-violet-600 dark:text-violet-400 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
+                      <span className="relative z-10">Simulate 1-Click Family Check-in</span>
                     </>
                   )}
                 </Button>
