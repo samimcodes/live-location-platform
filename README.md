@@ -4,10 +4,10 @@
 
 **A production-ready family & friends real-time GPS tracking platform — inspired by Life360.**
 
-Built with Next.js 16, Express 5, Socket.IO, Prisma, PostgreSQL, and MapLibre GL JS.
+Built with Next.js 15, Express 5, Socket.IO, Prisma, PostgreSQL, and MapLibre GL JS.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-16.2.9-000?logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5.25-000?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![Express](https://img.shields.io/badge/Express-5.x-000?logo=express)](https://expressjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-6.x-2D3748?logo=prisma)](https://prisma.io/)
@@ -43,7 +43,7 @@ Built with Next.js 16, Express 5, Socket.IO, Prisma, PostgreSQL, and MapLibre GL
 ### Frontend
 | Library | Version | Purpose |
 |---|---|---|
-| **Next.js** | 16.2.9 | App Router, SSR, middleware |
+| **Next.js** | 15.5.25 | App Router, SSR, middleware |
 | **React** | 19.x | UI rendering |
 | **TypeScript** | 5.x | Strict typing |
 | **Tailwind CSS** | v4 | Utility-first styling |
