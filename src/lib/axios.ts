@@ -45,6 +45,10 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 function shouldSkipRefresh(url?: string): boolean {
   if (!url) return false;
+  // If calling /auth/me without an existing token, skip refresh attempt to avoid unnecessary network round-trips
+  if (url.includes('/auth/me') && typeof window !== 'undefined' && !localStorage.getItem('token')) {
+    return true;
+  }
   return SKIP_REFRESH_PATHS.some((path) => url.includes(path));
 }
 
@@ -92,7 +96,12 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
-          window.location.href = '/login';
+          // Only redirect if user is actively in a protected dashboard route
+          if (window.location.pathname.startsWith('/dashboard')) {
+            const loginUrl = new URL('/login', window.location.origin);
+            loginUrl.searchParams.set('from', window.location.pathname);
+            window.location.href = loginUrl.toString();
+          }
         }
         return Promise.reject(refreshError);
       } finally {

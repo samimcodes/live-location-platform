@@ -53,7 +53,7 @@ function Avatar({ id = 0, name, avatar, sizePx = 36 }: {
       style={{ width: sizePx, height: sizePx }}
     >
       {avatar ? (
-        <Image src={avatar} alt={name} fill sizes={`${sizePx}px`} className="object-cover" />
+        <Image src={avatar} alt={name} fill sizes={`${sizePx}px`} unoptimized className="object-cover" />
       ) : (
         <div
           className={cn(

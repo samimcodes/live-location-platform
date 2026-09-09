@@ -91,7 +91,11 @@ export class FriendService {
     if (action === 'ACCEPTED') {
       // Ensure user1Id < user2Id to maintain unique constraint
       const [user1Id, user2Id] = [request.senderId, request.receiverId].sort((a, b) => a - b);
-      await prisma.friendship.create({ data: { user1Id, user2Id } });
+      await prisma.friendship.upsert({
+        where: { user1Id_user2Id: { user1Id, user2Id } },
+        create: { user1Id, user2Id },
+        update: {},
+      });
     }
 
     return {

@@ -20,6 +20,7 @@ import locationRoutes from './routes/locationRoutes';
 import groupRoutes from './routes/groupRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import savedPlaceRoutes from './routes/savedPlaceRoutes';
+import smsRoutes from './routes/smsRoutes';
 
 // Socket handler
 import { initSocketHandlers } from './socket/socketHandlers';
@@ -42,10 +43,35 @@ app.prepare().then(async () => {
   const server = express();
   const httpServer = createServer(server);
 
+  // ── Allowed CORS Origins ────────────────────────────────────
+  const getAllowedOrigins = (): (string | RegExp)[] => {
+    const envUrl = process.env.FRONTEND_URL?.trim();
+    const origins: (string | RegExp)[] = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+    if (envUrl) {
+      const urls = envUrl.split(',').map((u) => u.trim().replace(/\/+$/, '')).filter(Boolean);
+      origins.push(...urls);
+    }
+    origins.push(/^https:\/\/.*\.onrender\.com$/, /^https:\/\/.*\.vercel\.app$/);
+    return origins;
+  };
+
+  const corsOriginHandler = (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => {
+    if (!origin) return callback(null, true);
+    const allowed = getAllowedOrigins();
+    const cleanOrigin = origin.replace(/\/+$/, '');
+    const isMatch = allowed.some((pat) =>
+      typeof pat === 'string' ? cleanOrigin === pat : pat.test(cleanOrigin)
+    );
+    callback(null, isMatch);
+  };
+
   // ── Socket.IO ──────────────────────────────────────────────
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+      origin: corsOriginHandler,
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -56,7 +82,7 @@ app.prepare().then(async () => {
 
   // ── Middleware ─────────────────────────────────────────────
   server.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: corsOriginHandler,
     credentials: true,
   }));
   server.use(helmet({ contentSecurityPolicy: false }));
@@ -101,6 +127,7 @@ app.prepare().then(async () => {
   server.use('/api/v1/groups',        apiLimiter,  groupRoutes);
   server.use('/api/v1/notifications', apiLimiter,  notificationRoutes);
   server.use('/api/v1/saved-places',  apiLimiter,  savedPlaceRoutes);
+  server.use('/api/v1/sms',           apiLimiter,  smsRoutes);
   server.use('/api/v1/upload',        apiLimiter,  uploadRoutes);
 
   // Legacy routes kept for backward compat

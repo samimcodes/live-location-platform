@@ -7,6 +7,8 @@ import { connectSocket, disconnectSocket } from '@/lib/socket';
 import { useAppSelector } from '@/store/store';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
+import { toast } from '@/lib/toast';
+import { soundFx } from '@/lib/soundFx';
 
 interface SocketContextValue {
   socket: Socket | null;
@@ -141,6 +143,42 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       qc.invalidateQueries({ queryKey: ['friends-locations-initial'] });
     });
 
+    // ── sos:alert — emergency siren broadcast from friend ─────────────
+    s.on('sos:alert', (alert: {
+      userId: number;
+      name: string;
+      latitude: number;
+      longitude: number;
+      address?: string;
+      message?: string;
+      timestamp?: string;
+    }) => {
+      qc.invalidateQueries({ queryKey: ['notifications'] });
+      qc.invalidateQueries({ queryKey: ['friends'] });
+      qc.invalidateQueries({ queryKey: ['friends-locations-initial'] });
+
+      updateFriendLocation({
+        userId: alert.userId,
+        latitude: alert.latitude,
+        longitude: alert.longitude,
+        address: alert.address,
+        timestamp: alert.timestamp,
+      });
+
+      soundFx.playAlert();
+
+      toast.error(`🚨 EMERGENCY SOS: ${alert.name}`, {
+        description: alert.message || `Assistance requested near ${alert.address || 'GPS Coordinates'}`,
+        duration: 15_000,
+        action: {
+          label: 'View on Map',
+          onClick: () => {
+            window.location.href = `/dashboard/map?focus=${alert.userId}`;
+          },
+        },
+      });
+    });
+
     return () => {
       s.off('connect', handleConnect);
       s.off('disconnect', handleDisconnect);
@@ -151,6 +189,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       s.off('notification');
       s.off('friend:request:updated');
       s.off('sharing:changed');
+      s.off('sos:alert');
     };
   }, [isAuthenticated, token, updateFriendLocation, removeFriendLocation, addNotification, qc]);
 

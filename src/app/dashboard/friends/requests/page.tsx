@@ -33,7 +33,7 @@ function Avatar({
     <div className="relative h-11 w-11 shrink-0">
       <div className="relative h-full w-full overflow-hidden rounded-2xl">
         {avatar ? (
-          <Image src={avatar} alt={name ?? 'User'} fill sizes="44px"
+          <Image src={avatar} alt={name ?? 'User'} fill sizes="44px" unoptimized
             className="object-cover" />
         ) : (
           <div className={cn(

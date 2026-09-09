@@ -20,7 +20,7 @@ function baseCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
   };
 }
@@ -28,11 +28,11 @@ function baseCookieOptions(): CookieOptions {
 export function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
   res.cookie('accessToken', accessToken, {
     ...baseCookieOptions(),
-    maxAge: parseDurationMs(process.env.JWT_EXPIRES_IN, 30 * 24 * 60 * 60 * 1000),
+    maxAge: parseDurationMs(process.env.JWT_EXPIRES_IN, 7 * 24 * 60 * 60 * 1000),
   });
   res.cookie('refreshToken', refreshToken, {
     ...baseCookieOptions(),
-    maxAge: parseDurationMs(process.env.JWT_REFRESH_EXPIRES_IN, 7 * 24 * 60 * 60 * 1000),
+    maxAge: parseDurationMs(process.env.JWT_REFRESH_EXPIRES_IN, 30 * 24 * 60 * 60 * 1000),
   });
 }
 

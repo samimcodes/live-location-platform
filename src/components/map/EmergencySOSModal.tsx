@@ -18,10 +18,12 @@ import { Button } from '@/components/ui/button';
 import { soundFx } from '@/lib/soundFx';
 import { useLocationStore } from '@/store/useLocationStore';
 import { useFriends } from '@/hooks/useFriends';
+import { useSocketContext } from '@/components/SocketProvider';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 
 export function MapSOSButton() {
+  const { emit } = useSocketContext();
   const [isOpen, setIsOpen] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isDispatched, setIsDispatched] = useState(false);
@@ -43,6 +45,19 @@ export function MapSOSButton() {
       soundFx.playAlert();
       setIsDispatched(true);
       setCountdown(null);
+
+      // Emit live real-time emergency SOS broadcast to server
+      const lat = myLocation?.latitude ?? 23.8103;
+      const lng = myLocation?.longitude ?? 90.4125;
+      const addr = myLocation?.address || 'Live Map Coordinates';
+
+      emit('sos:dispatch', {
+        latitude: lat,
+        longitude: lng,
+        address: addr,
+        message: 'EMERGENCY: Immediate assistance requested!',
+      });
+
       toast.error('EMERGENCY SOS DISPATCHED', {
         description: 'Pinpoint GPS broadcasted to all circle members with high-priority siren.',
       });
@@ -51,7 +66,7 @@ export function MapSOSButton() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [countdown]);
+  }, [countdown, emit, myLocation]);
 
   const handleStartSOS = () => {
     soundFx.playPop();

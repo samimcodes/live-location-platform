@@ -48,7 +48,7 @@ function MemberAvatar({ name, avatar, size = 32 }: { name: string; avatar?: stri
       title={name}
     >
       {avatar ? (
-        <Image src={avatar} alt={name} fill sizes={`${size}px`} className="rounded-full object-cover" />
+        <Image src={avatar} alt={name} fill sizes={`${size}px`} unoptimized className="rounded-full object-cover" />
       ) : (
         <div
           className="w-full h-full rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold"

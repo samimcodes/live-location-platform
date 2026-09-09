@@ -37,16 +37,33 @@ export const sendTemplateEmail = async (
   templateName: string,
   context: Record<string, unknown>
 ): Promise<nodemailer.SentMessageInfo> => {
-  const templatePath = path.join(
-    process.cwd(),
-    'server',
-    'templates',
-    'emails',
-    `${templateName}.hbs`
-  );
-  const templateSource = fs.readFileSync(templatePath, 'utf8');
-  const compiled = handlebars.compile(templateSource);
-  const html = compiled(context);
+  const candidatePaths = [
+    path.join(process.cwd(), 'server', 'templates', 'emails', `${templateName}.hbs`),
+    path.join(__dirname, '..', 'templates', 'emails', `${templateName}.hbs`),
+    path.join(__dirname, '..', '..', 'server', 'templates', 'emails', `${templateName}.hbs`),
+  ];
+
+  const foundPath = candidatePaths.find((p) => fs.existsSync(p));
+
+  let html: string;
+  if (foundPath) {
+    const templateSource = fs.readFileSync(foundPath, 'utf8');
+    const compiled = handlebars.compile(templateSource);
+    html = compiled(context);
+  } else {
+    // Graceful fallback if .hbs template files were not copied to dist/
+    const link = (context.resetLink as string) || '';
+    html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; rounded: 8px;">
+        <h2 style="color: #6366f1;">${subject}</h2>
+        <p>Hello ${context.name || 'there'},</p>
+        <p>${subject}. If you requested this action, please use the button or link below:</p>
+        ${link ? `<p><a href="${link}" style="background-color: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">Continue</a></p><p><small style="color: #888;">${link}</small></p>` : ''}
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="color: #999; font-size: 12px;">© ${new Date().getFullYear()} LocaLink. All rights reserved.</p>
+      </div>
+    `;
+  }
 
   return sendEmail(to, subject, 'Please view this email in an HTML-capable client.', html);
 };

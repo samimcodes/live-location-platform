@@ -41,6 +41,7 @@ export default function AvatarStack({ items, max = 5, size = 28, className }: Pr
               src={item.avatar}
               alt={item.name}
               fill
+              unoptimized
               sizes={`${size}px`}
               className="rounded-full object-cover"
             />

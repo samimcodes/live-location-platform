@@ -117,7 +117,7 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
       try {
         const userExists = await prisma.user.findUnique({
           where: { id: userId },
-          select: { id: true, sharingLocation: true },
+          select: { id: true, name: true, sharingLocation: true },
         });
 
         if (!userExists) {
@@ -161,8 +161,159 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
         groupIds.forEach((gid) => {
           socket.to(`group:${gid}`).emit('group:location:receive', broadcast);
         });
+
+        // ── Geofence Safe Zone Proximity Check (Home, School, Work, etc.) ────
+        try {
+          const savedPlaces = await prisma.savedPlace.findMany({
+            where: { userId },
+            select: { id: true, name: true, latitude: true, longitude: true, type: true },
+          });
+
+          for (const place of savedPlaces) {
+            const distance = haversineMeters(fields.latitude, fields.longitude, place.latitude, place.longitude);
+            if (distance <= 150) {
+              const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+              const recentAlert = await prisma.notification.findFirst({
+                where: {
+                  userId,
+                  type: 'LOCATION_ALERT',
+                  createdAt: { gte: twoHoursAgo },
+                  body: { contains: place.name },
+                },
+              });
+
+              if (!recentAlert) {
+                const notifBody = `${userExists.name} arrived safely at ${place.name}.`;
+                const notif = await prisma.notification.create({
+                  data: {
+                    userId,
+                    type: 'LOCATION_ALERT',
+                    title: `Safe Zone: ${place.name}`,
+                    body: notifBody,
+                    data: { placeId: place.id, placeName: place.name, placeType: place.type },
+                  },
+                });
+
+                socket.emit('notification', {
+                  id: notif.id,
+                  type: 'LOCATION_ALERT',
+                  message: notifBody,
+                  data: notif.data,
+                });
+
+                latestFriendIds.forEach((fid) => {
+                  io.to(`user:${fid}`).emit('notification', {
+                    id: notif.id,
+                    type: 'LOCATION_ALERT',
+                    message: notifBody,
+                    data: { userId, placeName: place.name },
+                  });
+                });
+              }
+            }
+          }
+        } catch { /* non-critical geofence check failure */ }
       } catch (err) {
         console.error('location:update error:', err);
+      }
+    });
+
+    // ── sos:dispatch (Emergency 1-Click SOS from client) ──────────────────
+    socket.on('sos:dispatch', async (payload: unknown) => {
+      const p = payload as {
+        latitude?: number;
+        longitude?: number;
+        address?: string;
+        message?: string;
+      } | null;
+
+      if (!p || typeof p.latitude !== 'number' || typeof p.longitude !== 'number') {
+        socket.emit('error', { message: 'Invalid SOS payload' });
+        return;
+      }
+
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, name: true, phone: true },
+        });
+        if (!user) return;
+
+        // Upsert current location to DB
+        await prisma.location.upsert({
+          where: { userId },
+          create: {
+            userId,
+            latitude: p.latitude,
+            longitude: p.longitude,
+            address: p.address,
+          },
+          update: {
+            latitude: p.latitude,
+            longitude: p.longitude,
+            address: p.address,
+            updatedAt: new Date(),
+          },
+        });
+
+        // Record emergency history breadcrumb
+        await prisma.locationHistory.create({
+          data: {
+            userId,
+            latitude: p.latitude,
+            longitude: p.longitude,
+            address: p.address,
+            recordedAt: new Date(),
+          },
+        });
+
+        const friendIds = await getFriendIds(userId);
+        const sosAlert = {
+          userId,
+          name: user.name,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          address: p.address || 'Pinpoint GPS Coordinates',
+          message: p.message || 'EMERGENCY: Immediate assistance requested!',
+          timestamp: new Date().toISOString(),
+        };
+
+        // Create persistent LOCATION_ALERT notification for all friends
+        for (const fid of friendIds) {
+          const notif = await prisma.notification.create({
+            data: {
+              userId: fid,
+              type: 'LOCATION_ALERT',
+              title: `🚨 EMERGENCY SOS: ${user.name}`,
+              body: `${user.name} triggered an Emergency SOS near ${p.address || `${p.latitude.toFixed(4)}, ${p.longitude.toFixed(4)}`}!`,
+              data: sosAlert,
+            },
+          });
+
+          // High-priority audio/UI event + persistent notification to friend's socket room
+          io.to(`user:${fid}`).emit('sos:alert', sosAlert);
+          io.to(`user:${fid}`).emit('notification', {
+            id: notif.id,
+            type: 'LOCATION_ALERT',
+            message: notif.body,
+            data: sosAlert,
+          });
+        }
+
+        // Also broadcast to user's circles/groups
+        const groupIds = await getGroupIds(userId);
+        groupIds.forEach((gid) => {
+          socket.to(`group:${gid}`).emit('sos:alert', sosAlert);
+        });
+
+        socket.emit('sos:dispatched', {
+          success: true,
+          recipients: friendIds.length,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error('sos:dispatch error:', err);
+        socket.emit('error', { message: 'Failed to dispatch SOS alert' });
       }
     });
 
@@ -250,3 +401,17 @@ const checkFriendship = async (userA: number, userB: number): Promise<boolean> =
     return false;
   }
 };
+
+/** Calculates distance in meters between two lat/lng coordinates */
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3;
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}

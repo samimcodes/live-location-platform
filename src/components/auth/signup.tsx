@@ -58,8 +58,11 @@ export function SignUpForm() {
     setIsLoading(true);
     soundFx?.playPop?.();
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { confirmPassword, ...payload } = formData;
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      };
       const { data } = await api.post('/auth/register', payload);
       if (data.success) {
         soundFx?.playChime?.();

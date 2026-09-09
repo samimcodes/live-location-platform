@@ -194,10 +194,7 @@ export default function SettingsPage() {
       const { data } = await api.post('/upload/single', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      const rawUrl: string = data.data.url;
-      const url = rawUrl.startsWith('http')
-        ? rawUrl
-        : `${window.location.origin}${rawUrl}`;
+      const url: string = data.data.url;
 
       // Save avatar URL to profile
       const { data: profileData } = await api.patch('/users/profile', { avatar: url });

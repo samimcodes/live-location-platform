@@ -446,6 +446,7 @@ function FriendRow({ friend, isFocused, onFocus, onRouteTo, loc, myLocation }: R
               src={friend.avatar}
               alt={friend.name}
               fill
+              unoptimized
               sizes="40px"
               className="object-cover rounded-2xl"
             />

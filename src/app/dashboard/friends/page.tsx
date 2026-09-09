@@ -81,6 +81,7 @@ function FriendAvatar({
             src={avatar}
             alt={name}
             fill
+            unoptimized
             className="object-cover"
             sizes={`${size}px`}
           />
