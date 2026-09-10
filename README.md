@@ -18,6 +18,7 @@
 
 <br />
 
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-localinks.onrender.com-00C7B7?style=for-the-badge&logo=render&logoColor=white)](https://localinks.onrender.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-15.5-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -29,6 +30,7 @@
 
 <br />
 
+[🌐 **Live Demo**](https://localinks.onrender.com/) •
 [✨ Features](#-key-features) •
 [🏛️ Architecture](#%EF%B8%8F-system-architecture) •
 [🛠️ Tech Stack](#%EF%B8%8F-tech-stack) •
@@ -327,12 +329,16 @@ WebSocket events stream through authenticated rooms (`user:<id>` and `group:<id>
 
 ## 🚢 Deployment
 
-### Deploying on Railway (Recommended)
-1. Link your GitHub repository in **[Railway](https://railway.app/)**.
-2. Add a PostgreSQL database.
+### Deploying on Render (Active Production)
+LocaLink is live on Render: **[https://localinks.onrender.com](https://localinks.onrender.com)**
+
+1. Create a new **Web Service** on **[Render](https://render.com/)** and connect this repository.
+2. Select runtime: **Node**.
 3. Set **Build Command**: `npm run build`
 4. Set **Start Command**: `npm run start`
-5. Populate environment variables from `.env` in the Railway settings.
+5. Configure your environment variables (`DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, etc.) in the Render dashboard.
+
+### Deploying on Railway
 
 ### Docker Container
 ```dockerfile
