@@ -1,113 +1,204 @@
-# 📍 LocaLink — Real-Time Live Location Platform
+# 📍 LocaLink — Real-Time Live Location & Family Safety Platform
 
 <div align="center">
 
-**A production-ready family & friends real-time GPS tracking platform — inspired by Life360.**
+<br />
 
-Built with Next.js 15, Express 5, Socket.IO, Prisma, PostgreSQL, and MapLibre GL JS.
+```
+  _                     _     _       _   
+ | |                   | |   (_)     | |  
+ | |     ___   ___ __ _| |    _ _ __ | | __
+ | |    / _ \ / __/ _` | |   | | '_ \| |/ /
+ | |___| (_) | (_| (_| | |___| | | | |   < 
+ |______\___/ \___\__,_|______|_|_| |_|_|\_\
+```
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15.5.25-000?logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
-[![Express](https://img.shields.io/badge/Express-5.x-000?logo=express)](https://expressjs.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-6.x-2D3748?logo=prisma)](https://prisma.io/)
-[![Socket.IO](https://img.shields.io/badge/Socket.IO-4.x-010101?logo=socket.io)](https://socket.io/)
+### **Ultra-Low Latency Family & Friends GPS Tracking — Private, Modern & Open-Source**
+*Inspired by Life360 • Built with Next.js 15, React 19, Express 5, Socket.IO & MapLibre GL*
+
+<br />
+
+[![Next.js](https://img.shields.io/badge/Next.js-15.5-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Express](https://img.shields.io/badge/Express-5.2-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-4.8-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://socket.io/)
+[![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://prisma.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![MapLibre](https://img.shields.io/badge/MapLibre_GL-6.1-396B94?style=for-the-badge&logo=mapbox&logoColor=white)](https://maplibre.org/)
+
+<br />
+
+[✨ Features](#-key-features) •
+[🏛️ Architecture](#%EF%B8%8F-system-architecture) •
+[🛠️ Tech Stack](#%EF%B8%8F-tech-stack) •
+[🚀 Quick Start](#-quick-start) •
+[⚙️ Configuration](#%EF%B8%8F-environment-variables) •
+[📜 Scripts](#-scripts--commands) •
+[🚢 Deployment](#-deployment)
 
 </div>
 
 ---
 
-## ✨ Core Features
+## 💡 Why LocaLink?
 
-| Feature | Description |
-|---|---|
-| 🗺️ **Live Map** | Real-time interactive map (MapLibre GL + OpenStreetMap) with custom friend/group markers |
-| 📡 **Real-Time Tracking** | Socket.IO-powered 15-second GPS location sync with sub-20ms latency |
-| 👥 **Friends System** | Send, accept, reject, and cancel friend requests with search |
-| 🏠 **Groups / Circles** | Create named circles, invite members, view group map, leave/delete |
-| 🔔 **Smart Notifications** | Real-time push via Socket.IO + persisted DB notifications with read/unread state |
-| 🛡️ **Geofence Zones** | Home, School, Work safe zones with arrival/departure alerts |
-| 📜 **Location History** | 30-day timeline with date range filtering and trip replay |
-| 📌 **Saved Places** | Home, Work, School, Gym — quick-access custom location pins |
-| 👻 **Ghost Mode** | Instantly pause location sharing with a single toggle |
-| 🌗 **Dark / Light Mode** | System-aware theme with manual override and smooth transitions |
-| 🔐 **Full Auth** | JWT + HTTP-only cookies, refresh tokens, Google OAuth, Facebook OAuth |
-| 📧 **Email System** | Handlebars email templates via Nodemailer (password reset, welcome) |
-| 📊 **Dashboard Analytics** | KPI cards (active friends, groups, places), battery & speed telemetry |
-| 📱 **Fully Responsive** | Premium mobile-first UI with glassmorphism, animations, and micro-interactions |
+Most commercial location apps lock essential family safety features behind steep monthly subscriptions or harvest personal tracking data. 
+
+**LocaLink** is an open-source, privacy-first alternative offering:
+- **Zero Third-Party Map Costs**: Uses MapLibre GL + OpenStreetMap vector tiles instead of expensive Google Maps or Mapbox APIs.
+- **True Real-Time**: Sub-20ms bidirectional WebSocket sync powered by Socket.IO.
+- **Complete Privacy**: 1-click Ghost Mode, private invite codes, and fully self-hostable backend.
+
+---
+
+## ✨ Key Features
+
+<table width="100%">
+<tr>
+<td width="50%" valign="top">
+
+### 🗺️ Live Tracking & Navigation
+- **Smooth 60fps Vector Map** with real-time friend markers & accuracy halos
+- **Auto-centering & Fly-To** camera animation controls
+- **Worldwide Place Search** with instant coordinate pinpointing
+- **Background GPS Sync** with 15-second heartbeat intervals
+
+</td>
+<td width="50%" valign="top">
+
+### 🚨 Safety & Emergency SOS
+- **1-Click Distress Beacon** with 3-second abort countdown
+- **Audible Siren Alarm** synthesized directly via Web Audio API
+- **Live Location Broadcast** sent to all circle members instantly
+- **Twilio SMS Alerts** with direct emergency coordinates
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 🛡️ Geofencing & Safe Zones
+- **Automated Perimeter Detection** for Home, School, Work & Gym
+- **Arrival & Departure Alerts** calculated via server-side Haversine formula
+- **Custom Place Icons & Colors** for quick map visualization
+- **Persistent Safe Notifications** with unread indicators
+
+</td>
+<td width="50%" valign="top">
+
+### 👥 Circles & Social Control
+- **Private Circles** (Family, Close Friends, Travel Groups)
+- **Instant 6-Character Invite Codes** for frictionless onboarding
+- **Ghost Mode**: 1-tap toggle to immediately pause location sharing
+- **Live Online / Offline Presence** indicators for all friends
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 📜 History & Route Replay
+- **30-Day Location Breadcrumbs** stored in PostgreSQL
+- **Interactive Trip Replay** with scrubbable timeline slider
+- **Speed & Heading Telemetry** recorded during active travel
+- **Date-Range Filtering** to inspect specific daily journeys
+
+</td>
+<td width="50%" valign="top">
+
+### ⚡ Developer & User Experience
+- **Spotlight Command Palette (`Ctrl+K` / `Cmd+K`)** for instant actions
+- **Synthesized Sound FX Engine** (zero external MP3 assets)
+- **Dark / Light Theme** with system preference auto-detection
+- **Interactive Swagger Docs** built-in at `/api-docs`
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Client["Frontend Client (Next.js 15 + React 19)"]
+        UI["App Router Pages & shadcn/ui"]
+        Map["MapLibre GL JS (OpenStreetMap Tiles)"]
+        Audio["Web Audio FX Engine"]
+        State["Redux Toolkit (Auth) + Zustand (Live GPS)"]
+    end
+
+    subgraph Server["Unified Express 5 & Socket.IO Server"]
+        Express["Express REST API (/api/v1/*)"]
+        SocketIO["Socket.IO Engine (user:* & group:* rooms)"]
+        RateLimit["Rate Limiters (Auth vs General API)"]
+        NextHandler["Next.js SSR & Static Asset Pipeline"]
+    end
+
+    subgraph DatabaseLayer["Persistence & External APIs"]
+        Prisma["Prisma ORM Client v6"]
+        PostgreSQL[("PostgreSQL Database (Neon / Supabase / Local)")]
+        OAuth["Google & Facebook OAuth"]
+        Twilio["Twilio SMS Gateway"]
+        SMTP["Nodemailer (SMTP Emails)"]
+    end
+
+    UI --> State
+    Map --> UI
+    UI -->|HTTP / REST API| Express
+    UI -->|WebSocket Events| SocketIO
+    Express --> NextHandler
+    Express --> RateLimit
+    Express & SocketIO --> Prisma --> PostgreSQL
+    Express --> OAuth & Twilio & SMTP
+```
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-| Library | Version | Purpose |
-|---|---|---|
-| **Next.js** | 15.5.25 | App Router, SSR, middleware |
-| **React** | 19.x | UI rendering |
-| **TypeScript** | 5.x | Strict typing |
-| **Tailwind CSS** | v4 | Utility-first styling |
-| **shadcn/ui** | 4.x | Accessible component primitives |
-| **Framer Motion** | 12.x | Page transitions & micro-animations |
-| **MapLibre GL JS** | 6.x | Interactive open-source map |
-| **Socket.IO Client** | 4.x | Real-time event streaming |
-| **TanStack Query** | v5 | Server state, caching, refetching |
-| **Redux Toolkit** | 2.x | Auth & theme global state |
-| **Zustand** | 5.x | Location & notification stores |
-| **React Hook Form** | 7.x | Form state management |
-| **Zod** | 4.x | Schema validation |
-| **Axios** | 1.x | HTTP client with interceptors |
-| **Recharts** | 3.x | Analytics dashboard charts |
-| **Sonner** | 2.x | Toast notifications |
-| **Lucide React** | 1.x | Icon system |
+<div align="center">
 
-### Backend
-| Library | Version | Purpose |
-|---|---|---|
-| **Express.js** | v5 | API server wrapping Next.js |
-| **Socket.IO** | 4.x | Real-time bidirectional events |
-| **Prisma ORM** | v6 | Type-safe PostgreSQL ORM |
-| **PostgreSQL** | — | Relational database |
-| **JWT + jose** | — | Access & refresh token auth |
-| **bcrypt** | 6.x | Password hashing (12 rounds) |
-| **Nodemailer** | 9.x | Transactional emails |
-| **Handlebars** | 4.x | Email HTML templates |
-| **Multer** | 2.x | File/avatar uploads |
-| **Helmet** | 8.x | Security headers |
-| **CORS** | 2.x | Cross-origin restrictions |
-| **express-rate-limit** | 8.x | Rate limiting |
-| **express-validator** | 7.x | Request input validation |
-| **Morgan** | 1.x | HTTP request logging |
-| **Twilio** | 6.x | SMS notifications |
-| **swagger-ui-express** | 5.x | Auto API documentation at `/api-docs` |
-| **cross-env** | 10.x | Cross-platform env vars |
+| Domain | Technologies |
+|---|---|
+| **Frontend Core** | `Next.js 15.5` (App Router) • `React 19.2` • `TypeScript 5.x` |
+| **Styling & UI** | `Tailwind CSS v4` • `shadcn/ui` • `Framer Motion 12` • `Lucide Icons` |
+| **Map & Geospatial** | `MapLibre GL JS 6.1` • `OpenStreetMap Tiles` (100% Free & Open) |
+| **State Management** | `Redux Toolkit` (Session/Theme) • `Zustand 5` (GPS Telemetry) • `TanStack Query v5` |
+| **Backend Service** | `Express 5.2` • `Socket.IO 4.8` • `Node.js 20+` |
+| **Database & ORM** | `PostgreSQL` • `Prisma ORM 6.19` (9 Relational Models) |
+| **Authentication** | `JWT (Access + Refresh)` • `HttpOnly Cookies` • `bcrypt` • `Google & Facebook OAuth` |
+| **Communications** | `Nodemailer` (Handlebars templates) • `Twilio SMS / OTP` |
+| **Developer Tools** | `Swagger UI` (`/api-docs`) • `ESLint 9` • `ts-node` • `nodemon` |
+
+</div>
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Clone & Install
+### 1. Prerequisites
+- **Node.js**: `v20.0.0` or higher
+- **PostgreSQL**: Local or Cloud instance ([Neon](https://neon.tech), [Supabase](https://supabase.com))
 
+### 2. Installation
 ```bash
+# 1. Clone repository
 git clone https://github.com/samimcodes/live-location-platform.git
 cd live-location-platform
+
+# 2. Install packages (--legacy-peer-deps recommended for React 19)
 npm install --legacy-peer-deps
-```
 
-> **Note:** `--legacy-peer-deps` is required due to React 19 peer dependency constraints.
-
-### 2. Environment Variables
-
-```bash
+# 3. Setup environment variables
 cp .env.example .env
 ```
 
-Fill in your values — see the [Environment Variables](#-environment-variables) section below.
-
-### 3. Database Setup
-
+### 3. Database Migration
 ```bash
-# Run migrations and create database tables
+# Run Prisma migrations
 npm run db:migrate
 
 # Generate Prisma Client
@@ -115,18 +206,21 @@ npm run db:generate
 ```
 
 ### 4. Start Development Server
-
 ```bash
 npm run dev
 ```
 
-Visit `http://localhost:3000`
-
-API docs available at `http://localhost:3000/api-docs`
+- 🌐 **Web App**: [http://localhost:3000](http://localhost:3000)
+- 📖 **API Docs (Swagger)**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
 
 ---
 
 ## ⚙️ Environment Variables
+
+<details>
+<summary><b>Click to view essential <code>.env</code> variables</b></summary>
+
+<br />
 
 ```env
 # Application
@@ -134,346 +228,136 @@ NODE_ENV=development
 PORT=3000
 FRONTEND_URL=http://localhost:3000
 
-# Database (PostgreSQL / Neon)
-DATABASE_URL="postgresql://user:password@host:5432/localink?schema=public"
+# Database (PostgreSQL / Neon / Supabase)
+DATABASE_URL="postgresql://user:password@localhost:5432/localink?schema=public"
 
-# JWT
-JWT_SECRET=your_super_secret_jwt_key_min_32_chars
+# JWT Authentication
+JWT_SECRET=your_super_secret_jwt_access_key_min_32_chars
 JWT_EXPIRES_IN=7d
 JWT_REFRESH_SECRET=your_super_secret_refresh_key_min_32_chars
-JWT_REFRESH_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
 
-# Email (SMTP / Gmail)
+# Social Logins (Optional)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+NEXT_PUBLIC_FACEBOOK_APP_ID=your_facebook_app_id
+
+# Map Initial Viewport
+NEXT_PUBLIC_MAP_DEFAULT_LAT=23.8103
+NEXT_PUBLIC_MAP_DEFAULT_LNG=90.4125
+NEXT_PUBLIC_MAP_DEFAULT_ZOOM=11
+
+# Email & SMS Services (Optional)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
-FROM_EMAIL=noreply@localink.app
-FROM_NAME=LocaLink
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
-
-# Facebook OAuth
-NEXT_PUBLIC_FACEBOOK_APP_ID=your_facebook_app_id
-
-# Map (MapLibre GL — no API key needed, uses OpenStreetMap)
-NEXT_PUBLIC_MAP_DEFAULT_LNG=90.4125
-NEXT_PUBLIC_MAP_DEFAULT_LAT=23.8103
-NEXT_PUBLIC_MAP_DEFAULT_ZOOM=11
-
-# Twilio (Optional — SMS alerts)
-TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_ACCOUNT_SID=your_twilio_sid
 TWILIO_AUTH_TOKEN=your_twilio_auth_token
 TWILIO_PHONE_NUMBER=+1234567890
-
-# Uploads
-MAX_FILE_SIZE=5242880
-UPLOAD_DIR=public/uploads
 ```
+
+</details>
 
 ---
 
 ## 📁 Project Structure
 
+<details>
+<summary><b>Click to view repository structure</b></summary>
+
+<br />
+
 ```
 localink/
 ├── prisma/
-│   └── schema.prisma           # 9 models (see Database Schema)
+│   └── schema.prisma          # PostgreSQL models (User, Location, Group, etc.)
 │
-├── server/                     # Express 5 backend
-│   ├── controllers/            # Route request handlers
-│   ├── services/               # Business logic layer
-│   ├── routes/                 # API route definitions
-│   ├── middlewares/            # JWT auth, file upload, error handler
-│   ├── socket/                 # Socket.IO event handlers
-│   ├── templates/emails/       # Handlebars HTML email templates
-│   ├── swagger/                # OpenAPI spec (auto-generated docs)
-│   └── utils/                  # catchAsync, sendResponse, helpers
+├── server/                    # Custom Express 5 backend
+│   ├── index.ts               # HTTP & Socket.IO entry point
+│   ├── controllers/           # Auth, Friend, Location, Group, SMS controllers
+│   ├── routes/                # REST endpoints prefixed with /api/v1/*
+│   ├── middlewares/           # JWT auth verification, rate limiters, upload guards
+│   ├── socket/                # Socket.IO handlers (live tracking, emergency SOS)
+│   └── swagger/               # OpenAPI 3.0 specification (/api-docs)
 │
-└── src/                        # Next.js frontend
-    ├── app/
-    │   ├── page.tsx            # Landing home page
-    │   ├── login/              # Sign In page
-    │   ├── register/           # Sign Up page
-    │   ├── forgot-password/    # Password reset request
-    │   ├── reset-password/     # Password reset form
-    │   └── dashboard/          # Protected dashboard (JWT auth required)
-    │       ├── page.tsx        # Dashboard home (KPI, activity feed)
-    │       ├── map/            # Live real-time location map
-    │       ├── friends/        # Friend list + friend requests
-    │       ├── groups/         # Group circles + group detail page
-    │       ├── history/        # Location history with date filters
-    │       ├── notifications/  # Notification center
-    │       ├── saved-places/   # Saved locations manager
-    │       └── settings/       # Profile, password, theme, sharing
-    │
+└── src/                       # Next.js 15 frontend
+    ├── app/                   # App Router: Landing, Auth, Dashboard, Map, Settings
     ├── components/
-    │   ├── auth/               # SignIn, SignUp, ForgotPassword, ResetPassword
-    │   ├── dashboard/          # Sidebar, Navbar, KpiCard, ActivityFeed
-    │   ├── landing/            # Full landing page sections:
-    │   │   ├── LandingNavbar.tsx         # Sticky glassmorphism nav + theme toggle
-    │   │   ├── HeroSection.tsx           # Interactive GPS dashboard mockup
-    │   │   ├── FeaturesSection.tsx       # Feature grid
-    │   │   ├── LocationMapSection.tsx    # Live map demo with tabs
-    │   │   ├── FriendsRealtimeSection.tsx# Friends tracking list preview
-    │   │   ├── HowItWorksSection.tsx     # 3-step onboarding flow
-    │   │   ├── FAQSection.tsx            # Accordion FAQ
-    │   │   ├── CTASection.tsx            # Call-to-action with social proof
-    │   │   └── LandingFooter.tsx         # Site footer with links
-    │   ├── map/                # LiveMap Mapbox/MapLibre component
-    │   ├── SocketProvider.tsx  # Socket.IO context + connection lifecycle
-    │   ├── ThemeProvider.tsx   # next-themes wrapper with hydration-safe sync
-    │   └── ui/                 # shadcn/ui: Button, Card, Input, Badge,
-    │                           #   Dialog, Skeleton, Select, Separator...
-    │
-    ├── hooks/
-    │   ├── useAuth.ts          # Login, register, logout, OAuth
-    │   ├── useFriends.ts       # Friend CRUD + requests
-    │   ├── useGroups.ts        # Group CRUD + members
-    │   ├── useNotifications.ts # Notification fetching + mark-read
-    │   ├── useLocationSharing.ts # GPS watchPosition + Socket emit
-    │   └── useSocket.ts        # Socket.IO connection hook
-    │
-    ├── store/
-    │   ├── slices/
-    │   │   ├── authSlice.ts    # Redux: user session state
-    │   │   └── appSlice.ts     # Redux: theme preference
-    │   ├── useLocationStore.ts # Zustand: friends' live locations
-    │   └── useNotificationStore.ts # Zustand: unread count badge
-    │
-    ├── lib/
-    │   ├── axios.ts            # Axios instance with interceptors + token refresh
-    │   ├── socket.ts           # Socket.IO singleton client
-    │   ├── utils.ts            # cn(), formatters, helpers
-    │   ├── toast.ts            # Sonner toast helpers
-    │   └── dateUtils.ts        # Date formatting utilities
-    │
-    └── middleware.ts           # Next.js route protection (JWT cookie check)
+    │   ├── landing/           # Hero, Features, SOS Demo, Pricing, Map preview
+    │   ├── map/               # LiveMap, EmergencySOSModal, MarkerPanel, Controls
+    │   ├── dashboard/         # Sidebar, Navbar, CommandPalette, KPI Telemetry
+    │   └── ui/                # Accessible shadcn/ui components
+    ├── hooks/                 # Data hooks (useFriends, useGroups, useLocationSharing)
+    ├── store/                 # Global state (Redux auth + Zustand live GPS)
+    └── lib/                   # Axios client, Web Audio soundFx, date & map utilities
 ```
 
----
-
-## 🌐 API Reference
-
-All routes prefixed with `/api/v1/` — Full interactive docs at `/api-docs`.
-
-### Auth — `/api/v1/auth`
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|:----:|-------------|
-| POST | `/register` | — | Create account |
-| POST | `/login` | — | Sign in, sets HTTP-only cookies |
-| POST | `/logout` | ✅ | Sign out, clears cookies |
-| GET | `/me` | ✅ | Get authenticated user profile |
-| POST | `/forgot-password` | — | Send password reset email |
-| POST | `/reset-password` | — | Reset password with token |
-| POST | `/refresh-token` | — | Refresh access token via cookie |
-| PATCH | `/update-password` | ✅ | Change current password |
-| POST | `/google` | — | Google OAuth sign-in |
-| POST | `/facebook` | — | Facebook OAuth sign-in |
-
-### Friends — `/api/v1/friends`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | Get confirmed friend list |
-| GET | `/search?q=` | Search users by name or email |
-| POST | `/requests` | Send a friend request |
-| GET | `/requests/pending` | Get received pending requests |
-| GET | `/requests/sent` | Get sent requests |
-| PATCH | `/requests/:id` | Accept or reject a request |
-| DELETE | `/requests/:id` | Cancel a sent request |
-| DELETE | `/:friendId` | Remove a friend |
-
-### Location — `/api/v1/location`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| PUT | `/update` | Update my current location |
-| GET | `/me` | Get my current location |
-| GET | `/friends` | Get all friends' live locations |
-| GET | `/history` | Get location history (with date filter) |
-| DELETE | `/history` | Clear all location history |
-| PATCH | `/sharing` | Toggle location sharing on/off |
-
-### Groups — `/api/v1/groups`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/` | Create a new group circle |
-| GET | `/` | Get all my groups |
-| GET | `/:id` | Get group detail + members |
-| PATCH | `/:id` | Update group name/avatar |
-| DELETE | `/:id` | Delete group (admin only) |
-| POST | `/:id/members` | Add member to group |
-| DELETE | `/:id/members/:userId` | Remove a member |
-| POST | `/:id/leave` | Leave a group |
-
-### Notifications — `/api/v1/notifications`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | Get all notifications (paginated) |
-| GET | `/unread-count` | Get unread notification count |
-| PATCH | `/read-all` | Mark all as read |
-| PATCH | `/:id/read` | Mark single notification as read |
-| DELETE | `/:id` | Delete a notification |
-
-### Saved Places — `/api/v1/saved-places`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/` | Create a saved place |
-| GET | `/` | Get all my saved places |
-| PATCH | `/:id` | Update a saved place |
-| DELETE | `/:id` | Delete a saved place |
-
-### User — `/api/v1/users`
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| PATCH | `/profile` | Update name, bio, phone |
-| POST | `/avatar` | Upload profile avatar |
+</details>
 
 ---
 
-## 🔌 Socket.IO Events
+## 🔌 Real-Time Socket.IO Events
 
-**Authentication:** Pass JWT in `socket.handshake.auth.token`
+WebSocket events stream through authenticated rooms (`user:<id>` and `group:<id>`):
 
-### Client → Server
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `location:update` | `{ latitude, longitude, accuracy?, speed?, heading? }` | Broadcast GPS update |
-| `join` | `roomId: string` | Join a group/friend room |
-| `leave` | `roomId: string` | Leave a room |
-
-### Server → Client
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `location:receive` | `{ userId, latitude, longitude, speed?, heading?, updatedAt }` | Friend location update |
-| `friend:online` | `{ userId }` | Friend came online |
-| `friend:offline` | `{ userId }` | Friend went offline |
-| `notification` | `{ type, message, data }` | Real-time notification push |
+| Event | Direction | Purpose |
+|---|:---:|---|
+| `location:update` | Client → Server | Broadcast live GPS coordinates, speed, and heading |
+| `sos:dispatch` | Client → Server | Trigger emergency distress beacon & sound alarm |
+| `location:receive` | Server → Client | Deliver updated friend marker coordinates |
+| `sos:alert` | Server → Client | Deliver high-priority distress alert with pinpoint GPS |
+| `friend:online` / `offline` | Server → Client | Real-time presence updates |
+| `notification` | Server → Client | Instant push alert for geofences and friend requests |
 
 ---
 
-## 🗄️ Database Schema
+## 📜 Scripts & Commands
 
-**9 Prisma models:**
-
-```
-User ──< FriendRequest (sender → receiver)
-User ──< Friendship    (user1 ↔ user2)
-User ──  Location      (1:1 current GPS)
-User ──< LocationHistory (1:many history)
-User ──< Notification
-User ──< GroupMember >── Group
-User ──< SavedPlace
-Group ──< GroupMember
-```
-
-Key fields: `User.sharingLocation` (ghost mode toggle), `User.isOnline` (presence), `LocationHistory.accuracy/speed/heading` (telemetry)
-
----
-
-## 🔐 Security
-
-- JWT stored in **HTTP-only cookies** (not `localStorage`)
-- **Rate limiting**: 200 req/15min (general) · 20 req/15min (auth)
-- **Helmet** — comprehensive security HTTP headers
-- **CORS** — restricted to `FRONTEND_URL`
-- **bcrypt** — 12 salt rounds for password hashing
-- Password reset tokens **hashed (SHA-256)** before DB storage
-- **Input validation** — Zod (frontend) + express-validator (backend)
-- Route protection via **Next.js middleware** (`src/middleware.ts`)
-- **Refresh token rotation** on every access token renewal
-
----
-
-## 📝 Scripts
-
-```bash
-# Development
-npm run dev              # Start dev server (nodemon + Next.js hot reload)
-
-# Production
-npm run build            # Build Next.js + compile server TypeScript
-npm start                # Start production server
-
-# Code Quality
-npm run lint             # Run ESLint
-npm run type-check       # TypeScript strict check (frontend + backend)
-
-# Database
-npm run db:generate      # Regenerate Prisma Client
-npm run db:migrate       # Run pending migrations (dev)
-npm run db:migrate:deploy # Run migrations (production)
-npm run db:studio        # Open Prisma Studio (GUI)
-npm run db:reset         # Reset database (⚠️ destructive)
-```
+| Command | Description |
+|---|---|
+| `npm run dev` | Start development server (Next.js + Express + Socket.IO with hot-reload) |
+| `npm run build` | Compile Next.js production build & compile server TypeScript |
+| `npm run start` | Run compiled production server from `dist/` |
+| `npm run type-check` | Run strict TypeScript checks across client & server |
+| `npm run lint` | Run ESLint validation |
+| `npm run db:migrate` | Execute pending Prisma database migrations |
+| `npm run db:studio` | Open interactive Prisma Studio GUI at `localhost:5555` |
 
 ---
 
 ## 🚢 Deployment
 
-### Frontend + Backend → Railway (recommended)
+### Deploying on Railway (Recommended)
+1. Link your GitHub repository in **[Railway](https://railway.app/)**.
+2. Add a PostgreSQL database.
+3. Set **Build Command**: `npm run build`
+4. Set **Start Command**: `npm run start`
+5. Populate environment variables from `.env` in the Railway settings.
 
-```bash
-# Build command:
-npm run build
-
-# Start command:
-npm start
-
-# Set all .env variables in Railway Dashboard
+### Docker Container
+```dockerfile
+FROM node:20-alpine AS runner
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --legacy-peer-deps
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "run", "start"]
 ```
-
-### Database → Neon (PostgreSQL)
-
-```bash
-# 1. Create project at neon.tech
-# 2. Copy connection string to DATABASE_URL
-# 3. Run migrations in production:
-npm run db:migrate:deploy
-```
-
-### Alternative: Vercel (Frontend Only)
-
-```bash
-# Set in Vercel Dashboard:
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=...
-NEXT_PUBLIC_FACEBOOK_APP_ID=...
-NEXT_PUBLIC_MAP_DEFAULT_LNG=90.4125
-NEXT_PUBLIC_MAP_DEFAULT_LAT=23.8103
-NEXT_PUBLIC_MAP_DEFAULT_ZOOM=11
-```
-
-> **Note:** For Vercel, the Express backend needs to be deployed separately on Railway or Render.
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'feat: add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
-
----
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 <div align="center">
-  Built with ❤️ for families and friends who want to stay connected.<br/>
-  <strong>LocaLink</strong> — Always close to the people you love.
+
+<br />
+
+**LocaLink** — *Connecting families, protecting loved ones, anywhere in the world.*
+
+Made with ❤️ by [Samim](https://github.com/samimcodes) and open-source contributors.
+
 </div>
