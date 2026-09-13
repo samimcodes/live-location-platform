@@ -497,7 +497,7 @@ export function LiveMap({
       {/* ── Overlay controls (floating inside canvas, top bar) ──── */}
       {overlayControls && mapLoaded && (
         <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
-          <div className="m-3 pointer-events-auto rounded-2xl overflow-hidden
+          <div className="m-3 pointer-events-auto rounded-2xl overflow-visible relative
             bg-card/90 dark:bg-card/85 backdrop-blur-2xl
             border border-border/70 shadow-xl shadow-black/10">
             <MapControls {...overlayControls} />

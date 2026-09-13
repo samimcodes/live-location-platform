@@ -59,6 +59,7 @@ function MapBtn({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       title={title}
       className={cn(
@@ -222,28 +223,33 @@ export function MapControls({
           </MapBtn>
 
           {styleMenuOpen && onSelectMapTheme && (
-            <div className="absolute right-0 top-10 w-44 rounded-2xl bg-card/95 backdrop-blur-2xl border border-border/70 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 top-11 w-52 rounded-2xl bg-card/95 backdrop-blur-2xl border border-border/70 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
               <p className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest px-2.5 py-1">
-                Map Style
+                Map View Layers
               </p>
               {(Object.keys(MAP_STYLES) as MapThemeStyle[]).map((themeKey) => {
                 const isSelected = mapTheme === themeKey;
+                const icon = themeKey === 'satellite' ? '🛰️' : themeKey === 'dark' ? '🌙' : themeKey === 'light' ? '🏔️' : '🗺️';
                 return (
                   <button
                     key={themeKey}
+                    type="button"
                     onClick={() => {
                       onSelectMapTheme(themeKey);
                       setStyleMenuOpen(false);
                     }}
                     className={cn(
-                      'w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer select-none',
+                      'w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none',
                       isSelected
-                        ? 'bg-primary text-primary-foreground font-bold'
-                        : 'text-foreground hover:bg-muted/70'
+                        ? 'bg-primary text-primary-foreground font-bold shadow-xs'
+                        : 'text-foreground hover:bg-muted/80'
                     )}
                   >
-                    <span>{MAP_STYLES[themeKey].name}</span>
-                    {isSelected && <Check size={13} className="shrink-0" />}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm shrink-0">{icon}</span>
+                      <span className="truncate">{MAP_STYLES[themeKey].name}</span>
+                    </div>
+                    {isSelected && <Check size={13} className="shrink-0 text-primary-foreground" />}
                   </button>
                 );
               })}

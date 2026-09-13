@@ -92,9 +92,29 @@ export const MAP_STYLES: Record<MapThemeStyle, { id: MapThemeStyle; name: string
           attribution: '© Esri, Maxar, Earthstar Geographics',
           maxzoom: 19,
         },
+        'esri-sat-roads': {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          attribution: '',
+          maxzoom: 19,
+        },
+        'esri-sat-labels': {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          attribution: '',
+          maxzoom: 19,
+        },
       },
       layers: [
         { id: 'esri-sat-tiles', type: 'raster', source: 'esri-sat', minzoom: 0, maxzoom: 22 },
+        { id: 'esri-sat-roads-tiles', type: 'raster', source: 'esri-sat-roads', minzoom: 0, maxzoom: 22 },
+        { id: 'esri-sat-labels-tiles', type: 'raster', source: 'esri-sat-labels', minzoom: 0, maxzoom: 22 },
       ],
     },
   },
@@ -113,9 +133,19 @@ export const MAP_STYLES: Record<MapThemeStyle, { id: MapThemeStyle; name: string
           attribution: '© Esri, OpenStreetMap contributors',
           maxzoom: 19,
         },
+        'esri-dark-labels': {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          attribution: '',
+          maxzoom: 19,
+        },
       },
       layers: [
         { id: 'esri-dark-tiles', type: 'raster', source: 'esri-dark', minzoom: 0, maxzoom: 22 },
+        { id: 'esri-dark-labels-tiles', type: 'raster', source: 'esri-dark-labels', minzoom: 0, maxzoom: 22 },
       ],
     },
   },

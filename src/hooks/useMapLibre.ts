@@ -169,8 +169,8 @@ export function useMapLibre({
   const setMapThemeStyle = useCallback((theme: MapThemeStyle) => {
     setMapTheme(theme);
     if (!mapRef.current) return;
-    const targetStyle = MAP_STYLES[theme]?.style ?? MAP_STYLES.dark.style;
-    mapRef.current.setStyle(targetStyle);
+    const targetStyle = MAP_STYLES[theme]?.style ?? MAP_STYLES.satellite.style;
+    mapRef.current.setStyle(targetStyle, { diff: false });
   }, []);
 
   // ── toggle3D ─────────────────────────────────────────────────────────
