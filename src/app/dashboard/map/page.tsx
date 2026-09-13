@@ -66,7 +66,7 @@ function MapPageInner() {
     flyTo, fitToPoints, toggleFullscreen, isFullscreen,
     mapTheme, setMapThemeStyle, is3D, toggle3D,
     zoomIn, zoomOut,
-  } = useMapLibre({ controls: true, initialTheme: 'street' });
+  } = useMapLibre({ controls: true, initialTheme: 'satellite' });
 
   // ── Compute all active points ──────────────────────────────────────────
   const allPoints = useMemo<LatLng[]>(() => {

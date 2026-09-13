@@ -63,7 +63,7 @@ export interface UseMapLibreReturn {
 export function useMapLibre({
   center   = DEFAULT_CENTER,
   zoom     = DEFAULT_ZOOM,
-  initialTheme = 'street',
+  initialTheme = 'satellite',
   controls = true,
   skipInit = false,
 }: UseMapLibreOptions = {}): UseMapLibreReturn {
