@@ -4,15 +4,17 @@
  * Fully typed; safe to import from both client components and hooks.
  */
 
-// ── OSM tile source ────────────────────────────────────────────────────────
+// ── Reliable Vector/Raster Tile Source (Watermark-free, zero API key) ───────
 export const OSM_STYLE = {
   version: 8 as const,
   sources: {
     osm: {
       type: 'raster' as const,
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      ],
       tileSize: 256,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+      attribution: '© <a href="https://www.esri.com/" target="_blank">Esri</a>, OpenStreetMap contributors',
       maxzoom: 19,
     },
   },
@@ -51,19 +53,19 @@ export interface MapRasterStyle {
 export const MAP_STYLES: Record<MapThemeStyle, { id: MapThemeStyle; name: string; style: MapRasterStyle }> = {
   street: {
     id: 'street',
-    name: 'Vibrant Street (OSM)',
+    name: 'Vibrant World Street',
     style: OSM_STYLE,
   },
   light: {
     id: 'light',
-    name: 'World Street Map',
+    name: 'Clean Topo Terrain',
     style: {
       version: 8,
       sources: {
-        'esri-street': {
+        'esri-topo': {
           type: 'raster',
           tiles: [
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
           ],
           tileSize: 256,
           attribution: '© Esri, OpenStreetMap contributors',
@@ -71,7 +73,7 @@ export const MAP_STYLES: Record<MapThemeStyle, { id: MapThemeStyle; name: string
         },
       },
       layers: [
-        { id: 'esri-street-tiles', type: 'raster', source: 'esri-street', minzoom: 0, maxzoom: 22 },
+        { id: 'esri-topo-tiles', type: 'raster', source: 'esri-topo', minzoom: 0, maxzoom: 22 },
       ],
     },
   },
