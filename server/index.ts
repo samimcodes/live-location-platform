@@ -21,6 +21,7 @@ import groupRoutes from './routes/groupRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import savedPlaceRoutes from './routes/savedPlaceRoutes';
 import smsRoutes from './routes/smsRoutes';
+import chatRoutes from './routes/chatRoutes';
 
 // Socket handler
 import { initSocketHandlers } from './socket/socketHandlers';
@@ -129,6 +130,7 @@ app.prepare().then(async () => {
   server.use('/api/v1/saved-places',  apiLimiter,  savedPlaceRoutes);
   server.use('/api/v1/sms',           apiLimiter,  smsRoutes);
   server.use('/api/v1/upload',        apiLimiter,  uploadRoutes);
+  server.use('/api/v1/chat',          apiLimiter,  chatRoutes);
 
   // Legacy routes kept for backward compat
   server.use('/api/users',  apiLimiter,  userRoutes);

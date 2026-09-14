@@ -8,6 +8,8 @@ export interface LocationFields {
   address?: string;
   city?: string;
   country?: string;
+  batteryLevel?: number;
+  isCharging?: boolean;
 }
 
 const lastHistoryWrite = new Map<number, { at: number; lat: number; lng: number }>();
@@ -24,6 +26,10 @@ function optionalString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 && value.length < 500
     ? value
     : undefined;
+}
+
+function optionalBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
 }
 
 export function pickLocationFields(input: unknown): LocationFields | null {
@@ -52,6 +58,8 @@ export function pickLocationFields(input: unknown): LocationFields | null {
   const address = optionalString(obj.address);
   const city = optionalString(obj.city);
   const country = optionalString(obj.country);
+  const batteryLevel = optionalNumber(obj.batteryLevel);
+  const isCharging = optionalBoolean(obj.isCharging);
 
   if (accuracy !== undefined) fields.accuracy = accuracy;
   if (altitude !== undefined) fields.altitude = altitude;
@@ -60,6 +68,10 @@ export function pickLocationFields(input: unknown): LocationFields | null {
   if (address !== undefined) fields.address = address;
   if (city !== undefined) fields.city = city;
   if (country !== undefined) fields.country = country;
+  if (batteryLevel !== undefined && batteryLevel >= 0 && batteryLevel <= 100) {
+    fields.batteryLevel = Math.round(batteryLevel);
+  }
+  if (isCharging !== undefined) fields.isCharging = isCharging;
 
   return fields;
 }

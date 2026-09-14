@@ -338,6 +338,124 @@ export const initSocketHandlers = (io: SocketIOServer): void => {
       });
     });
 
+    // ── chat:send ────────────────────────────────────────────────────────
+    socket.on('chat:send', async (payload: unknown) => {
+      if (!payload || typeof payload !== 'object') return;
+      const data = payload as {
+        receiverId?: number;
+        groupId?: number;
+        content?: string;
+        type?: 'TEXT' | 'VOICE' | 'QUICK_PING';
+        audioUrl?: string;
+        audioDuration?: number;
+      };
+
+      const content = typeof data.content === 'string' ? data.content.trim() : '';
+      if (!content && !data.audioUrl) return;
+
+      const receiverId = typeof data.receiverId === 'number' ? data.receiverId : undefined;
+      const groupId = typeof data.groupId === 'number' ? data.groupId : undefined;
+      const type = data.type === 'VOICE' || data.type === 'QUICK_PING' ? data.type : 'TEXT';
+      const audioUrl = typeof data.audioUrl === 'string' ? data.audioUrl : null;
+      const audioDuration = typeof data.audioDuration === 'number' ? data.audioDuration : null;
+
+      if (!receiverId && !groupId) return;
+
+      try {
+        if (receiverId) {
+          const isFriend = await checkFriendship(userId, receiverId);
+          if (!isFriend) {
+            socket.emit('error', { message: 'Can only message friends' });
+            return;
+          }
+        } else if (groupId) {
+          const member = await prisma.groupMember.findUnique({
+            where: { groupId_userId: { groupId, userId } },
+            select: { id: true },
+          });
+          if (!member) {
+            socket.emit('error', { message: 'Not a member of this circle' });
+            return;
+          }
+        }
+
+        const message = await prisma.message.create({
+          data: {
+            senderId: userId,
+            receiverId: receiverId ?? null,
+            groupId: groupId ?? null,
+            content,
+            type,
+            audioUrl,
+            audioDuration,
+          },
+          include: {
+            sender: {
+              select: { id: true, name: true, avatar: true },
+            },
+          },
+        });
+
+        if (receiverId) {
+          io.to(`user:${receiverId}`).emit('chat:message', message);
+          socket.emit('chat:message', message);
+        } else if (groupId) {
+          io.to(`group:${groupId}`).emit('chat:message', message);
+        }
+      } catch (err) {
+        console.error('Failed to save/send chat message:', err);
+        socket.emit('error', { message: 'Failed to send message' });
+      }
+    });
+
+    // ── chat:typing ──────────────────────────────────────────────────────
+    socket.on('chat:typing', (payload: unknown) => {
+      if (!payload || typeof payload !== 'object') return;
+      const data = payload as { receiverId?: number; groupId?: number; isTyping: boolean };
+      if (data.receiverId) {
+        io.to(`user:${data.receiverId}`).emit('chat:typing', {
+          senderId: userId,
+          isTyping: !!data.isTyping,
+        });
+      } else if (data.groupId) {
+        socket.to(`group:${data.groupId}`).emit('chat:typing', {
+          senderId: userId,
+          groupId: data.groupId,
+          isTyping: !!data.isTyping,
+        });
+      }
+    });
+
+    // ── chat:read ────────────────────────────────────────────────────────
+    socket.on('chat:read', async (payload: unknown) => {
+      if (!payload || typeof payload !== 'object') return;
+      const data = payload as { senderId?: number; groupId?: number };
+      try {
+        if (data.senderId) {
+          await prisma.message.updateMany({
+            where: {
+              senderId: data.senderId,
+              receiverId: userId,
+              isRead: false,
+            },
+            data: { isRead: true },
+          });
+          io.to(`user:${data.senderId}`).emit('chat:read_receipt', {
+            readByUserId: userId,
+          });
+        } else if (data.groupId) {
+          await prisma.message.updateMany({
+            where: {
+              groupId: data.groupId,
+              senderId: { not: userId },
+              isRead: false,
+            },
+            data: { isRead: true },
+          });
+        }
+      } catch { /* non-critical */ }
+    });
+
     // ── disconnect ───────────────────────────────────────────────────────
     socket.on('disconnect', async () => {
       console.log(`🔴 Socket disconnected: userId=${userId}`);

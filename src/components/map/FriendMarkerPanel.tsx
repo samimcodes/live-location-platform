@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Clock, Search, X,
   MapPin, Gauge, Radio, ChevronRight, Compass,
+  Battery, BatteryCharging, MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from '@/lib/dateUtils';
@@ -19,6 +20,7 @@ export interface FriendMarkerPanelProps {
   focusedUserId?: number;
   onFocusFriend:  (userId: number | undefined) => void;
   onRouteTo?:     (lat: number, lng: number, name: string) => void;
+  onOpenChat?:    (friend: Friend) => void;
   className?:     string;
   style?:         React.CSSProperties;
   isLoading?:     boolean;
@@ -46,6 +48,7 @@ export function FriendMarkerPanel({
   focusedUserId,
   onFocusFriend,
   onRouteTo,
+  onOpenChat,
   className,
   style,
   isLoading = false,
@@ -234,6 +237,7 @@ export function FriendMarkerPanel({
                   isFocused={focusedUserId === f.id}
                   onFocus={onFocusFriend}
                   onRouteTo={onRouteTo}
+                  onOpenChat={onOpenChat}
                   loc={friendsLocations.get(f.id)}
                   myLocation={myLocation}
                 />
@@ -250,6 +254,7 @@ export function FriendMarkerPanel({
                   isFocused={focusedUserId === f.id}
                   onFocus={onFocusFriend}
                   onRouteTo={onRouteTo}
+                  onOpenChat={onOpenChat}
                   loc={friendsLocations.get(f.id)}
                   myLocation={myLocation}
                 />
@@ -268,6 +273,7 @@ export function FriendMarkerPanel({
                     isFocused={focusedUserId === f.id}
                     onFocus={onFocusFriend}
                     onRouteTo={onRouteTo}
+                    onOpenChat={onOpenChat}
                     loc={friendsLocations.get(f.id)}
                     myLocation={myLocation}
                   />
@@ -284,6 +290,7 @@ export function FriendMarkerPanel({
                     friend={f}
                     isFocused={false}
                     onFocus={onFocusFriend}
+                    onOpenChat={onOpenChat}
                     loc={undefined}
                     myLocation={myLocation}
                   />
@@ -300,6 +307,7 @@ export function FriendMarkerPanel({
                     friend={f}
                     isFocused={false}
                     onFocus={onFocusFriend}
+                    onOpenChat={onOpenChat}
                     loc={undefined}
                     myLocation={myLocation}
                   />
@@ -377,16 +385,19 @@ function Section({ label, dot, count, dimmed = false, pulse = false, children }:
 
 // ── Friend row ─────────────────────────────────────────────────────────────
 interface RowProps {
-  friend:    Friend;
-  isFocused: boolean;
-  onFocus:   (id: number | undefined) => void;
+  friend:     Friend;
+  isFocused:  boolean;
+  onFocus:    (id: number | undefined) => void;
   onRouteTo?: (lat: number, lng: number, name: string) => void;
-  loc?:      {
+  onOpenChat?: (friend: Friend) => void;
+  loc?: {
     city?: string;
     latitude: number;
     longitude: number;
     speed?: number;
     timestamp?: string;
+    batteryLevel?: number;
+    isCharging?: boolean;
   };
   myLocation?: {
     latitude: number;
@@ -394,7 +405,7 @@ interface RowProps {
   } | null;
 }
 
-function FriendRow({ friend, isFocused, onFocus, onRouteTo, loc, myLocation }: RowProps) {
+function FriendRow({ friend, isFocused, onFocus, onRouteTo, onOpenChat, loc, myLocation }: RowProps) {
   const canFocus = !!loc && friend.sharingLocation;
   const speedKmh = loc?.speed != null && loc.speed > 0
     ? Math.round(loc.speed * 3.6)
@@ -474,11 +485,35 @@ function FriendRow({ friend, isFocused, onFocus, onRouteTo, loc, myLocation }: R
           )}>
             {friend.name}
           </p>
-          {distanceStr && (
-            <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-1.5 py-0.2 rounded-md shrink-0">
-              {distanceStr}
-            </span>
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {loc?.batteryLevel != null && (
+              <span
+                className={cn(
+                  'inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[9px] font-extrabold tabular-nums border',
+                  loc.isCharging
+                    ? 'bg-chart-5/15 text-chart-5 border-chart-5/30'
+                    : loc.batteryLevel <= 20
+                    ? 'bg-destructive/15 text-destructive border-destructive/30 animate-pulse'
+                    : loc.batteryLevel <= 50
+                    ? 'bg-chart-4/15 text-chart-4 border-chart-4/30'
+                    : 'bg-chart-5/15 text-chart-5 border-chart-5/30'
+                )}
+                title={loc.isCharging ? `Charging (${loc.batteryLevel}%)` : `Battery ${loc.batteryLevel}%`}
+              >
+                {loc.isCharging ? (
+                  <BatteryCharging size={10} className="shrink-0 animate-pulse" />
+                ) : (
+                  <Battery size={10} className="shrink-0" />
+                )}
+                {loc.batteryLevel}%
+              </span>
+            )}
+            {distanceStr && (
+              <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-1.5 py-0.2 rounded-md shrink-0">
+                {distanceStr}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-1 mt-0.5 min-w-0">
@@ -511,6 +546,20 @@ function FriendRow({ friend, isFocused, onFocus, onRouteTo, loc, myLocation }: R
             <Gauge size={9} />
             {speedKmh} km/h
           </span>
+        )}
+
+        {onOpenChat && (
+          <button
+            type="button"
+            title={`Chat with ${friend.name}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenChat(friend);
+            }}
+            className="h-7 w-7 rounded-xl bg-muted/80 hover:bg-primary/20 text-muted-foreground hover:text-primary flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+          >
+            <MessageSquare size={13} />
+          </button>
         )}
 
         {canFocus && onRouteTo && myLocation && (

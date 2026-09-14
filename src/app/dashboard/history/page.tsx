@@ -11,7 +11,7 @@ import {
   History, MapPin, Trash2, Navigation, Map as MapIcon,
   Route, Building2, Gauge, Calendar, Filter, Loader2,
   ListRestart, Clock, AlertTriangle, X, Sparkles,
-  ChevronRight, Compass, BarChart2,
+  ChevronRight, Compass, BarChart2, Download,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -54,7 +54,123 @@ interface HistoryStats {
   topCities: { city: string; count: number }[];
 }
 
+export interface StayLocation {
+  id: string;
+  latitude: number;
+  longitude: number;
+  city?: string;
+  address?: string;
+  startTime: Date;
+  endTime: Date;
+  durationMins: number;
+}
+
 const PAGE_SIZE = 50;
+
+function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function detectStayLocations(entries: HistoryEntry[]): StayLocation[] {
+  if (entries.length < 2) return [];
+  const sorted = [...entries]
+    .filter((e) => isValidLatLng(e.latitude, e.longitude))
+    .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
+
+  const stays: StayLocation[] = [];
+  let clusterStart = 0;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const startPoint = sorted[clusterStart];
+    const currentPoint = sorted[i];
+    const dist = getDistanceMeters(startPoint.latitude, startPoint.longitude, currentPoint.latitude, currentPoint.longitude);
+
+    if (dist > 80) {
+      const startTime = new Date(startPoint.recordedAt);
+      const endTime = new Date(sorted[i - 1].recordedAt);
+      const durationMins = Math.round((endTime.getTime() - startTime.getTime()) / (60 * 1000));
+
+      if (durationMins >= 10) {
+        stays.push({
+          id: `stay-${clusterStart}-${i - 1}`,
+          latitude: startPoint.latitude,
+          longitude: startPoint.longitude,
+          city: startPoint.city,
+          address: startPoint.address,
+          startTime,
+          endTime,
+          durationMins,
+        });
+      }
+      clusterStart = i;
+    }
+  }
+
+  if (clusterStart < sorted.length - 1) {
+    const startPoint = sorted[clusterStart];
+    const endPoint = sorted[sorted.length - 1];
+    const startTime = new Date(startPoint.recordedAt);
+    const endTime = new Date(endPoint.recordedAt);
+    const durationMins = Math.round((endTime.getTime() - startTime.getTime()) / (60 * 1000));
+    if (durationMins >= 10) {
+      stays.push({
+        id: `stay-${clusterStart}-${sorted.length - 1}`,
+        latitude: startPoint.latitude,
+        longitude: startPoint.longitude,
+        city: startPoint.city,
+        address: startPoint.address,
+        startTime,
+        endTime,
+        durationMins,
+      });
+    }
+  }
+
+  return stays.reverse();
+}
+
+function exportToGPX(records: HistoryEntry[]) {
+  if (!records.length) {
+    toast.error('No location points to export');
+    return;
+  }
+  const sorted = [...records].reverse().filter((r) => isValidLatLng(r.latitude, r.longitude));
+  const pointsXml = sorted.map((r) => `    <trkpt lat="${r.latitude}" lon="${r.longitude}">
+      <time>${new Date(r.recordedAt).toISOString()}</time>
+      ${r.speed !== undefined ? `<speed>${(r.speed / 3.6).toFixed(2)}</speed>` : ''}
+    </trkpt>`).join('\n');
+
+  const gpxContent = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="LocaLink" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>LocaLink Route History</name>
+    <time>${new Date().toISOString()}</time>
+  </metadata>
+  <trk>
+    <name>LocaLink Track</name>
+    <trkseg>
+${pointsXml}
+    </trkseg>
+  </trk>
+</gpx>`;
+
+  const blob = new Blob([gpxContent], { type: 'application/gpx+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `localink-route-${new Date().toISOString().slice(0, 10)}.gpx`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success('GPX Route downloaded successfully!');
+}
 
 // ── Date grouping helper ───────────────────────────────────────────────────
 function groupByDate(entries: HistoryEntry[]): { label: string; entries: HistoryEntry[] }[] {
@@ -329,6 +445,11 @@ export default function HistoryPage() {
     return routeCoords[Math.floor(routeCoords.length / 2)];
   }, [routeCoords]);
 
+  const stayLocations = useMemo(
+    () => detectStayLocations(Array.isArray(allRecords) ? allRecords : []),
+    [allRecords]
+  );
+
   const grouped = useMemo(() => groupByDate(Array.isArray(allRecords) ? allRecords : []), [allRecords]);
 
   const chartData = useMemo(() => {
@@ -417,6 +538,18 @@ export default function HistoryPage() {
                   <Filter size={16} />
                   Filter
                 </Button>
+
+                {allRecords.length > 0 && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 shadow-sm rounded-xl h-11 px-4 font-bold text-[13px] border-border/80 hover:bg-muted"
+                    onClick={() => exportToGPX(allRecords)}
+                    title="Download GPX file for GPS apps"
+                  >
+                    <Download size={16} />
+                    Export GPX
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -620,6 +753,53 @@ export default function HistoryPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── DETECTED STAY LOCATIONS ────────────────────────────────────── */}
+      {stayLocations.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                  <Compass size={17} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Stay Points & Stops</h3>
+                  <p className="text-xs text-muted-foreground">Places where you stopped or paused for 10+ minutes</p>
+                </div>
+              </div>
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                {stayLocations.length} Stop{stayLocations.length > 1 ? 's' : ''} Identified
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {stayLocations.slice(0, 6).map((stay) => (
+                <div key={stay.id} className="p-3.5 rounded-xl border border-border/50 bg-muted/20 flex flex-col justify-between space-y-2.5 hover:border-indigo-500/40 hover:bg-muted/40 transition-all">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <MapPin size={14} className="text-indigo-500 shrink-0 mt-0.5" />
+                      <span className="text-xs font-bold text-foreground truncate">
+                        {stay.city || stay.address || `${stay.latitude.toFixed(4)}, ${stay.longitude.toFixed(4)}`}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0 tabular-nums">
+                      {stay.durationMins >= 60
+                        ? `${(stay.durationMins / 60).toFixed(1)}h`
+                        : `${stay.durationMins}m`}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground flex items-center justify-between border-t border-border/20 pt-2">
+                    <span>{stay.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="text-muted-foreground/40">→</span>
+                    <span>{stay.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* ── TIMELINE ───────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>

@@ -10,6 +10,8 @@ export interface LocationData {
   address?: string;
   city?: string;
   timestamp?: string;
+  batteryLevel?: number;
+  isCharging?: boolean;
 }
 
 interface LocationState {
@@ -18,6 +20,8 @@ interface LocationState {
   isSharing: boolean;
   watchId: number | null;
   geoError: GeolocationPositionError | null;
+  ghostUntil: number | null;
+  batterySaverMode: boolean;
 
   setMyLocation: (loc: LocationData) => void;
   updateFriendLocation: (loc: LocationData) => void;
@@ -25,6 +29,8 @@ interface LocationState {
   setSharing: (sharing: boolean) => void;
   setWatchId: (id: number | null) => void;
   setGeoError: (err: GeolocationPositionError | null) => void;
+  setGhostUntil: (until: number | null) => void;
+  setBatterySaverMode: (enabled: boolean) => void;
 }
 
 export const useLocationStore = create<LocationState>((set) => ({
@@ -33,6 +39,8 @@ export const useLocationStore = create<LocationState>((set) => ({
   isSharing: false,
   watchId: null,
   geoError: null,
+  ghostUntil: null,
+  batterySaverMode: false,
 
   setMyLocation: (loc) => set({ myLocation: loc }),
 
@@ -53,4 +61,6 @@ export const useLocationStore = create<LocationState>((set) => ({
   setSharing: (sharing) => set({ isSharing: sharing }),
   setWatchId: (id) => set({ watchId: id }),
   setGeoError: (err) => set({ geoError: err }),
+  setGhostUntil: (until) => set({ ghostUntil: until }),
+  setBatterySaverMode: (enabled) => set({ batterySaverMode: enabled }),
 }));

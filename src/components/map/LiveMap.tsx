@@ -242,7 +242,18 @@ export function LiveMap({
 
         if (friendMarkersRef.current[userId]) {
           friendMarkersRef.current[userId].setLngLat([longitude, latitude]);
-          const newHtml = buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp, distStr);
+          const newHtml = buildFriendPopup(
+            name,
+            isOnline,
+            loc.city,
+            latitude,
+            longitude,
+            loc.speed,
+            loc.timestamp,
+            distStr,
+            loc.batteryLevel,
+            loc.isCharging
+          );
           if (newHtml !== friendPopupHtmlRef.current[userId]) {
             friendPopupHtmlRef.current[userId] = newHtml;
             friendPopupsRef.current[userId]?.setHTML(newHtml);
@@ -254,7 +265,18 @@ export function LiveMap({
         } else {
           const grad   = friendGradient(userId);
           const el     = createMarkerElement({ label: name, letter: name.charAt(0).toUpperCase(), gradient: grad, isOnline });
-          const html   = buildFriendPopup(name, isOnline, loc.city, latitude, longitude, loc.speed, loc.timestamp, distStr);
+          const html   = buildFriendPopup(
+            name,
+            isOnline,
+            loc.city,
+            latitude,
+            longitude,
+            loc.speed,
+            loc.timestamp,
+            distStr,
+            loc.batteryLevel,
+            loc.isCharging
+          );
           friendPopupHtmlRef.current[userId] = html;
           const popup  = new Popup({ offset: [0, -42], closeButton: false, maxWidth: '240px' })
             .setHTML(html);

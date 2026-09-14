@@ -26,11 +26,16 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB file size limit
   },
   fileFilter: (req, file, cb) => {
-    // Accept only image and pdf files as an example
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+    // Accept images, pdfs, and audio files (for voice notes)
+    if (
+      file.mimetype.startsWith('image/') ||
+      file.mimetype === 'application/pdf' ||
+      file.mimetype.startsWith('audio/') ||
+      file.mimetype === 'video/webm'
+    ) {
       cb(null, true);
     } else {
-      cb(new Error('Only images and PDFs are allowed'));
+      cb(new Error('Only images, PDFs, and audio recordings are allowed'));
     }
   }
 });

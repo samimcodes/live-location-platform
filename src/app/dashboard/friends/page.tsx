@@ -34,7 +34,9 @@ import {
   AlertTriangle,
   X,
   Gauge,
+  QrCode,
 } from "lucide-react";
+import { FriendQrModal } from "@/components/friends/FriendQrModal";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/axios";
@@ -72,11 +74,12 @@ function FriendAvatar({
   size?: number;
   isOnline?: boolean;
 }) {
+  const [imgError, setImgError] = useState(false);
   const dotSize = Math.max(10, Math.round(size * 0.26));
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <div className="relative h-full w-full overflow-hidden rounded-2xl">
-        {avatar ? (
+        {avatar && !imgError ? (
           <Image
             src={avatar}
             alt={name}
@@ -84,6 +87,7 @@ function FriendAvatar({
             unoptimized
             className="object-cover"
             sizes={`${size}px`}
+            onError={() => setImgError(true)}
           />
         ) : (
           <div
@@ -238,7 +242,17 @@ export default function FriendsPage() {
   const [listQuery, setListQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [qrModalOpen, setQrModalOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const invite = params.get("invite");
+    if (invite) {
+      setQrModalOpen(true);
+    }
+  }, []);
 
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
   const sentIds = useMemo(
@@ -346,18 +360,30 @@ export default function FriendsPage() {
                 </div>
               </div>
 
-              <Button asChild className="relative gap-2 rounded-2xl h-10 px-6 bg-gradient-to-r from-primary via-indigo-600 to-primary hover:from-primary/95 hover:to-indigo-600/95 text-primary-foreground shadow-md shadow-primary/25 transition-all active:scale-[0.98] text-[13px] font-extrabold overflow-hidden group cursor-pointer">
-                <Link href="/dashboard/friends/requests">
-                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
-                  <UserPlus size={16} />
-                  <span>Friend Requests</span>
-                  {pendingCount > 0 && (
-                    <span className="ml-1.5 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold animate-pulse shadow-xs">
-                      {pendingCount}
-                    </span>
-                  )}
-                </Link>
-              </Button>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <Button
+                  type="button"
+                  onClick={() => setQrModalOpen(true)}
+                  variant="outline"
+                  className="gap-2 rounded-2xl h-10 px-5 border-border/80 bg-card/90 hover:bg-muted font-bold text-xs shadow-xs"
+                >
+                  <QrCode size={16} className="text-primary" />
+                  <span>QR & Invite</span>
+                </Button>
+
+                <Button asChild className="relative gap-2 rounded-2xl h-10 px-6 bg-gradient-to-r from-primary via-indigo-600 to-primary hover:from-primary/95 hover:to-indigo-600/95 text-primary-foreground shadow-md shadow-primary/25 transition-all active:scale-[0.98] text-[13px] font-extrabold overflow-hidden group cursor-pointer">
+                  <Link href="/dashboard/friends/requests">
+                    <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                    <UserPlus size={16} />
+                    <span>Friend Requests</span>
+                    {pendingCount > 0 && (
+                      <span className="ml-1.5 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold animate-pulse shadow-xs">
+                        {pendingCount}
+                      </span>
+                    )}
+                  </Link>
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
@@ -841,6 +867,11 @@ export default function FriendsPage() {
           )}
         </motion.div>
       </div>
+
+      <FriendQrModal
+        open={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+      />
     </div>
   );
 }

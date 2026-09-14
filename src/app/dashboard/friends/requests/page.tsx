@@ -11,8 +11,9 @@ import { Button } from '@/components/ui/button';
 import {
   UserPlus, Clock, Check, X, MessageSquare,
   Loader2, ArrowLeft, CheckCheck, History,
-  Inbox, Send, AlertTriangle,
+  Inbox, Send, AlertTriangle, QrCode,
 } from 'lucide-react';
+import { FriendQrModal } from '@/components/friends/FriendQrModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
@@ -27,14 +28,15 @@ const AVATAR_BG = [
 function Avatar({
   id, name, avatar,
 }: { id?: number; name?: string; avatar?: string | null }) {
+  const [imgError, setImgError] = useState(false);
   const letter = (name ?? '?').charAt(0).toUpperCase();
   const bg     = AVATAR_BG[(id ?? 0) % AVATAR_BG.length];
   return (
     <div className="relative h-11 w-11 shrink-0">
       <div className="relative h-full w-full overflow-hidden rounded-2xl">
-        {avatar ? (
+        {avatar && !imgError ? (
           <Image src={avatar} alt={name ?? 'User'} fill sizes="44px" unoptimized
-            className="object-cover" />
+            className="object-cover" onError={() => setImgError(true)} />
         ) : (
           <div className={cn(
             'h-full w-full flex items-center justify-center',
@@ -124,6 +126,7 @@ export default function RequestsPage() {
 
   const [respondingId, setRespondingId] = useState<number | null>(null);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   const handleRespond = (id: number, action: 'ACCEPTED' | 'REJECTED') => {
     setRespondingId(id);
@@ -170,16 +173,29 @@ export default function RequestsPage() {
                   </p>
                 </div>
               </div>
-              {pending.length > 0 && (
-                <Button size="sm" disabled={acceptingAll}
-                  onClick={() => acceptAll()}
-                  className="shrink-0 gap-2 rounded-xl h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold relative">
-                  {acceptingAll
-                    ? <Loader2 size={16} className="animate-spin" />
-                    : <CheckCheck size={16} />}
-                  Accept all{pending.length > 1 ? ` (${pending.length})` : ''}
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQrModalOpen(true)}
+                  className="gap-2 rounded-xl h-10 px-4 border-border/80 bg-card/90 hover:bg-muted font-bold text-xs shadow-xs"
+                >
+                  <QrCode size={15} className="text-primary" />
+                  <span>My QR & Invite</span>
                 </Button>
-              )}
+
+                {pending.length > 0 && (
+                  <Button size="sm" disabled={acceptingAll}
+                    onClick={() => acceptAll()}
+                    className="shrink-0 gap-2 rounded-xl h-10 px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all active:scale-95 text-[13px] font-bold relative">
+                    {acceptingAll
+                      ? <Loader2 size={16} className="animate-spin" />
+                      : <CheckCheck size={16} />}
+                    Accept all{pending.length > 1 ? ` (${pending.length})` : ''}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -434,6 +450,11 @@ export default function RequestsPage() {
         )}
 
       </AnimatePresence>
+
+      <FriendQrModal
+        open={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+      />
     </div>
   );
 }

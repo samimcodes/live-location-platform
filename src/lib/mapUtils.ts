@@ -373,6 +373,8 @@ export function buildFriendPopup(
   speed?: number,
   timestamp?: string,
   distanceStr?: string,
+  batteryLevel?: number,
+  isCharging?: boolean
 ): string {
   const safeName = escapeHtml(name);
   const rawLoc = city ?? (lat !== undefined && lng !== undefined ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : '');
@@ -384,6 +386,9 @@ export function buildFriendPopup(
     : null;
   const onlineColor = isOnline ? 'var(--chart-5,#10b981)' : 'var(--muted-foreground,#9ca3af)';
   const secondaryColor = 'var(--muted-foreground,#64748b)';
+  const batteryStr = batteryLevel != null
+    ? `${isCharging ? '⚡ ' : '🔋 '}${batteryLevel}%`
+    : null;
 
   return /* html */ `
     <div style="padding:12px 14px;min-width:170px">
@@ -397,6 +402,7 @@ export function buildFriendPopup(
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 2px">
         ${distanceStr ? `<span style="font-size:10px;font-weight:700;background:color-mix(in oklch, var(--primary) 10%, transparent);color:var(--primary);padding:2px 6px;border-radius:6px">📍 ${escapeHtml(distanceStr)}</span>` : ''}
         ${speedStr ? `<span style="font-size:10px;font-weight:700;background:color-mix(in oklch, var(--chart-3) 12%, transparent);color:var(--chart-3);padding:2px 6px;border-radius:6px">🚗 ${escapeHtml(speedStr)}</span>` : ''}
+        ${batteryStr ? `<span style="font-size:10px;font-weight:700;background:color-mix(in oklch, var(--chart-5) 12%, transparent);color:var(--chart-5);padding:2px 6px;border-radius:6px">${escapeHtml(batteryStr)}</span>` : ''}
       </div>
       ${timeStr ? `<p style="color:${secondaryColor};font-size:10px;margin:4px 0 0;opacity:0.75">Updated at ${escapeHtml(timeStr)}</p>` : ''}
     </div>`;
@@ -417,29 +423,52 @@ export function isValidLatLng(lat: unknown, lng: unknown): boolean {
 }
 
 // ── Routing / Directions Engine (OSRM) ────────────────────────────────────
+export type RoutingProfile = 'driving' | 'walking';
+
+export interface RouteStep {
+  instruction: string;
+  distanceMeters: number;
+  durationSeconds: number;
+}
+
 export interface RouteInfo {
   coordinates: [number, number][]; // [lng, lat][]
   distanceMeters: number;
   durationSeconds: number;
+  steps?: RouteStep[];
 }
 
 export async function fetchLiveRoute(
   startLng: number,
   startLat: number,
   endLng: number,
-  endLat: number
+  endLat: number,
+  profile: RoutingProfile = 'driving'
 ): Promise<RouteInfo | null> {
   try {
-    const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+    const osrmProfile = profile === 'walking' ? 'foot' : 'driving';
+    const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.routes || data.routes.length === 0) return null;
     const route = data.routes[0];
+    const steps: RouteStep[] = (route.legs?.[0]?.steps ?? []).map((s: { maneuver?: { type?: string; modifier?: string }; name?: string; distance: number; duration: number }) => {
+      const type = s.maneuver?.type || 'turn';
+      const modifier = s.maneuver?.modifier ? ` ${s.maneuver.modifier}` : '';
+      const street = s.name ? ` on ${s.name}` : '';
+      return {
+        instruction: `${type}${modifier}${street}`.trim(),
+        distanceMeters: s.distance,
+        durationSeconds: s.duration,
+      };
+    });
+
     return {
       coordinates: route.geometry.coordinates as [number, number][],
       distanceMeters: route.distance,
       durationSeconds: route.duration,
+      steps,
     };
   } catch (err) {
     console.warn('Failed to fetch route:', err);

@@ -48,6 +48,8 @@ model User {
   groupsCreated          Group[]            @relation("GroupCreator")
   groupMemberships       GroupMember[]
   savedPlaces            SavedPlace[]
+  sentMessages           Message[]          @relation("SentMessages")
+  receivedMessages       Message[]          @relation("ReceivedMessages")
 
   @@map("users")
 }
@@ -105,10 +107,12 @@ model Location {
   altitude  Float?
   speed     Float?
   heading   Float?
-  address   String?
-  city      String?
-  country   String?
-  updatedAt DateTime @default(now()) @updatedAt
+  address      String?
+  city         String?
+  country      String?
+  batteryLevel Float?
+  isCharging   Boolean?
+  updatedAt    DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -126,10 +130,12 @@ model LocationHistory {
   accuracy  Float?
   speed     Float?
   heading   Float?
-  address   String?
-  city      String?
-  country   String?
-  recordedAt DateTime @default(now())
+  address      String?
+  city         String?
+  country      String?
+  batteryLevel Float?
+  isCharging   Boolean?
+  recordedAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -179,6 +185,7 @@ model Group {
 
   createdBy User          @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members   GroupMember[]
+  messages  Message[]
 
   @@map("groups")
 }
@@ -233,3 +240,34 @@ enum PlaceType {
   GYM
   OTHER
 }
+
+// ─────────────────────────────────────────────
+// MESSAGE (Direct & Circle Chat)
+// ─────────────────────────────────────────────
+model Message {
+  id            Int         @id @default(autoincrement())
+  senderId      Int
+  receiverId    Int?
+  groupId       Int?
+  content       String      @db.Text
+  type          MessageType @default(TEXT)
+  audioUrl      String?
+  audioDuration Float?
+  isRead        Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+
+  sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User?  @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  group    Group? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@index([groupId, createdAt])
+  @@map("messages")
+}
+
+enum MessageType {
+  TEXT
+  VOICE
+  QUICK_PING
+}
+

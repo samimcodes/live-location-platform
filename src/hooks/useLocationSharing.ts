@@ -17,24 +17,59 @@ export interface LocationSharingResult {
   geoError: GeolocationPositionError | null;
 }
 
+interface BatteryManager extends EventTarget {
+  charging: boolean;
+  chargingTime: number;
+  dischargingTime: number;
+  level: number;
+}
+
+interface NavigatorWithBattery extends Navigator {
+  getBattery?: () => Promise<BatteryManager>;
+}
+
+async function getDeviceBattery(): Promise<{ batteryLevel?: number; isCharging?: boolean }> {
+  try {
+    const nav = typeof navigator !== 'undefined' ? (navigator as NavigatorWithBattery) : undefined;
+    if (nav?.getBattery) {
+      const b = await nav.getBattery();
+      return {
+        batteryLevel: Math.round(b.level * 100),
+        isCharging: b.charging,
+      };
+    }
+  } catch {
+    // Battery API not supported or restricted
+  }
+  return {};
+}
+
 export function useLocationSharing(): LocationSharingResult {
   const { emit } = useSocketContext();
-  const { isSharing, setMyLocation, setWatchId, watchId, geoError, setGeoError } = useLocationStore();
+  const {
+    isSharing, setMyLocation, setWatchId, watchId,
+    geoError, setGeoError, ghostUntil, batterySaverMode
+  } = useLocationStore();
   const { isAuthenticated, user } = useAppSelector((s) => s.auth);
 
   // Keep refs so callbacks never go stale without causing re-renders
-  const watchIdRef   = useRef<number | null>(watchId);
-  const isAuthRef    = useRef(isAuthenticated);
-  const isSharingRef = useRef(isSharing);
-  const userIdRef    = useRef<number>(user?.id ?? 0);
+  const watchIdRef          = useRef<number | null>(watchId);
+  const isAuthRef           = useRef(isAuthenticated);
+  const isSharingRef        = useRef(isSharing);
+  const userIdRef           = useRef<number>(user?.id ?? 0);
+  const ghostUntilRef       = useRef<number | null>(ghostUntil);
+  const batterySaverModeRef = useRef<boolean>(batterySaverMode);
+  const lastEmitTimeRef     = useRef<number>(0);
 
   // Sync refs safely in effect
   useEffect(() => {
-    watchIdRef.current   = watchId;
-    isAuthRef.current    = isAuthenticated;
-    isSharingRef.current = isSharing;
-    userIdRef.current    = user?.id ?? 0;
-  }, [watchId, isAuthenticated, isSharing, user?.id]);
+    watchIdRef.current          = watchId;
+    isAuthRef.current           = isAuthenticated;
+    isSharingRef.current        = isSharing;
+    userIdRef.current           = user?.id ?? 0;
+    ghostUntilRef.current       = ghostUntil;
+    batterySaverModeRef.current = batterySaverMode;
+  }, [watchId, isAuthenticated, isSharing, user?.id, ghostUntil, batterySaverMode]);
 
   useEffect(() => {
     if (!isAuthenticated || !isSharing) {
@@ -58,17 +93,33 @@ export function useLocationSharing(): LocationSharingResult {
       (position) => {
         // Clear any previous error on success
         setGeoError(null);
-        const payload = {
-          userId:    userIdRef.current,
-          latitude:  position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy:  position.coords.accuracy  ?? undefined,
-          altitude:  position.coords.altitude  ?? undefined,
-          speed:     position.coords.speed     ?? undefined,
-          heading:   position.coords.heading   ?? undefined,
-        };
-        setMyLocation(payload);
-        emit('location:update', payload);
+        void (async () => {
+          const battery = await getDeviceBattery();
+          const payload = {
+            userId:    userIdRef.current,
+            latitude:  position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy:  position.coords.accuracy  ?? undefined,
+            altitude:  position.coords.altitude  ?? undefined,
+            speed:     position.coords.speed     ?? undefined,
+            heading:   position.coords.heading   ?? undefined,
+            ...battery,
+          };
+          setMyLocation(payload);
+
+          const now = Date.now();
+          const isGhostActive = ghostUntilRef.current !== null && now < ghostUntilRef.current;
+          const isSaverActive = batterySaverModeRef.current || ((battery.batteryLevel ?? 100) <= 20 && !battery.isCharging);
+          const minInterval = isSaverActive ? 60_000 : 8_000;
+
+          // Only broadcast to friends if ghost mode is NOT active
+          if (!isGhostActive) {
+            if (now - lastEmitTimeRef.current >= minInterval) {
+              lastEmitTimeRef.current = now;
+              emit('location:update', payload);
+            }
+          }
+        })();
       },
       (err) => {
         // Surface the error so the UI can show a permissions prompt or warning
