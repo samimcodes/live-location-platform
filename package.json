@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" nodemon --watch server --watch tsconfig.server.json --ext ts --exec ts-node --transpile-only --project tsconfig.server.json server/index.ts",
-    "build": "cross-env NODE_ENV=production next build && tsc --project tsconfig.server.json",
+    "build": "prisma generate && cross-env NODE_ENV=production next build && tsc --project tsconfig.server.json",
+    "postinstall": "prisma generate",
     "start": "cross-env NODE_ENV=production node dist/server/index.js",
     "lint": "eslint",
     "db:generate": "prisma generate",
