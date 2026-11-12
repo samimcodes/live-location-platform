@@ -41,16 +41,37 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // If accessToken is missing or expired, check if a valid refreshToken cookie exists.
+  // If refreshToken is valid, allow navigation so client-side Axios/AuthInitializer
+  // can silently refresh the accessToken without booting the user to /login.
+  let hasValidRefreshToken = false;
+  if (!isValidToken) {
+    const refreshToken = request.cookies.get('refreshToken')?.value;
+    if (refreshToken) {
+      try {
+        const refreshSecret = process.env.JWT_REFRESH_SECRET;
+        if (refreshSecret) {
+          await jwtVerify(refreshToken, new TextEncoder().encode(refreshSecret));
+          hasValidRefreshToken = true;
+        }
+      } catch {
+        hasValidRefreshToken = false;
+      }
+    }
+  }
+
+  const isAuthed = isValidToken || hasValidRefreshToken;
+
   const isAuthRoute = AUTH_ROUTES.includes(pathname);
   const isDashboard = pathname.startsWith(DASHBOARD_PREFIX);
 
   // Logged-in users → redirect away from login / register / forgot-password
-  if (isAuthRoute && isValidToken) {
+  if (isAuthRoute && isAuthed) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   // Protected dashboard routes → redirect to login with ?from= for post-login redirect
-  if (isDashboard && !isValidToken) {
+  if (isDashboard && !isAuthed) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);

@@ -90,7 +90,7 @@ export function MapSOSButton() {
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="absolute bottom-6 left-4 sm:left-52 z-20"
+        className="absolute bottom-16 left-3 sm:bottom-5 sm:left-44 z-20"
       >
         <button
           onClick={handleStartSOS}

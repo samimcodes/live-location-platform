@@ -45,10 +45,6 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 function shouldSkipRefresh(url?: string): boolean {
   if (!url) return false;
-  // If calling /auth/me without an existing token, skip refresh attempt to avoid unnecessary network round-trips
-  if (url.includes('/auth/me') && typeof window !== 'undefined' && !localStorage.getItem('token')) {
-    return true;
-  }
   return SKIP_REFRESH_PATHS.some((path) => url.includes(path));
 }
 
@@ -107,6 +103,12 @@ api.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+
+    if (error.response?.data && typeof error.response.data === 'object' && error.response.data.message) {
+      error.message = error.response.data.message;
+    } else if (error.response?.status === 404) {
+      error.message = 'Requested resource not found (404). Please ensure the server is running with `npm run dev`.';
     }
 
     return Promise.reject(error);

@@ -17,17 +17,36 @@ type SafeUser = Omit<
 
 export class AuthService {
   static registerUser = catchServiceAsync(async (data: Prisma.UserCreateInput) => {
-    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    const cleanEmail = data.email.trim().toLowerCase();
+    const existing = await prisma.user.findFirst({
+      where: { email: { equals: cleanEmail, mode: 'insensitive' } },
+    });
     if (existing) throw new Error('User already exists with this email');
 
-    const toSave = { ...data };
-    if (data.password) {
-      toSave.password = await bcrypt.hash(data.password, SALT_ROUNDS);
-    }
+    const hashedPassword = data.password
+      ? await bcrypt.hash(data.password, SALT_ROUNDS)
+      : undefined;
 
-    const user = await prisma.user.create({ data: toSave });
-    const { password, resetPasswordToken, resetPasswordExpires, refreshToken, loginLog, ...safe } = user;
-    return safe;
+    const user = await prisma.user.create({
+      data: {
+        name: data.name.trim(),
+        email: cleanEmail,
+        password: hashedPassword,
+        phone: data.phone,
+        avatar: data.avatar,
+        bio: data.bio,
+      },
+    });
+    const token = signAccessToken({ id: user.id, email: user.email, role: user.role });
+    const refreshToken = signRefreshToken(user.id);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken, isOnline: true, lastSeen: new Date() },
+    });
+
+    const { password, resetPasswordToken, resetPasswordExpires, refreshToken: _rt, loginLog: _ll, ...safe } = user;
+    return { user: safe, token, refreshToken };
   });
 
   static getMe = catchServiceAsync(async (userId: number) => {
@@ -51,7 +70,10 @@ export class AuthService {
   });
 
   static loginUser = catchServiceAsync(async (email: string, passwordInput: string) => {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: cleanEmail, mode: 'insensitive' } },
+    });
     if (!user || !user.password) throw new Error('Invalid email or password');
 
     const valid = await bcrypt.compare(passwordInput, user.password);
@@ -74,7 +96,10 @@ export class AuthService {
   });
 
   static forgotPassword = catchServiceAsync(async (email: string) => {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: cleanEmail, mode: 'insensitive' } },
+    });
     if (!user) {
       return { message: 'If that email is registered, a reset link has been sent' };
     }

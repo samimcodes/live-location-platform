@@ -7,8 +7,22 @@ import { clearAuthCookies, setAuthCookies } from '../utils/authCookies';
 
 export class AuthController {
   static register = catchAsync(async (req: AuthRequest, res: Response) => {
-    const user = await AuthService.registerUser(req.body);
-    sendResponse(res, { statusCode: 201, message: 'Account created successfully', data: user });
+    const { name, email, password } = req.body as {
+      name?: string;
+      email?: string;
+      password?: string;
+    };
+    if (!name?.trim() || !email?.trim() || !password) {
+      sendResponse(res, { statusCode: 400, message: 'Name, email and password are required' });
+      return;
+    }
+    const result = await AuthService.registerUser(req.body);
+    setAuthCookies(res, result.token, result.refreshToken);
+    sendResponse(res, {
+      statusCode: 201,
+      message: 'Account created successfully',
+      data: { user: result.user, token: result.token },
+    });
   });
 
   static login = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -74,14 +88,13 @@ export class AuthController {
   static me = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user?.userId;
     if (!userId) {
-      clearAuthCookies(res);
       sendResponse(res, { statusCode: 401, message: 'Unauthorized' });
       return;
     }
     const user = await AuthService.getMe(userId);
     if (!user) {
       clearAuthCookies(res);
-      sendResponse(res, { statusCode: 404, message: 'User not found' });
+      sendResponse(res, { statusCode: 401, message: 'Session expired or user not found' });
       return;
     }
     sendResponse(res, { statusCode: 200, data: user });

@@ -20,6 +20,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Start GPS + socket location sharing for the whole dashboard
   useLocationSharing();
 
+  // Close mobile sidebar drawer automatically on route navigation
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [pathname]);
+
   // Global Ctrl+K / Cmd+K keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
+    <div className="flex h-dvh w-full bg-background overflow-hidden">
       {/* Global Spotlight Command Palette */}
       <CommandPalette
         open={commandPaletteOpen}

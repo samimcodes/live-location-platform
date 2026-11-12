@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,18 +18,40 @@ import {
 import { soundFx } from '@/lib/soundFx';
 import Link from 'next/link';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
-
-const stats = [
-  { value: 2400, suffix: '+', label: 'Active Families', icon: Users, decimals: 0 },
-  { value: 99.99, suffix: '%', label: 'Uptime SLA', icon: Zap, decimals: 2 },
-  { value: 4.9, suffix: ' / 5', label: 'App Store Rating', icon: Star, decimals: 1 },
-];
+import { usePublicStats } from '@/hooks/usePublicStats';
+import { useAuth } from '@/hooks/useAuth';
 
 export function CTASection() {
+  const { data: publicStats } = usePublicStats();
+  const { isAuthenticated } = useAuth();
+
+  const stats = useMemo(() => [
+    {
+      value: publicStats?.totalUsers ? Math.max(publicStats.totalUsers, 1) : 24,
+      suffix: '+',
+      label: 'Registered Members',
+      icon: Users,
+      decimals: 0
+    },
+    {
+      value: 99.99,
+      suffix: '%',
+      label: 'Uptime SLA',
+      icon: Zap,
+      decimals: 2
+    },
+    {
+      value: publicStats?.totalCircles ? Math.max(publicStats.totalCircles, 1) : 8,
+      suffix: '+',
+      label: 'Active Circles',
+      icon: Sparkles,
+      decimals: 0
+    },
+  ], [publicStats]);
   return (
     <section
       id="cta"
-      className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden bg-white dark:bg-[#0B1020] scroll-mt-16 border-t border-slate-200/80 dark:border-slate-800/80"
+      className="py-16 sm:py-24 lg:py-28 px-4 sm:px-6 relative overflow-hidden bg-[#F6F8FD] dark:bg-[#070B16] scroll-mt-16 border-t border-slate-200/80 dark:border-white/[0.06]"
     >
       <div className="max-w-6xl mx-auto">
         <motion.div
@@ -37,7 +59,7 @@ export function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="relative overflow-hidden rounded-[36px] border border-white/20 shadow-[0_24px_70px_rgba(124,58,237,0.25)]"
+          className="relative overflow-hidden rounded-3xl sm:rounded-[36px] border border-white/20 shadow-[0_24px_70px_rgba(124,58,237,0.25)]"
         >
           {/* Layered Gradient Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#4C1D95] via-[#6D28D9] to-[#2563EB]" />
@@ -50,8 +72,8 @@ export function CTASection() {
           {/* Subtle Dot Grid Pattern Overlay */}
           <div className="absolute inset-0 opacity-[0.08] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:24px_24px]" />
 
-          <div className="relative z-10 p-8 sm:p-14 lg:p-16">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="relative z-10 p-6 sm:p-12 lg:p-16">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
               {/* Left: Text Content */}
               <div className="lg:col-span-7 space-y-7 text-left">
                 {/* Label Pill */}
@@ -72,16 +94,16 @@ export function CTASection() {
                 </div>
 
                 {/* CTA Buttons */}
-                <div className="flex flex-wrap gap-3.5 items-center">
+                <div className="flex flex-wrap gap-3 sm:gap-3.5 items-center">
                   <Button
                     size="lg"
-                    className="relative h-13 px-8 font-bold text-sm rounded-2xl bg-white text-violet-700 hover:bg-white/95 shadow-[0_12px_30px_rgba(0,0,0,0.25)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] group gap-2.5 cursor-pointer overflow-hidden border border-white/80"
-                    onClick={() => soundFx.playPop()}
+                    className="relative w-full sm:w-auto justify-center h-12 sm:h-13 px-7 sm:px-8 font-bold text-sm rounded-2xl bg-white text-violet-700 hover:bg-white/95 shadow-[0_12px_30px_rgba(0,0,0,0.25)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] group gap-2.5 cursor-pointer overflow-hidden border border-white/80"
+                    onClick={() => soundFx?.playPop?.()}
                     asChild
                   >
-                    <Link href="/register">
+                    <Link href={isAuthenticated ? '/dashboard' : '/register'}>
                       <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-violet-300/40 to-transparent pointer-events-none" />
-                      <span className="relative z-10">Start Tracking Free</span>
+                      <span className="relative z-10">{isAuthenticated ? 'Open Dashboard' : 'Start Tracking Free'}</span>
                       <ArrowRight size={17} className="relative z-10 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   </Button>
@@ -89,22 +111,30 @@ export function CTASection() {
                   <Button
                     variant="outline"
                     size="lg"
-                    className="relative h-13 px-7 font-bold text-sm rounded-2xl border border-white/40 text-white bg-white/10 hover:bg-white/20 hover:border-white/60 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] backdrop-blur-md gap-2 cursor-pointer shadow-lg"
-                    onClick={() => soundFx.playPop()}
+                    className="relative w-full sm:w-auto justify-center h-12 sm:h-13 px-7 font-bold text-sm rounded-2xl border border-white/40 text-white bg-white/10 hover:bg-white/20 hover:border-white/60 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] backdrop-blur-md gap-2 cursor-pointer shadow-lg"
+                    onClick={() => soundFx?.playPop?.()}
                     asChild
                   >
-                    <Link href="/login">
+                    <Link href={isAuthenticated ? '/dashboard/map' : '/login'}>
                       <Send size={15} />
-                      <span>Live Dashboard</span>
+                      <span>{isAuthenticated ? 'Open Live Map' : 'Live Dashboard'}</span>
                     </Link>
                   </Button>
                 </div>
 
                 {/* Trust Markers */}
-                <div className="flex items-center gap-2 text-white/80 text-xs font-medium pt-1">
-                  <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
-                  <span>
-                    No credit card required • Instant 60-second setup • End-to-end encrypted
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-white/85 text-xs font-medium pt-1">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck size={15} className="text-emerald-400 shrink-0" />
+                    <span>No credit card required</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-amber-300 shrink-0" />
+                    <span>Voice Chat & OSRM Navigation</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Zap size={14} className="text-cyan-300 shrink-0" />
+                    <span>Sub-20ms WebSocket Live Radar</span>
                   </span>
                 </div>
               </div>
@@ -116,10 +146,10 @@ export function CTASection() {
                   whileInView={{ opacity: 1, scale: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-                  className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[28px] p-7 sm:p-8 space-y-6 shadow-2xl"
+                  className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl sm:rounded-[28px] p-5 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl"
                 >
                   {/* Mini Header */}
-                  <div className="flex items-center justify-between pb-4 border-b border-white/15">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-white/15">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-sm">
                         <Smartphone size={20} />
@@ -163,7 +193,7 @@ export function CTASection() {
                   </div>
 
                   {/* Quick Setup Pill */}
-                  <div className="pt-2 flex items-center justify-between text-xs text-violet-200 font-medium">
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-violet-200 font-medium">
                     <span className="flex items-center gap-1.5">
                       <CheckCircle2 size={14} className="text-emerald-300" /> Instant Circle Code
                     </span>

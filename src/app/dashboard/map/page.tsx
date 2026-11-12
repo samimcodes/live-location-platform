@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { MapSOSButton } from '@/components/map/EmergencySOSModal';
 import { MapChatDrawer } from '@/components/map/MapChatDrawer';
 import { GhostModeDialog } from '@/components/map/GhostModeDialog';
+import { MapAICopilot } from '@/components/map/MapAICopilot';
 import type { RoutingProfile } from '@/lib/mapUtils';
 
 // LiveMap is WebGL — client only
@@ -119,6 +120,24 @@ function MapPageInner() {
     setFocusedUserId(Number(focusParam));
     setMobileDrawerOpen(false);
   }
+
+  // Auto-center from ?lat=...&lng=...&zoom=... (e.g. Saved Places or Command Palette)
+  const latParam = searchParams?.get('lat');
+  const lngParam = searchParams?.get('lng');
+  const zoomParam = searchParams?.get('zoom');
+  const lastCenteredCoordsRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!mapLoaded || !latParam || !lngParam) return;
+    const lat = Number(latParam);
+    const lng = Number(lngParam);
+    const zoom = zoomParam ? Number(zoomParam) : 16;
+    const key = `${latParam},${lngParam},${zoom}`;
+    if (isValidLatLng(lat, lng) && lastCenteredCoordsRef.current !== key) {
+      lastCenteredCoordsRef.current = key;
+      flyTo(lat, lng, Number.isFinite(zoom) ? zoom : 16);
+    }
+  }, [mapLoaded, latParam, lngParam, zoomParam, flyTo]);
 
   const handleFitAll = useCallback(() => {
     fitToPoints(allPointsRef.current, 80);
@@ -265,7 +284,7 @@ function MapPageInner() {
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="absolute top-16 sm:top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none max-w-[min(94%,26rem)]"
+              className="absolute top-[74px] sm:top-[76px] left-1/2 -translate-x-1/2 z-30 pointer-events-none max-w-[min(94%,26rem)]"
             >
               <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-card/90 dark:bg-card/85 backdrop-blur-2xl border border-primary/40 shadow-xl">
                 <Loader2 size={15} className="animate-spin text-primary shrink-0" />
@@ -282,7 +301,7 @@ function MapPageInner() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-16 sm:top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-[min(94%,28rem)] flex flex-col gap-1.5"
+              className="absolute top-[74px] sm:top-[76px] left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-[min(94%,28rem)] flex flex-col gap-1.5"
             >
               <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-card/95 backdrop-blur-2xl border border-primary/40 shadow-2xl shadow-primary/10">
                 <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-primary flex items-center justify-center text-white shadow-md shrink-0">
@@ -389,7 +408,7 @@ function MapPageInner() {
         )}
 
         {/* ── Privacy / Ghost Mode & Battery Button ──────────── */}
-        <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
+        <div className="absolute bottom-4 left-3 sm:bottom-5 sm:left-4 z-20 flex items-center gap-2 pointer-events-auto">
           <button
             onClick={() => setGhostModalOpen(true)}
             className={cn(
@@ -429,6 +448,16 @@ function MapPageInner() {
 
         {/* ── Floating 1-Click Emergency SOS Dispatch Button ──── */}
         <MapSOSButton />
+
+        {/* ── AI Spatial Copilot ───────────────────────────────── */}
+        <MapAICopilot
+          myLocation={myLocation}
+          friendsLocations={Array.from(friendsLocations.values())}
+          friends={friends}
+          onFlyToPerson={(lat, lng) => flyTo(lat, lng, 16.5)}
+          onRouteToPerson={(lat, lng, name) => handleGetRouteTo(lat, lng, name)}
+          onFocusFriend={handleFocusFriend}
+        />
 
         {/* ── Mobile FAB: open friends drawer ─────────────────── */}
         <AnimatePresence>
@@ -471,7 +500,7 @@ function MapPageInner() {
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', stiffness: 340, damping: 32 }}
-                className="absolute inset-x-0 bottom-0 z-40 max-h-[75vh] flex flex-col bg-card rounded-t-3xl border-t border-border/70 shadow-2xl overflow-hidden lg:hidden"
+                className="absolute inset-x-0 bottom-0 z-40 max-h-[75dvh] flex flex-col bg-card rounded-t-3xl border-t border-border/70 shadow-2xl overflow-hidden lg:hidden"
               >
                 <div className="w-full flex justify-center pt-2.5 pb-1">
                   <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />

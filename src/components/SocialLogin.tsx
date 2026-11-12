@@ -45,7 +45,11 @@ export default function SocialLogin() {
         dispatch(setCredentials({ user: data.data.user, token: data.data.token }));
         useLocationStore.getState().setSharing(Boolean(data.data.user.sharingLocation));
         toast.success('Signed in with Google!');
-        router.push('/dashboard');
+        const params = new URLSearchParams(window.location.search);
+        const from = params.get('from');
+        const target = from && from.startsWith('/dashboard') ? from : '/dashboard';
+        router.refresh();
+        router.push(target);
       }
     } catch (err: unknown) {
       const msg =
@@ -56,21 +60,18 @@ export default function SocialLogin() {
   };
 
   if (!googleClientId) {
-    return (
-      <p className="text-xs text-muted-foreground text-center">
-        Set <code className="bg-muted px-1 rounded">NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> to enable social login.
-      </p>
-    );
+    return null;
   }
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
-      <div className="w-full flex justify-center">
+      <div className="w-full flex justify-center overflow-hidden rounded-xl">
         <GoogleLogin
           onSuccess={handleGoogleSuccess}
-          onError={() => toast.error('Google login failed')}
+          onError={() => toast.error('Google sign-in could not be completed')}
           useOneTap={false}
-          width="100%"
+          theme="outline"
+          shape="pill"
         />
       </div>
     </GoogleOAuthProvider>

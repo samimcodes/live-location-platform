@@ -35,6 +35,8 @@ import {
   X,
   Gauge,
   QrCode,
+  Battery,
+  Zap,
 } from "lucide-react";
 import { FriendQrModal } from "@/components/friends/FriendQrModal";
 import { cn } from "@/lib/utils";
@@ -443,7 +445,7 @@ export default function FriendsPage() {
           {...fadeUp(0.07)}
           className="xl:col-span-4 xl:sticky xl:top-4"
         >
-          <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+          <div className="rounded-3xl border border-border/60 bg-card/90 dark:bg-card/75 backdrop-blur-xl shadow-xs overflow-hidden transition-all duration-300">
             <div className="flex items-center gap-3 px-5 pt-4 pb-3">
               <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
                 <Search size={14} className="text-secondary-foreground" />
@@ -580,7 +582,7 @@ export default function FriendsPage() {
         {/* ── YOUR FRIENDS ───────────────────────────────────────── */}
         <motion.div {...fadeUp(0.12)} className="xl:col-span-8 min-w-0">
           {isLoading || isError || friends.length > 0 ? (
-            <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+            <div className="rounded-3xl border border-border/60 bg-card/90 dark:bg-card/75 backdrop-blur-xl shadow-xs overflow-hidden transition-all duration-300">
               <div className="flex items-center justify-between gap-3 px-5 py-3.5 flex-wrap">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -746,6 +748,10 @@ export default function FriendsPage() {
                       liveLoc?.speed != null && liveLoc.speed > 0
                         ? Math.round(liveLoc.speed * 3.6)
                         : null;
+                    const batteryLevel =
+                      liveLoc?.batteryLevel != null
+                        ? Math.round(liveLoc.batteryLevel)
+                        : null;
 
                     return (
                       <motion.div
@@ -756,7 +762,7 @@ export default function FriendsPage() {
                           delay: Math.min(i * 0.03, 0.24),
                           duration: 0.22,
                         }}
-                        className="flex flex-col justify-between rounded-2xl border border-border/50 bg-background/50 p-4 hover:border-border hover:shadow-sm transition-all"
+                        className="flex flex-col justify-between rounded-2xl border border-border/60 bg-card/85 dark:bg-card/65 backdrop-blur-md p-4 hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
                       >
                         <div>
                           <div className="flex items-start gap-3">
@@ -799,6 +805,24 @@ export default function FriendsPage() {
                                     <Gauge size={9} /> {speedKmh} km/h
                                   </span>
                                 )}
+
+                                {batteryLevel != null && (
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md",
+                                      batteryLevel <= 20 && !liveLoc?.isCharging
+                                        ? "text-destructive bg-destructive/10"
+                                        : "text-chart-5 bg-chart-5/10",
+                                    )}
+                                  >
+                                    {liveLoc?.isCharging ? (
+                                      <Zap size={9} />
+                                    ) : (
+                                      <Battery size={9} />
+                                    )}
+                                    {batteryLevel}%
+                                  </span>
+                                )}
                               </div>
                               {displayCity && friend.sharingLocation && (
                                 <p
@@ -827,7 +851,7 @@ export default function FriendsPage() {
                             onClick={() =>
                               router.push(`/dashboard/map?focus=${friend.id}`)
                             }
-                            className="h-8 flex-1 gap-1.5 text-xs rounded-lg"
+                            className="h-8 flex-1 gap-1.5 text-xs rounded-xl"
                           >
                             <Eye size={13} />
                             View on map
@@ -836,7 +860,7 @@ export default function FriendsPage() {
                             variant="ghost"
                             size="sm"
                             title="Remove friend"
-                            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             disabled={removingId === friend.id}
                             onClick={() => setConfirmFriend(friend)}
                           >
@@ -854,7 +878,7 @@ export default function FriendsPage() {
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-border/50 bg-card/50 px-8 py-16 text-center h-full min-h-64 flex flex-col items-center justify-center">
+            <div className="rounded-3xl border border-dashed border-border/50 bg-card/60 dark:bg-card/45 backdrop-blur-xl px-8 py-16 text-center h-full min-h-64 flex flex-col items-center justify-center">
               <div className="mx-auto h-16 w-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-5">
                 <Sparkles size={28} className="text-primary" />
               </div>

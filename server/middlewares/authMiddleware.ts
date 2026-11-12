@@ -44,12 +44,19 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
     req.user = decoded;
     next();
   } catch (err) {
-    clearAuthCookies(res);
-    // Expired tokens must be 401 so the Axios interceptor can refresh.
+    // Expired tokens must be 401 so the Axios interceptor can refresh using refreshToken.
+    // Clear ONLY the expired accessToken cookie; do NOT wipe the refreshToken!
     if (err instanceof jwt.TokenExpiredError) {
+      res.clearCookie('accessToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      });
       res.status(401).json({ success: false, message: 'Token expired.' });
       return;
     }
+    clearAuthCookies(res);
     res.status(403).json({ success: false, message: 'Invalid token.' });
   }
 };

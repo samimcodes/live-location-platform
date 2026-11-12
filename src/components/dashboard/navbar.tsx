@@ -22,6 +22,7 @@ import {
   ExternalLink,
   ChevronRight,
   Globe,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppSelector, useAppDispatch } from '@/store/store';
@@ -117,12 +118,12 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false, onOpenCo
     <header
       role="banner"
       aria-label="Dashboard top navigation"
-      className="h-16 flex items-center justify-between px-4 sm:px-6 bg-card/85 dark:bg-card/75 backdrop-blur-2xl border-b border-border/40 sticky top-0 z-40 shadow-xs"
+      className="h-16 flex items-center justify-between gap-2 px-3 sm:px-6 bg-card/85 dark:bg-card/75 backdrop-blur-2xl border-b border-border/40 sticky top-0 z-40 shadow-xs"
     >
       {/* ── Left Area — Mobile trigger & Command Search ─────────────── */}
-      <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
         <button
-          className="md:hidden p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+          className="md:hidden p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
           onClick={onMobileMenuToggle}
           aria-label="Toggle mobile menu"
           aria-expanded={mobileSidebarOpen}
@@ -131,11 +132,11 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false, onOpenCo
         </button>
 
         {/* Brand mark on mobile view */}
-        <div className="md:hidden flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white shadow-xs">
+        <div className="md:hidden flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0">
             <Radio size={14} />
           </div>
-          <span className="font-extrabold text-sm text-foreground tracking-tight">LocaLink</span>
+          <span className="hidden min-[400px]:inline font-extrabold text-sm text-foreground tracking-tight truncate">LocaLink</span>
         </div>
 
         {/* Spotlight Command Palette trigger */}
@@ -158,8 +159,33 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false, onOpenCo
       </div>
 
       {/* ── Right Area — Live Radar Pill, Theme, Notifications, Profile ─ */}
-      <div className="flex items-center gap-2 shrink-0">
-        
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+
+        {/* Global LocaLink AI Copilot Trigger */}
+        <Link
+          href="/dashboard/map?ai=1"
+          onClick={() => soundFx?.playPop?.()}
+          title="Open LocaLink AI Copilot & Voice"
+          className="relative overflow-hidden inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-slate-900 border border-cyan-400/50 hover:border-cyan-300 text-xs font-bold text-white transition-all shadow-[0_0_15px_rgba(56,189,248,0.35)] select-none group cursor-pointer"
+        >
+          {/* Shimmer Light Beam */}
+          <motion.span
+            initial={{ x: '-150%' }}
+            animate={{ x: '250%' }}
+            transition={{ repeat: Infinity, duration: 2.8, ease: 'easeInOut', repeatDelay: 1.0 }}
+            className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 pointer-events-none"
+          />
+          <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-gradient-to-tr from-cyan-400 via-indigo-500 to-violet-500 flex items-center justify-center text-white shrink-0 shadow-xs">
+            <Sparkles size={11} className="animate-pulse" />
+          </div>
+          <span className="text-[11px] sm:text-xs font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-100 to-white bg-clip-text text-transparent">
+            LocaLink AI
+          </span>
+          <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-[9px] font-mono text-cyan-300 font-bold">
+            Live
+          </span>
+        </Link>
+
         {/* Live Location Broadcasting Pill */}
         <Link
           href="/dashboard/settings"
@@ -229,7 +255,7 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false, onOpenCo
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                 transition={{ duration: 0.18, ease: 'easeOut' }}
-                className="absolute right-0 top-12 w-80 sm:w-92 bg-card/95 backdrop-blur-2xl border border-border/60 rounded-3xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/5 dark:ring-white/10"
+                className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-17 sm:top-12 sm:w-92 bg-card/95 backdrop-blur-2xl border border-border/60 rounded-3xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/5 dark:ring-white/10"
               >
                 {/* Popover Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border/40 bg-muted/20">
@@ -365,7 +391,7 @@ export function Navbar({ onMobileMenuToggle, mobileSidebarOpen = false, onOpenCo
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                 transition={{ duration: 0.18, ease: 'easeOut' }}
-                className="absolute right-0 top-12 w-64 bg-card/95 backdrop-blur-2xl border border-border/60 rounded-3xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/5 dark:ring-white/10"
+                className="absolute right-0 top-12 w-[min(16rem,calc(100vw-1.5rem))] bg-card/95 backdrop-blur-2xl border border-border/60 rounded-3xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/5 dark:ring-white/10"
               >
                 {/* User Info Header */}
                 <div className="px-5 py-4 border-b border-border/40 bg-muted/20">

@@ -527,9 +527,9 @@ export function LiveMap({
         </div>
       )}
 
-      {/* ── Live Speedometer & Compass HUD (Bottom-Left) ────────── */}
+      {/* ── Live Speedometer & Compass HUD (Bottom-Left, stacked cleanly above action pills) ────────── */}
       {mapLoaded && myLocation && (
-        <div className="absolute bottom-6 left-4 z-20 pointer-events-none hidden sm:flex items-center gap-2">
+        <div className="absolute bottom-18 left-4 z-20 pointer-events-none hidden sm:flex items-center gap-2">
           <div className="pointer-events-auto flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-card/85 backdrop-blur-2xl border border-border/70 shadow-xl">
             <div className="flex items-center gap-1.5">
               <Gauge size={15} className="text-primary animate-pulse" />

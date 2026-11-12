@@ -51,11 +51,13 @@ function MapBtn({
   title,
   children,
   active,
+  className,
 }: {
   onClick:  () => void;
   title:    string;
   children: React.ReactNode;
   active?:  boolean;
+  className?: string;
 }) {
   return (
     <button
@@ -68,6 +70,7 @@ function MapBtn({
         active
           ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/25 font-bold'
           : 'bg-background/80 text-foreground/80 border-border/60 hover:bg-background hover:text-foreground shadow-xs',
+        className,
       )}
     >
       {children}
@@ -128,14 +131,14 @@ export function MapControls({
   };
 
   return (
-    <div className={cn('flex items-center justify-between gap-3 px-3 py-2', className)}>
+    <div className={cn('flex items-center justify-between gap-2 sm:gap-3 px-2.5 sm:px-3 py-2', className)}>
 
       {/* ── Left: Search slot + Sharing toggle + Friend count ────────── */}
-      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
         
         {/* Search Bar Slot */}
         {searchSlot && (
-          <div className="shrink-0 max-w-[15rem] sm:max-w-xs w-full">
+          <div className="min-w-0 flex-1 max-w-xs">
             {searchSlot}
           </div>
         )}
@@ -263,6 +266,7 @@ export function MapControls({
             onClick={onToggle3D}
             title={is3D ? 'Reset to 2D Top View' : 'Switch to 3D Perspective Tilt'}
             active={is3D}
+            className="hidden min-[440px]:flex"
           >
             <Compass size={15} className={cn('transition-transform duration-300', is3D && 'rotate-45')} />
           </MapBtn>
@@ -270,7 +274,7 @@ export function MapControls({
 
         {/* Fit all points */}
         {allPoints.length > 0 && (
-          <MapBtn onClick={onFitAll} title={`Fit all ${allPoints.length} pins`}>
+          <MapBtn onClick={onFitAll} title={`Fit all ${allPoints.length} pins`} className="hidden min-[380px]:flex">
             <Scan size={15} />
           </MapBtn>
         )}

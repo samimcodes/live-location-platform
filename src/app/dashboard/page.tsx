@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { useAppSelector } from "@/store/store";
 import { useFriends, type Friend } from "@/hooks/useFriends";
 import { useGroups } from "@/hooks/useGroups";
@@ -44,9 +45,22 @@ import {
   Activity,
   TrendingUp,
   Compass,
+  Battery,
 } from "lucide-react";
 import StatsChart from "@/components/dashboard/StatsChart";
 import { soundFx } from "@/lib/soundFx";
+
+function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 const MiniMap = dynamic(
   () => import("@/components/map/MiniMap").then((m) => m.MiniMap),
@@ -241,31 +255,72 @@ export default function DashboardPage() {
 
   const isLoading = friendsLoading || groupsLoading;
 
+  // ── Real Location History Records from Database ────────────────────
+  const { data: historyRecords = [] } = useQuery<Array<{
+    latitude: number;
+    longitude: number;
+    speed?: number;
+    recordedAt: string;
+  }>>({
+    queryKey: ['dashboard-real-history'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/location/history', { params: { limit: 300 } });
+        return res.data?.data?.records ?? [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 60_000,
+  });
+
   const [chartMetric, setChartMetric] = useState<'signals' | 'active' | 'distance'>('signals');
 
   const activityData = useMemo(() => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const today = new Date();
     const list = [];
+
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const dayName = days[d.getDay()];
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const dayEnd = dayStart + 86400000;
+
+      // Filter real entries recorded on this exact calendar day
+      const dayEntries = historyRecords.filter((r) => {
+        const t = new Date(r.recordedAt).getTime();
+        return t >= dayStart && t < dayEnd;
+      });
 
       let val = 0;
       if (chartMetric === 'signals') {
-        const base = friendsLocations.size * 8 + (isSharing ? 20 : 5);
-        val = Math.max(6, base + ((i * 7 + 4) % 16));
+        val = dayEntries.length;
+        // If today and broadcasting live, ensure live broadcast updates are reflected
+        if (i === 0 && val === 0 && isSharing) {
+          val = Math.max(1, friendsLocations.size + 1);
+        }
       } else if (chartMetric === 'active') {
-        val = Math.max(1, Math.min(Math.max(1, friends.length), onlineFriends.length + ((i + 2) % 3)));
+        val = i === 0 ? onlineFriends.length : (dayEntries.length > 0 ? 1 : 0);
       } else {
-        val = Math.max(2, (i * 3 + (friendsLocations.size * 2)) % 15 + 3);
+        // Real distance in km computed from consecutive history coordinates
+        let dayDist = 0;
+        for (let j = 1; j < dayEntries.length; j++) {
+          dayDist += haversineDistanceKm(
+            dayEntries[j - 1].latitude,
+            dayEntries[j - 1].longitude,
+            dayEntries[j].latitude,
+            dayEntries[j].longitude
+          );
+        }
+        val = Math.round(dayDist * 10) / 10;
       }
 
       list.push({ date: i === 0 ? 'Today' : dayName, value: val });
     }
     return list;
-  }, [chartMetric, friendsLocations.size, isSharing, friends.length, onlineFriends.length]);
+  }, [chartMetric, historyRecords, isSharing, friendsLocations.size, onlineFriends.length]);
 
   const handleToggleSharing = useCallback(async () => {
     if (togglingSharing) return;
@@ -513,6 +568,20 @@ export default function DashboardPage() {
                 </div>
               )}
 
+              {/* Device Battery Telemetry */}
+              {myLocation?.batteryLevel != null && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-semibold bg-background/80 backdrop-blur-md border border-border/60 text-foreground/85 shadow-2xs">
+                  {myLocation.isCharging ? (
+                    <Zap size={13} className="text-amber-500 fill-amber-500 animate-pulse" />
+                  ) : (
+                    <Battery size={13} className={myLocation.batteryLevel < 20 ? "text-red-500" : "text-emerald-500"} />
+                  )}
+                  <span>
+                    {myLocation.batteryLevel}% {myLocation.isCharging ? "Charging" : "Battery"}
+                  </span>
+                </div>
+              )}
+
               {/* Network Pill */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-semibold bg-background/80 backdrop-blur-md border border-border/60 text-foreground/85 shadow-2xs">
                 <Users size={13} className="text-primary" />
@@ -587,7 +656,7 @@ export default function DashboardPage() {
           className="lg:col-span-5 flex flex-col gap-5"
         >
           {/* Mini Map & Location Status Widget */}
-          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs transition-all hover:shadow-md">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/90 dark:bg-card/75 backdrop-blur-xl shadow-xs transition-all duration-300 hover:border-primary/30 hover:shadow-md">
             {myLocation ? (
               <div className="relative">
                 <MiniMap
@@ -706,7 +775,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions Card */}
-          <div className="rounded-3xl border border-border/60 bg-card p-5 shadow-xs">
+          <div className="rounded-3xl border border-border/60 bg-card/90 dark:bg-card/75 backdrop-blur-xl p-5 shadow-xs transition-all duration-300 hover:border-primary/30 hover:shadow-md">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary/10">
@@ -751,7 +820,7 @@ export default function DashboardPage() {
           className="lg:col-span-7 flex flex-col gap-5"
         >
           {/* On the Map — Friends Streaming Live Coordinates */}
-          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/90 dark:bg-card/75 backdrop-blur-xl shadow-xs transition-all duration-300 hover:border-primary/30 hover:shadow-md">
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
@@ -827,6 +896,11 @@ export default function DashboardPage() {
                           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                             Live
                           </span>
+                          {loc?.batteryLevel != null && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-muted text-muted-foreground border border-border">
+                              {loc.isCharging ? '⚡' : ''}{loc.batteryLevel}%
+                            </span>
+                          )}
                         </div>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {locationLabel(friend, loc)}
@@ -847,7 +921,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Online Circle Feed */}
-          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/90 dark:bg-card/75 backdrop-blur-xl shadow-xs transition-all duration-300 hover:border-primary/30 hover:shadow-md">
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative">
@@ -960,7 +1034,7 @@ export default function DashboardPage() {
           ACTIVITY & GPS TRENDS CHART
           ══════════════════════════════════════════════════════════════════ */}
       <motion.div {...fadeUp(0.2)}>
-        <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs p-6">
+        <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/90 dark:bg-card/75 backdrop-blur-xl shadow-xs p-6 transition-all duration-300 hover:border-primary/30 hover:shadow-md">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
@@ -1024,7 +1098,7 @@ export default function DashboardPage() {
           ══════════════════════════════════════════════════════════════════ */}
       {!groupsLoading && groups.length > 0 && (
         <motion.div {...fadeUp(0.22)}>
-          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xs">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/90 dark:bg-card/75 backdrop-blur-xl shadow-xs transition-all duration-300 hover:border-primary/30 hover:shadow-md">
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-chart-2/10">

@@ -71,7 +71,7 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'relative flex flex-col h-screen bg-card/90 dark:bg-card/75 backdrop-blur-2xl border-r border-border/50 transition-all duration-300 ease-in-out z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.2)]',
+        'relative flex flex-col h-dvh bg-card/90 dark:bg-card/75 backdrop-blur-2xl border-r border-border/50 transition-all duration-300 ease-in-out z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.2)]',
         isCollapsed ? 'w-[76px]' : 'w-64'
       )}
     >

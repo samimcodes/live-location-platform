@@ -101,11 +101,11 @@ export default function KpiCard({
         className={cn(
           // Layout & shape
           "relative flex flex-col justify-between h-full overflow-hidden",
-          "rounded-2xl bg-card border border-border/60",
-          "p-5",
+          "rounded-3xl bg-card/90 dark:bg-card/75 border border-border/60 shadow-xs backdrop-blur-xl",
+          "p-5 sm:p-6",
           // Transitions — uses globals.css .card-shine and .glow-shadow
           "transition-all duration-300 ease-out",
-          "hover:shadow-xl hover:-translate-y-1",
+          "hover:shadow-xl hover:-translate-y-1 hover:border-primary/40",
           "card-shine glow-shadow",
         )}
       >

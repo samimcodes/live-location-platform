@@ -14,6 +14,9 @@ import { Eye, EyeOff, Mail, Lock, User, Navigation, ArrowRight, ShieldCheck } fr
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { soundFx } from '@/lib/soundFx';
+import { useAppDispatch } from '@/store/store';
+import { setCredentials } from '@/store/slices/authSlice';
+import { useLocationStore } from '@/store/useLocationStore';
 
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -32,6 +35,7 @@ export function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const {
     register,
@@ -59,25 +63,36 @@ export function SignUpForm() {
     soundFx?.playPop?.();
     try {
       const payload = {
-        name: formData.name,
-        email: formData.email,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
       };
       const { data } = await api.post('/auth/register', payload);
       if (data.success) {
         soundFx?.playChime?.();
-        toast.success('Account created successfully!', { description: 'Please sign in to access your dashboard.' });
-        router.push('/login');
+        if (data.data?.token) {
+          localStorage.setItem('token', data.data.token);
+          dispatch(setCredentials({ user: data.data.user, token: data.data.token }));
+          useLocationStore.getState().setSharing(Boolean(data.data.user?.sharingLocation));
+          toast.success('Account created successfully!', {
+            description: 'Welcome to LocaLink! Redirecting to dashboard…',
+          });
+          router.refresh();
+          router.push('/dashboard');
+        } else {
+          toast.success('Account created successfully!', {
+            description: 'Please sign in to access your dashboard.',
+          });
+          router.push('/login');
+        }
       } else {
         throw new Error(data.message);
       }
     } catch (err: unknown) {
       soundFx?.playAlert?.();
       const msg =
-        err instanceof Error
-          ? err.message
-          : (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-            ?? 'Registration failed. Please try again.';
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? (err instanceof Error ? err.message : 'Registration failed. Please try again.');
       toast.error(msg);
     } finally {
       setIsLoading(false);

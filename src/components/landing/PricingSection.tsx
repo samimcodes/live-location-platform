@@ -2,261 +2,303 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Check,
-  Sparkles,
-  Zap,
-  Shield,
-  Users,
-  Crown,
-  ArrowRight,
-  HelpCircle,
-  ShieldCheck,
-  CheckCircle2,
-} from 'lucide-react';
+import { Check, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { soundFx } from '@/lib/soundFx';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 
-const tiers = [
+interface PricingTier {
+  id: string;
+  name: string;
+  tagline: string;
+  monthlyPrice: string;
+  yearlyPrice: string;
+  yearlyTotal: string;
+  cta: string;
+  ctaAuthenticated: string;
+  highlight: boolean;
+  featureHeading: string;
+  features: string[];
+}
+
+const tiers: PricingTier[] = [
   {
+    id: 'free',
     name: 'Free Circle',
-    tagline: 'Essential real-time tracking for individuals and small families.',
-    priceMonthly: 0,
-    priceYearly: 0,
-    popular: false,
-    badge: 'FREE FOREVER',
-    features: [
-      'Up to 5 Circle Members',
-      '1 Private Circle Hub',
-      'Real-time 15s GPS Map Tracking',
-      '2 Custom Geofence Safe Zones',
-      '7-Day Location Route History',
-      'Ghost Mode Privacy Controls',
-      'Standard Web & Mobile Access',
-    ],
+    tagline: 'Real-time sharing, Ghost Mode, and SOS safety for everyday personal circles.',
+    monthlyPrice: '0',
+    yearlyPrice: '0',
+    yearlyTotal: 'Free forever · No card required',
     cta: 'Get Started Free',
-    href: '/register?plan=free',
+    ctaAuthenticated: 'Open Dashboard',
     highlight: false,
+    featureHeading: 'Core features included',
+    features: [
+      'Up to 5 active Circle members',
+      'Sub-second WebSocket GPS updates',
+      '1-tap Ghost Mode privacy toggle',
+      'Instant 1-tap SOS alert broadcast',
+      '24-hour route & location timeline',
+    ],
   },
   {
+    id: 'family-pro',
     name: 'Family Pro',
-    tagline: 'Total peace of mind with 30-day replay and emergency dispatch.',
-    priceMonthly: 4.99,
-    priceYearly: 3.99,
-    popular: true,
-    badge: 'MOST POPULAR',
-    features: [
-      'Up to 15 Circle Members',
-      'Unlimited Private Circles',
-      'Sub-20ms Real-Time GPS Tracking',
-      'Unlimited Geofence Safe Zones',
-      '30-Day Interactive Route Replay',
-      '1-Click Emergency SOS Dispatch & SMS',
-      'Low Battery & Speed Alerts (<15%)',
-      'Individual Ghost Mode Granularity',
-    ],
-    cta: 'Start 14-Day Free Trial',
-    href: '/register?plan=family-pro',
+    tagline: 'Extended route history, unlimited Smart Zones, and proactive safety alerts.',
+    monthlyPrice: '4.99',
+    yearlyPrice: '3.99',
+    yearlyTotal: 'Billed $47.88 / member annually',
+    cta: 'Start Family Pro',
+    ctaAuthenticated: 'Manage Plan',
     highlight: true,
+    featureHeading: 'Everything in Free, plus',
+    features: [
+      'Unlimited Circle members & groups',
+      'Unlimited Smart Arrival & Departure Zones',
+      '30-day route playback & GPX export',
+      'Low-battery & connectivity alerts',
+      'Priority SOS escalation notifications',
+    ],
   },
   {
+    id: 'fleet-teams',
     name: 'Fleet & Teams',
-    tagline: 'Advanced telemetry and admin controls for teams & organizations.',
-    priceMonthly: 12.99,
-    priceYearly: 9.99,
-    popular: false,
-    badge: 'FOR TEAMS',
-    features: [
-      'Unlimited Circle Members',
-      'Unlimited Circles & Sub-teams',
-      '1-Year GPS Timeline History',
-      'Custom Geofence Radius & Polygonal Zones',
-      'Admin Role Management & Audit Logs',
-      'Priority Socket.IO Dedicated Bandwidth',
-      'REST API & Webhook Integrations',
-      '24/7 Dedicated Support Specialist',
-    ],
-    cta: 'Get Team Access',
-    href: '/register?plan=fleet-teams',
+    tagline: 'Shared dispatcher map views, multi-room coordination, and 90-day audit logs.',
+    monthlyPrice: '12.99',
+    yearlyPrice: '9.99',
+    yearlyTotal: 'Billed $119.88 / seat annually',
+    cta: 'Create Team Workspace',
+    ctaAuthenticated: 'Manage Team',
     highlight: false,
+    featureHeading: 'Everything in Family Pro, plus',
+    features: [
+      'Multiple dedicated team rooms',
+      '90-day timeline & GPX activity logs',
+      'Shared dispatcher map overview',
+      'Bulk member invite & role controls',
+      'Dedicated onboarding support',
+    ],
   },
 ];
 
 export function PricingSection() {
+  const { isAuthenticated } = useAuth();
   const [isYearly, setIsYearly] = useState(true);
 
   const handleToggleBilling = (yearly: boolean) => {
-    soundFx.playPop();
+    if (yearly === isYearly) return;
+    soundFx?.playPop();
     setIsYearly(yearly);
   };
 
   return (
     <section
       id="pricing"
-      className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden bg-[#F6F8FD] dark:bg-background scroll-mt-16"
+      className="relative scroll-mt-16 border-t border-slate-200/80 bg-[#F6F8FD] px-4 py-16 dark:border-white/[0.06] dark:bg-[#070B16] sm:px-6 sm:py-24 lg:py-28"
     >
-      {/* Background ambient lighting */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-violet-500/10 dark:bg-violet-950/20 rounded-full blur-[140px] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto relative z-10">
-        {/* Header */}
+      <div className="mx-auto max-w-6xl">
+        {/* Clean Editorial Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 14 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="text-center mb-16 sm:mb-20"
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.4 }}
+          className="mx-auto mb-12 max-w-2xl text-center sm:mb-14"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 text-xs font-bold shadow-2xs mb-5">
-            <Crown size={14} />
-            <span>Transparent & Fair Pricing</span>
-          </div>
-
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-950 dark:text-white mb-6 tracking-tight leading-[1.1]">
-            Simple plans for{' '}
-            <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">
-              every size circle
-            </span>
-          </h2>
-
-          <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
-            Start for free with no credit card required. Upgrade anytime your family or team needs extended history and emergency features.
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-400">
+            Pricing
           </p>
 
-          {/* Billing Switcher */}
-          <div className="mt-8 inline-flex items-center gap-2 p-1.5 bg-white dark:bg-[#0E1528] rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm">
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl lg:text-[42px] lg:leading-[1.15]">
+            Transparent plans that scale with your circle
+          </h2>
+
+          <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">
+            Start free with real-time GPS, Ghost Mode, and SOS alerts. Upgrade only when you need extended history or team workspaces.
+          </p>
+
+          {/* Clean Segmented Billing Toggle */}
+          <div className="mt-8 inline-flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-xs dark:border-white/[0.08] dark:bg-[#0D1426]">
             <button
+              type="button"
+              aria-pressed={!isYearly}
               onClick={() => handleToggleBilling(false)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`relative rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors sm:text-sm ${
                 !isYearly
-                  ? 'bg-violet-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  ? 'text-white dark:text-slate-900'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
-              Monthly Billing
+              {!isYearly && (
+                <motion.span
+                  layoutId="pricing-billing-pill"
+                  transition={{ type: 'spring', stiffness: 450, damping: 36 }}
+                  className="absolute inset-0 rounded-lg bg-slate-900 dark:bg-white"
+                />
+              )}
+              <span className="relative z-10">Monthly</span>
             </button>
+
             <button
+              type="button"
+              aria-pressed={isYearly}
               onClick={() => handleToggleBilling(true)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              className={`relative flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors sm:text-sm ${
                 isYearly
-                  ? 'bg-violet-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  ? 'text-white dark:text-slate-900'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
-              <span>Annual Billing</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                SAVE 20%
+              {isYearly && (
+                <motion.span
+                  layoutId="pricing-billing-pill"
+                  transition={{ type: 'spring', stiffness: 450, damping: 36 }}
+                  className="absolute inset-0 rounded-lg bg-slate-900 dark:bg-white"
+                />
+              )}
+              <span className="relative z-10">Annual</span>
+              <span
+                className={`relative z-10 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide transition-colors ${
+                  isYearly
+                    ? 'bg-emerald-500/20 text-emerald-300 dark:bg-emerald-600/15 dark:text-emerald-700'
+                    : 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400'
+                }`}
+              >
+                Save 20%
               </span>
             </button>
           </div>
         </motion.div>
 
-        {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+        {/* Aligned 3-Column Grid */}
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3 lg:gap-6">
           {tiers.map((tier, idx) => {
-            const price = isYearly ? tier.priceYearly : tier.priceMonthly;
+            const activePrice = isYearly ? tier.yearlyPrice : tier.monthlyPrice;
+            const isFree = activePrice === '0';
+            const showDiscount = isYearly && !isFree;
+            const ctaHref = isAuthenticated
+              ? tier.id === 'free'
+                ? '/dashboard'
+                : '/dashboard/settings'
+              : '/register';
+            const ctaLabel = isAuthenticated ? tier.ctaAuthenticated : tier.cta;
+
             return (
               <motion.div
-                key={tier.name}
-                initial={{ opacity: 0, y: 30 }}
+                key={tier.id}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.5, delay: idx * 0.1, ease: 'easeOut' }}
-                className={`relative rounded-[30px] p-8 sm:p-9 flex flex-col justify-between transition-all duration-300 text-left ${
+                transition={{ duration: 0.35, delay: idx * 0.06 }}
+                className={`relative flex h-full flex-col rounded-2xl bg-white p-6 transition-colors dark:bg-[#0D1426] sm:p-8 ${
                   tier.highlight
-                    ? 'bg-white dark:bg-[#0E1528] border-2 border-violet-600 shadow-[0_20px_60px_rgba(124,58,237,0.18)] lg:-translate-y-2'
-                    : 'bg-white/95 dark:bg-[#0E1528]/80 border border-slate-200/90 dark:border-slate-800/80 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:border-violet-300 dark:hover:border-violet-700'
+                    ? 'border border-indigo-500/70 shadow-[0_18px_45px_-22px_rgba(79,70,229,0.28)] ring-1 ring-indigo-500/15 dark:border-indigo-400/50 dark:ring-indigo-400/15'
+                    : 'border border-slate-200/90 shadow-xs hover:border-slate-300 dark:border-white/[0.08] dark:hover:border-white/[0.16]'
                 }`}
               >
-                {/* Popular Pill */}
-                {tier.popular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[10px] font-black tracking-widest shadow-md">
-                    {tier.badge}
-                  </div>
-                )}
+                {/* Title & Inline Popular Pill */}
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+                    {tier.name}
+                  </h3>
+                  {tier.highlight && (
+                    <span className="rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-600 dark:bg-indigo-400/15 dark:text-indigo-300">
+                      Most Popular
+                    </span>
+                  )}
+                </div>
 
-                <div>
-                  <div className="flex items-center justify-between pb-2">
-                    <h3 className="text-xl font-black text-slate-900 dark:text-foreground">
-                      {tier.name}
-                    </h3>
-                    {!tier.popular && (
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                        {tier.badge}
+                <p className="mt-2 min-h-[42px] text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                  {tier.tagline}
+                </p>
+
+                {/* Price */}
+                <div className="mt-6 border-b border-slate-200/80 pb-6 dark:border-white/[0.08]">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold tracking-tight text-slate-900 tabular-nums dark:text-white">
+                      ${activePrice}
+                    </span>
+                    {showDiscount && (
+                      <span className="text-sm font-medium text-slate-400 line-through tabular-nums dark:text-slate-500">
+                        ${tier.monthlyPrice}
                       </span>
                     )}
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      {isFree ? '/ forever' : '/ member / month'}
+                    </span>
                   </div>
-
-                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed min-h-[36px]">
-                    {tier.tagline}
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    {isFree
+                      ? tier.yearlyTotal
+                      : isYearly
+                        ? tier.yearlyTotal
+                        : 'Billed monthly · Cancel anytime'}
                   </p>
+                </div>
 
-                  {/* Price */}
-                  <div className="my-6 flex items-baseline gap-1.5">
-                    <span className="text-4xl sm:text-5xl font-black text-slate-950 dark:text-white">
-                      ${price}
-                    </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                      / user {price > 0 ? (isYearly ? '/ month (billed yearly)' : '/ month') : ''}
-                    </span>
-                  </div>
-
-                  {/* Feature Checklist */}
-                  <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-3">
-                      Included Capabilities:
-                    </span>
-                    {tier.features.map((f) => (
-                      <div key={f} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-                        <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
-                        <span>{f}</span>
-                      </div>
+                {/* Features */}
+                <div className="mt-6 flex-1">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {tier.featureHeading}
+                  </p>
+                  <ul className="mt-4 space-y-3">
+                    {tier.features.map((feat) => (
+                      <li
+                        key={feat}
+                        className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-200"
+                      >
+                        <Check
+                          className={`mt-0.5 h-4 w-4 shrink-0 ${
+                            tier.highlight
+                              ? 'text-indigo-600 dark:text-indigo-400'
+                              : 'text-slate-400 dark:text-slate-500'
+                          }`}
+                        />
+                        <span>{feat}</span>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
 
-                {/* Action CTA Button */}
-                <div className="pt-8 mt-6 border-t border-slate-100 dark:border-slate-800">
+                {/* CTA */}
+                <Link href={ctaHref} className="mt-8 block w-full">
                   <Button
-                    size="lg"
-                    className={`relative w-full h-12 font-bold text-xs sm:text-sm rounded-2xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 overflow-hidden group active:scale-[0.98] ${
+                    type="button"
+                    onClick={() => soundFx?.playPop()}
+                    className={`group flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all ${
                       tier.highlight
-                        ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-[0_8px_25px_rgba(124,58,237,0.35)] hover:shadow-[0_14px_35px_rgba(124,58,237,0.55)] border border-white/25 hover:-translate-y-0.5'
-                        : 'bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 hover:-translate-y-0.5 shadow-xs'
+                        ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400'
+                        : 'border border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-white dark:hover:bg-white/[0.09]'
                     }`}
-                    onClick={() => soundFx.playPop()}
-                    asChild
                   >
-                    <Link href={tier.href}>
-                      {tier.highlight && (
-                        <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
-                      )}
-                      <span className="relative z-10">{tier.cta}</span>
-                      <ArrowRight size={15} className="relative z-10 group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                    <span>{ctaLabel}</span>
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </Button>
-                </div>
+                </Link>
               </motion.div>
             );
           })}
         </div>
 
-        {/* Guarantee Banner */}
-        <div className="mt-12 flex items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-          <span className="flex items-center gap-1.5 font-medium">
-            <CheckCircle2 size={14} className="text-emerald-500" /> 14-day free trial on Pro
+        {/* Clean Minimal Trust Line */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            End-to-end encrypted telemetry
           </span>
-          <span className="h-3 w-px bg-slate-200 dark:bg-border hidden sm:block" />
-          <span className="flex items-center gap-1.5 font-medium">
-            <ShieldCheck size={14} className="text-violet-500" /> Cancel anytime with 1 click
+          <span aria-hidden="true" className="hidden text-slate-300 dark:text-slate-700 sm:inline">
+            •
           </span>
-          <span className="h-3 w-px bg-slate-200 dark:bg-border hidden sm:block" />
-          <span className="flex items-center gap-1.5 font-medium">
-            <Zap size={14} className="text-amber-500" /> No credit card required for Free Circle
+          <span>No ad tracking or data resale</span>
+          <span aria-hidden="true" className="hidden text-slate-300 dark:text-slate-700 sm:inline">
+            •
           </span>
+          <span>Switch or cancel anytime</span>
         </div>
       </div>
     </section>
   );
 }
+
+export default PricingSection;

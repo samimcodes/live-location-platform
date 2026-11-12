@@ -101,7 +101,7 @@ export function TestimonialsSection() {
   return (
     <section
       id="testimonials"
-      className="py-24 sm:py-32 px-0 relative overflow-hidden bg-white dark:bg-[#070B16] border-t border-slate-200/80 dark:border-slate-800/80 scroll-mt-16"
+      className="py-16 sm:py-24 lg:py-28 px-0 relative overflow-hidden bg-white dark:bg-[#070B16] border-t border-slate-200/80 dark:border-slate-800/80 scroll-mt-16"
     >
       {/* High-tech ambient glowing lights */}
       <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[550px] h-[350px] bg-violet-600/10 dark:bg-violet-900/15 rounded-full blur-[140px] pointer-events-none" />
@@ -141,8 +141,8 @@ export function TestimonialsSection() {
         onMouseLeave={() => setIsPaused(false)}
       >
         {/* Left & Right Gradient Fog Masks for Seamless Edge Fade */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-40 bg-gradient-to-r from-white dark:from-[#070B16] via-white/80 dark:via-[#070B16]/80 to-transparent z-20 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-40 bg-gradient-to-l from-white dark:from-[#070B16] via-white/80 dark:via-[#070B16]/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-40 bg-gradient-to-r from-white dark:from-[#070B16] via-white/80 dark:via-[#070B16]/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-40 bg-gradient-to-l from-white dark:from-[#070B16] via-white/80 dark:via-[#070B16]/80 to-transparent z-20 pointer-events-none" />
 
         {/* Animated Marquee Flex Track */}
         <motion.div
@@ -160,17 +160,17 @@ export function TestimonialsSection() {
           {marqueeItems.map((item, idx) => (
             <div
               key={`${item.id}-${idx}`}
-              className="w-[340px] sm:w-[390px] shrink-0 relative bg-white/90 dark:bg-[#0D1426]/90 backdrop-blur-2xl p-6 sm:p-7 rounded-[28px] border border-slate-200/90 dark:border-slate-800/90 shadow-[0_4px_25px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.3)] hover:border-violet-500/50 dark:hover:border-violet-500/50 hover:shadow-[0_20px_45px_rgba(124,58,237,0.12)] transition-all duration-300 flex flex-col justify-between text-left select-none hover:-translate-y-1.5 group overflow-hidden"
+              className="w-[min(340px,84vw)] sm:w-[390px] shrink-0 relative bg-white/90 dark:bg-[#0D1426]/90 backdrop-blur-2xl p-5 sm:p-7 rounded-[28px] border border-slate-200/90 dark:border-slate-800/90 shadow-[0_4px_25px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.3)] hover:border-violet-500/50 dark:hover:border-violet-500/50 hover:shadow-[0_20px_45px_rgba(124,58,237,0.12)] transition-all duration-300 flex flex-col justify-between text-left select-none hover:-translate-y-1.5 group overflow-hidden"
             >
               {/* Top Hairline Glowing Gradient Accent */}
               <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-violet-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
               <div>
                 {/* ── CARD HEADER: User Info + Stars ── */}
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                     <div className="relative shrink-0">
-                      <div className="h-11 w-11 rounded-full overflow-hidden ring-2 ring-violet-500/30 group-hover:ring-violet-500 transition-all shadow-xs">
+                      <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-full overflow-hidden ring-2 ring-violet-500/30 group-hover:ring-violet-500 transition-all shadow-xs">
                         <Image
                           src={item.avatar}
                           alt={item.name}
@@ -209,7 +209,7 @@ export function TestimonialsSection() {
               </div>
 
               {/* ── CARD FOOTER: Feature Pill ── */}
-              <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/90 dark:bg-[#131C35] text-slate-700 dark:text-slate-300 text-[10px] font-mono font-semibold border border-slate-200/70 dark:border-slate-700/60">
                   <span>{item.tagIcon}</span>
                   <span>{item.tag}</span>

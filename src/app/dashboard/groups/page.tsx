@@ -248,7 +248,7 @@ export default function GroupsPage() {
 
       {/* ── HEADER ─────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm transition-all hover:shadow-md">
+        <div className="relative overflow-hidden rounded-3xl bg-card/90 dark:bg-card/75 backdrop-blur-xl border border-border/60 shadow-xs transition-all duration-300 hover:border-primary/30 hover:shadow-md">
           {/* Subtle gradient background accent */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-3/5" />
           <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-[80px] opacity-60 pointer-events-none" />
@@ -506,7 +506,7 @@ export default function GroupsPage() {
         /* ── Empty state ── */
         <motion.div
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-8 py-24 text-center"
+          className="rounded-3xl border border-dashed border-border/60 bg-card/60 dark:bg-card/45 backdrop-blur-xl px-8 py-24 text-center"
         >
           <div className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-br from-violet-500/15 to-fuchsia-500/15 border border-violet-500/20 flex items-center justify-center mb-6">
             <Users2 size={32} className="text-violet-500" />
@@ -524,7 +524,7 @@ export default function GroupsPage() {
         /* ── Filtered Empty state ── */
         <motion.div
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-8 py-16 text-center"
+          className="rounded-3xl border border-dashed border-border/60 bg-card/60 dark:bg-card/45 backdrop-blur-xl px-8 py-16 text-center"
         >
           <div className="mx-auto h-14 w-14 rounded-2xl bg-muted/60 flex items-center justify-center mb-3">
             <Search size={22} className="text-muted-foreground/40" />

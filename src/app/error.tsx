@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { Home, RefreshCw, Shield, AlertTriangle } from 'lucide-react';
 
 export default function Error({
-  _error,
+  error: _error,
   reset,
 }: {
-  _error?: Error & { digest?: string };
+  error: Error & { digest?: string };
   reset: () => void;
 }) {
   const [isRetrying, setIsRetrying] = useState(false);
