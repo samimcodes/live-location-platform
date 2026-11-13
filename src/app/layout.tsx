@@ -24,7 +24,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'LocaLink — Real-Time Family & Friends GPS Platform',
   description: 'Share your real-time location with family and friends, stay safe together with smart geofencing, route history, and emergency alerts.',
-  icons: { icon: '/favicon.ico' },
+  icons: {
+    icon: [
+      { url: '/logo.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico' },
+    ],
+    apple: '/logo.svg',
+  },
   manifest: '/manifest.json',
 };
 

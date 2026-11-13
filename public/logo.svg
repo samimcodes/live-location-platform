@@ -1,0 +1,27 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoBg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#4F46E5"/>
+      <stop offset="60%" stopColor="#6366F1"/>
+      <stop offset="100%" stopColor="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base with Drop Glow -->
+  <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#logoBg)"/>
+  <rect x="2" y="2" width="60" height="60" rx="18" stroke="white" stroke-opacity="0.3" stroke-width="1.5"/>
+
+  <!-- Orbital Connection Ring -->
+  <ellipse cx="32" cy="32" rx="26" ry="11.5" transform="rotate(-26 32 32)" stroke="white" stroke-width="2.5" stroke-opacity="0.45" stroke-dasharray="4 3"/>
+
+  <!-- Location Beacon Pin -->
+  <path d="M32 8C23.72 8 17 14.72 17 23C17 34.25 32 54 32 54C32 54 47 34.25 47 23C47 14.72 40.28 8 32 8Z" fill="white" fill-opacity="0.2" stroke="white" stroke-width="3.5" stroke-linejoin="round"/>
+
+  <!-- Core Pulse Node -->
+  <circle cx="32" cy="23" r="7" fill="white"/>
+  <circle cx="32" cy="23" r="3.5" fill="#4F46E5"/>
+
+  <!-- Active Orbit Satellite Node -->
+  <circle cx="53" cy="22" r="3.5" fill="#38BDF8"/>
+</svg>
+

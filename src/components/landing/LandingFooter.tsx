@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Lock, ArrowUp } from 'lucide-react';
 import { soundFx } from '@/lib/soundFx';
 import { useAuth } from '@/hooks/useAuth';
+import { LocaLinkLogo } from '@/components/brand/LocaLinkLogo';
 
 export function LandingFooter() {
   const { isAuthenticated } = useAuth();
@@ -31,44 +32,9 @@ export function LandingFooter() {
             <Link
               href="/"
               onClick={() => soundFx?.playPop?.()}
-              className="group inline-flex cursor-pointer items-center gap-3"
+              className="group inline-flex cursor-pointer items-center"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-sm transition-transform group-hover:scale-105">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z"
-                    fill="white"
-                    fillOpacity="0.25"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M12 11.5C13.3807 11.5 14.5 10.3807 14.5 9C14.5 7.61929 13.3807 6.5 12 6.5C10.6193 6.5 9.5 7.61929 9.5 9C9.5 10.3807 10.6193 11.5 12 11.5Z"
-                    fill="white"
-                  />
-                </svg>
-              </div>
-              <div className="flex flex-col text-left">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-lg font-bold leading-none tracking-tight text-slate-950 dark:text-white">
-                    LocaLink
-                  </span>
-                  <span className="rounded-md bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300">
-                    Live
-                  </span>
-                </div>
-                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-600 dark:text-indigo-400">
-                  Real-Time GPS Platform
-                </span>
-              </div>
+              <LocaLinkLogo size="lg" showSubtitle={true} />
             </Link>
 
             <p className="max-w-sm text-sm leading-relaxed text-slate-600 dark:text-slate-400">

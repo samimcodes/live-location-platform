@@ -10,8 +10,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/lib/toast';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Eye, EyeOff, Mail, Lock, Navigation, ArrowRight, Check, CheckCircle2, Zap, UserCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Check, CheckCircle2, Zap, ShieldAlert, Shield, User } from 'lucide-react';
 import Link from 'next/link';
 import { soundFx } from '@/lib/soundFx';
 import dynamic from 'next/dynamic';
@@ -43,11 +42,11 @@ export function SignInForm() {
   const emailValue = watch('email') || '';
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
 
-  const fillDemo = (email: string, pass: string) => {
+  const fillDemo = (email: string, pass: string, roleName: string) => {
     soundFx?.playChime?.();
     setValue('email', email, { shouldValidate: true });
     setValue('password', pass, { shouldValidate: true });
-    toast.success('Demo credentials loaded!', { description: `Filled ${email}` });
+    toast.success(`${roleName} credentials loaded`, { description: email });
   };
 
   const onSubmit = async (data: FormData) => {
@@ -56,7 +55,7 @@ export function SignInForm() {
     try {
       await login(data.email.trim().toLowerCase(), data.password);
       soundFx?.playChime?.();
-      toast.success('Welcome back!', { description: 'Redirecting to your live dashboard…' });
+      toast.success('Welcome back!', { description: 'Opening your dashboard…' });
       const params = new URLSearchParams(window.location.search);
       const from = params.get('from');
       const target = from && from.startsWith('/dashboard') ? from : '/dashboard';
@@ -73,92 +72,89 @@ export function SignInForm() {
     }
   };
 
+  const hasGoogleAuth = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+
   return (
-    <motion.form
-      onSubmit={handleSubmit(onSubmit)}
-      className="space-y-3 w-full text-left"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* ── 1-Click Quick Demo Login Pills ── */}
-      <div className="flex items-center justify-between gap-1.5 p-1.5 rounded-xl bg-violet-50/80 dark:bg-violet-950/30 border border-violet-200/80 dark:border-violet-500/30">
-        <span className="text-[10px] font-mono font-bold text-violet-700 dark:text-violet-300 uppercase pl-1 shrink-0 flex items-center gap-1">
-          <Zap size={10} className="text-amber-500" />
-          <span>Quick:</span>
-        </span>
-        <div className="flex items-center gap-1.5 overflow-x-auto">
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-3 text-left">
+      {/* ── Frosted Glass Quick Demo Strip ── */}
+      <div className="flex items-center justify-between rounded-xl border border-indigo-200/50 bg-indigo-50/50 px-2.5 py-1.5 backdrop-blur-xl dark:border-indigo-500/20 dark:bg-indigo-500/[0.08]">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-900 dark:text-indigo-200">
+          <Zap className="h-3 w-3 text-amber-500 fill-amber-500/20" />
+          <span>Quick Demo:</span>
+        </div>
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => fillDemo('admin@localink.com', 'admin123')}
-            className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-white dark:bg-[#121B33] text-violet-700 dark:text-violet-300 border border-violet-300/80 dark:border-violet-500/40 hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer shadow-2xs shrink-0 active:scale-95"
+            onClick={() => fillDemo('admin@localink.com', 'admin123', 'Demo Admin')}
+            className="group flex cursor-pointer items-center gap-1 rounded-lg border border-white/70 bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-slate-700 shadow-2xs backdrop-blur-md transition-all hover:bg-white hover:text-indigo-600 active:scale-95 dark:border-white/10 dark:bg-white/[0.08] dark:text-slate-200 dark:hover:bg-white/[0.15] dark:hover:text-white"
           >
-            ⚡ Demo Admin
+            <Shield className="h-2.5 w-2.5 text-indigo-500 group-hover:scale-110 transition-transform" />
+            <span>Admin</span>
           </button>
           <button
             type="button"
-            onClick={() => fillDemo('family@localink.com', 'user123')}
-            className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-white dark:bg-[#121B33] text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer shadow-2xs shrink-0 active:scale-95"
+            onClick={() => fillDemo('family@localink.com', 'user123', 'Demo Member')}
+            className="group flex cursor-pointer items-center gap-1 rounded-lg border border-white/70 bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-slate-700 shadow-2xs backdrop-blur-md transition-all hover:bg-white hover:text-indigo-600 active:scale-95 dark:border-white/10 dark:bg-white/[0.08] dark:text-slate-200 dark:hover:bg-white/[0.15] dark:hover:text-white"
           >
-            👤 Demo Member
+            <User className="h-2.5 w-2.5 text-emerald-500 group-hover:scale-110 transition-transform" />
+            <span>Member</span>
           </button>
         </div>
       </div>
 
-      {/* Email Field */}
+      {/* ── Email Field ── */}
       <div className="space-y-1">
-        <Label htmlFor="email" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+        <Label htmlFor="email" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
           Email address
         </Label>
         <div className="relative">
-          <Mail
-            size={15}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none"
-          />
+          <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <Input
             id="email"
             type="email"
-            placeholder="name@example.com"
+            placeholder="name@company.com"
+            autoComplete="email"
             {...register('email')}
             aria-invalid={!!errors.email}
-            className="h-10.5 pl-10 pr-9 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/90 dark:bg-[#121B33] focus-visible:ring-2 focus-visible:ring-violet-500 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-2xs"
+            className="h-10 rounded-xl border border-slate-200/80 bg-white/75 pl-9 pr-9 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 shadow-2xs backdrop-blur-md transition-all focus-visible:bg-white focus-visible:border-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-600/15 dark:border-white/10 dark:bg-slate-900/50 dark:text-white dark:placeholder:text-slate-500 dark:focus-visible:bg-slate-900/80 dark:focus-visible:border-indigo-400 dark:focus-visible:ring-indigo-400/20"
           />
           {isEmailValid && (
-            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none animate-in fade-in zoom-in-75 duration-200">
-              <CheckCircle2 size={15} />
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
           )}
         </div>
         {errors.email && (
-          <p className="text-xs text-rose-500 font-medium mt-0.5">{errors.email.message}</p>
+          <p className="flex items-center gap-1 text-[11px] font-medium text-rose-500 dark:text-rose-400">
+            <ShieldAlert className="h-3 w-3" />
+            <span>{errors.email.message}</span>
+          </p>
         )}
       </div>
 
-      {/* Password Field */}
+      {/* ── Password Field ── */}
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <Label htmlFor="password" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          <Label htmlFor="password" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
             Password
           </Label>
           <Link
             href="/forgot-password"
-            className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline transition-colors"
+            className="text-[11px] font-semibold text-indigo-600 transition-colors hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
           >
             Forgot password?
           </Link>
         </div>
         <div className="relative">
-          <Lock
-            size={15}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none"
-          />
+          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
             placeholder="••••••••••••"
+            autoComplete="current-password"
             {...register('password')}
             aria-invalid={!!errors.password}
-            className="h-10.5 pl-10 pr-11 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/90 dark:bg-[#121B33] focus-visible:ring-2 focus-visible:ring-violet-500 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all shadow-2xs"
+            className="h-10 rounded-xl border border-slate-200/80 bg-white/75 pl-9 pr-9 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 shadow-2xs backdrop-blur-md transition-all focus-visible:bg-white focus-visible:border-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-600/15 dark:border-white/10 dark:bg-slate-900/50 dark:text-white dark:placeholder:text-slate-500 dark:focus-visible:bg-slate-900/80 dark:focus-visible:border-indigo-400 dark:focus-visible:ring-indigo-400/20"
           />
           <button
             type="button"
@@ -166,86 +162,95 @@ export function SignInForm() {
               soundFx?.playPop?.();
               setShowPassword(!showPassword);
             }}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 cursor-pointer"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-slate-400 transition-colors hover:text-slate-700 dark:hover:text-white"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
         {errors.password && (
-          <p className="text-xs text-rose-500 font-medium mt-0.5">{errors.password.message}</p>
+          <p className="flex items-center gap-1 text-[11px] font-medium text-rose-500 dark:text-rose-400">
+            <ShieldAlert className="h-3 w-3" />
+            <span>{errors.password.message}</span>
+          </p>
         )}
       </div>
 
-      {/* Remember Me */}
-      <div className="flex items-center gap-2 py-0.5">
-        <div
+      {/* ── Remember Me Checkbox ── */}
+      <div className="flex items-center gap-2 pt-0.5">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={rememberMe}
           onClick={() => {
             soundFx?.playPop?.();
             setRememberMe(!rememberMe);
           }}
-          className={`h-4 w-4 rounded-md border flex items-center justify-center cursor-pointer transition-all shrink-0 ${
+          className={`flex h-4 w-4 cursor-pointer items-center justify-center rounded-md border transition-all ${
             rememberMe
-              ? 'bg-violet-600 border-violet-600 text-white'
-              : 'bg-white dark:bg-[#121B33] border-slate-300 dark:border-slate-700'
+              ? 'border-indigo-600 bg-indigo-600 text-white shadow-2xs dark:border-indigo-500 dark:bg-indigo-500'
+              : 'border-slate-300 bg-white dark:border-white/20 dark:bg-white/[0.05]'
           }`}
         >
-          {rememberMe && <Check size={11} strokeWidth={3} />}
-        </div>
-        <Label
-          className="text-xs font-semibold text-slate-600 dark:text-slate-400 cursor-pointer select-none"
+          {rememberMe && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+        </button>
+        <span
+          className="cursor-pointer select-none text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           onClick={() => {
             soundFx?.playPop?.();
             setRememberMe(!rememberMe);
           }}
         >
           Remember my session
-        </Label>
+        </span>
       </div>
 
-      {/* Sign In Button */}
+      {/* ── Professional Primary Button ── */}
       <Button
         type="submit"
         disabled={isLoading}
-        className="relative w-full h-11 rounded-2xl text-white text-sm font-bold bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-700 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-500/25 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 cursor-pointer flex items-center justify-center gap-2 border border-white/20 overflow-hidden group/sub"
+        className="group relative flex h-10.5 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 text-xs sm:text-sm font-semibold text-white shadow-md shadow-indigo-600/30 transition-all hover:from-indigo-500 hover:to-violet-500 hover:shadow-lg hover:shadow-indigo-600/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] disabled:opacity-75"
       >
-        <span className="absolute inset-0 -translate-x-full group-hover/sub:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
         {isLoading ? (
           <>
-            <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
             <span>Signing in…</span>
           </>
         ) : (
           <>
-            <Navigation size={14} className="text-white" style={{ transform: 'rotate(-30deg)' }} />
             <span>Sign In to LocaLink</span>
-            <ArrowRight size={14} className="group-hover/sub:translate-x-0.5 transition-transform" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </>
         )}
       </Button>
 
-      {/* Divider */}
-      <div className="relative flex items-center py-1">
-        <div className="flex-1 border-t border-slate-200 dark:border-slate-800" />
-        <span className="mx-3 text-[10px] font-mono font-medium text-slate-400 dark:text-slate-500 uppercase">
-          or continue with
-        </span>
-        <div className="flex-1 border-t border-slate-200 dark:border-slate-800" />
-      </div>
+      {/* ── Social Login Divider ── */}
+      {hasGoogleAuth && (
+        <>
+          <div className="relative flex items-center py-0.5">
+            <div className="flex-1 border-t border-slate-200/90 dark:border-white/10" />
+            <span className="mx-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              or continue with
+            </span>
+            <div className="flex-1 border-t border-slate-200/90 dark:border-white/10" />
+          </div>
+          <div className="flex flex-col items-center justify-center">
+            <SocialLogin />
+          </div>
+        </>
+      )}
 
-      {/* Social Buttons */}
-      <div className="flex flex-col items-center gap-2">
-        <SocialLogin />
-      </div>
-
-      {/* Register Link */}
-      <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-1 font-medium">
+      {/* ── Direct Link to Register ── */}
+      <p className="pt-0.5 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="text-violet-600 dark:text-violet-400 hover:underline font-bold inline-flex items-center gap-0.5">
-          <span>Create one free</span>
-          <ArrowRight size={12} />
+        <Link
+          href="/register"
+          onClick={() => soundFx?.playPop?.()}
+          className="font-semibold text-indigo-600 transition-colors hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+        >
+          Sign up free ↗
         </Link>
       </p>
-    </motion.form>
+    </form>
   );
 }

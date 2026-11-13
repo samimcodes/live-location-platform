@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/ThemeProvider';
 import { soundFx } from '@/lib/soundFx';
 import { useAuth } from '@/hooks/useAuth';
+import { LocaLinkLogo } from '@/components/brand/LocaLinkLogo';
 
 const navLinks = [
   { label: 'Features', href: '#features', id: 'features', icon: Zap },
@@ -136,30 +137,9 @@ export function LandingNavbar() {
               soundFx?.playPop?.();
               setMobileOpen(false);
             }}
-            className="flex items-center gap-2.5 group shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="group shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
-            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-gradient-to-b from-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-[0_2px_8px_rgba(99,102,241,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] group-hover:scale-[1.03] transition-transform duration-200">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path
-                  d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z"
-                  fill="white"
-                  fillOpacity="0.22"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                />
-                <circle cx="12" cy="9" r="2.5" fill="white" />
-              </svg>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[16px] sm:text-[17px] font-bold tracking-[-0.025em] text-slate-950 dark:text-white leading-none">
-                LocaLink
-              </span>
-              <span className="relative flex h-2 w-2" title="Real-time GPS network active">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-            </div>
+            <LocaLinkLogo size="md" />
           </Link>
 
           {/* Center Navigation Pill (Desktop) */}
